@@ -7,6 +7,14 @@
 
 import SwiftUI
 
+public struct CustomSymbolPath: Hashable {
+    let id: String
+    let draw: (CGRect) -> Path
+    
+    public static func == (lhs: CustomSymbolPath, rhs: CustomSymbolPath) -> Bool { lhs.id == rhs.id }
+    public func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
+
 public enum ChartSymbolShape: Hashable {
     case circle
     case square
@@ -14,6 +22,11 @@ public enum ChartSymbolShape: Hashable {
     case diamond
     case cross
     case star
+    case customShape(CustomSymbolPath)
+    
+    public static func custom(id: String = UUID().uuidString, _ draw: @escaping (CGRect) -> Path) -> ChartSymbolShape {
+        return .customShape(CustomSymbolPath(id: id, draw: draw))
+    }
     
     public func path(in rect: CGRect) -> Path {
         var path = Path()
@@ -34,7 +47,7 @@ public enum ChartSymbolShape: Hashable {
             path.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
             path.closeSubpath()
         case .cross:
-            let t = rect.width * 0.3 // Товщина ліній хрестика
+            let t = rect.width * 0.3
             path.addRect(CGRect(x: rect.midX - t/2, y: rect.minY, width: t, height: rect.height))
             path.addRect(CGRect(x: rect.minX, y: rect.midY - t/2, width: rect.width, height: t))
         case .star:
@@ -48,7 +61,10 @@ public enum ChartSymbolShape: Hashable {
                 if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
             }
             path.closeSubpath()
+        case .customShape(let customPath):
+            return customPath.draw(rect)
         }
+        
         return path
     }
 }
