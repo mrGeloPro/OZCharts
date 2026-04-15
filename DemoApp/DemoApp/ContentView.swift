@@ -32,6 +32,11 @@ struct ContentView: View {
                 Section(header: Text("Advanced Layering")) {
                     NavigationLink("HYBRID VIEW (Line + Shapes + Icons)", destination: HybridChartDemoView())
                 }
+                
+                Section(header: Text("Interactive & Dynamic")) {
+                    NavigationLink("LIVE TELEMETRY (Real-time)", destination: LiveTrackingDemoView())
+                    NavigationLink("EVENT STACKING (Multi-layer)", destination: EventStackDemoView())
+                }
             }
             .navigationTitle("OZCharts Demo")
         }
@@ -544,5 +549,108 @@ struct HybridChartDemoView: View {
         }
         .navigationTitle("HYBRID VIEW")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct LiveTrackingDemoView: View {
+    @State private var data: [Point2D] = []
+    @State private var timer: Timer?
+    @State private var counter: Double = 0
+    
+    var body: some View {
+        VStack {
+            CartesianChartView(
+                data: data,
+                type: .line(lineWidth: 3, color: .green),
+                xScale: LinearScale(domain: counter-20...counter),
+                yScale: LinearScale(domain: 0...100),
+                isLiveTrackingEnabled: true,
+                emptyState: { AnyView(ProgressView("Waiting for signal...")) }
+            ) { points in
+                if let p = points.last {
+                    Text("\(Int(p.originalPoint.y))%").bold().padding(4).background(Color.black).foregroundColor(.white).cornerRadius(4)
+                }
+            }
+            .frame(height: 300)
+            .padding()
+            .background(Color(white: 0.1).cornerRadius(16))
+            .padding()
+            
+            Button(timer == nil ? "Start Telemetry" : "Stop") {
+                toggleTimer()
+            }
+            .padding().background(timer == nil ? Color.blue : Color.red).foregroundColor(.white).cornerRadius(12)
+            
+            Spacer()
+        }
+        .navigationTitle("Live Telemetry")
+    }
+    
+    func toggleTimer() {
+        if timer == nil {
+            timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+                let newPoint = Point2D(x: counter, y: Double.random(in: 40...80))
+                data.append(newPoint)
+                counter += 0.5
+                if data.count > 100 { data.removeFirst() }
+            }
+        } else {
+            timer?.invalidate()
+            timer = nil
+        }
+    }
+}
+
+struct EventStackDemoView: View {
+    let mockData: [Point2D] = (0...10).map { Point2D(x: Double($0), y: Double.random(in: 10...50)) }
+    
+    var body: some View {
+        VStack {
+            CartesianChartView(
+                data: mockData,
+                type: .line(lineWidth: 2, color: .gray.opacity(0.5)),
+                xScale: LinearScale(domain: 0...10),
+                yScale: LinearScale(domain: 0...100),
+                customViewAnnotations: [
+                    CustomViewAnnotation(x: 5, y: 50) {
+                        InteractiveStackView()
+                    }
+                ]
+            ) { _ in EmptyView() }
+            .frame(height: 350)
+            .padding()
+            .background(Color.black.opacity(0.05).cornerRadius(16))
+            .padding()
+            
+            Text("Tap on the icon to cycle through stacked events")
+                .font(.caption).foregroundColor(.secondary)
+            
+            Spacer()
+        }
+        .navigationTitle("Event Stacking")
+    }
+}
+
+struct InteractiveStackView: View {
+    @State private var topIndex = 0
+    let icons = ["sun.max.fill", "cloud.rain.fill", "bolt.fill"]
+    let colors: [Color] = [.yellow, .blue, .purple]
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<icons.count, id: \.self) { i in
+                Image(systemName: icons[i])
+                    .font(.title)
+                    .foregroundColor(colors[i])
+                    .offset(x: i == topIndex ? 0 : CGFloat(i * 3), y: i == topIndex ? 0 : CGFloat(i * 3))
+                    .opacity(i == topIndex ? 1 : 0.3)
+                    .scaleEffect(i == topIndex ? 1.2 : 0.8)
+            }
+        }
+        .onTapGesture {
+            withAnimation(.spring()) {
+                topIndex = (topIndex + 1) % icons.count
+            }
+        }
     }
 }
