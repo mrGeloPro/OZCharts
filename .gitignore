@@ -18,4 +18,4 @@ DerivedData
 *.xcuserstate
 
 # Swift Package Manager
-.build/
+.build/.swiftpm/
