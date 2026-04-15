@@ -1,3 +1,10 @@
+//
+//  ChartSymbolShape.swift
+//  OZCharts
+//
+//  Created by Oleh Hulovatyi on 15.04.2026.
+//
+
 import SwiftUI
 
 public enum ChartSymbolShape: Hashable {

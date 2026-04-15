@@ -1,3 +1,10 @@
+//
+//  CartesianCoordinator.swift
+//  OZCharts
+//
+//  Created by Oleh Hulovatyi on 11.04.2026.
+//
+
 import Foundation
 import CoreGraphics
 

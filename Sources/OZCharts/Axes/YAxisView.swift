@@ -1,3 +1,10 @@
+//
+//  YAxisView.swift
+//  OZCharts
+//
+//  Created by Oleh Hulovatyi on 11.04.2026.
+//
+
 import SwiftUI
 
 public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputType == CGFloat {

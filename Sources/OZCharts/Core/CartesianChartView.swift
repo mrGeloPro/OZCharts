@@ -1,3 +1,10 @@
+//
+//  CartesianChartView.swift
+//  OZCharts
+//
+//  Created by Oleh Hulovatyi on 11.04.2026.
+//
+
 import SwiftUI
 
 /// A high-performance, highly customizable charting view built on SwiftUI `Canvas`.
