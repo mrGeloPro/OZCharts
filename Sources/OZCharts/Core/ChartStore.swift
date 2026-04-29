@@ -1,0 +1,438 @@
+//
+//  ChartStore.swift
+//  OZCharts
+//
+//  Created by Oleh Hulovatyi.
+//  Copyright (c) 2026 Oleh Hulovatyi. All rights reserved.
+//
+
+import SwiftUI
+
+@MainActor
+public final class ChartStore<
+    Point: ChartDataPoint,
+    XScale: Scale,
+    YScale: Scale
+>: ObservableObject
+where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
+      YScale.InputType == Point.YValue, YScale.OutputType == CGFloat,
+      Point.XValue == Double, Point.YValue == Double {
+
+    // MARK: - Published State
+    @Published public var activeXScale: XScale
+    @Published public var activeYScale: YScale
+
+    @Published public var seriesContexts: [[ChartPointContext<Point>]] = []
+    @Published public var oldSeriesContexts: [[ChartPointContext<Point>]] = []
+    @Published public var animationProgress: CGFloat = 1.0
+    @Published public var isAnimationActive = false
+
+    @Published public var highlightedPoints: [ChartPointContext<Point>] = []
+    @Published public var violinBackgrounds: [AnyHashable: Path] = [:]
+
+    @Published public var viewport = ChartViewport()
+
+    // MARK: - Internal logic variables
+    public var baseXScale: XScale
+    public var baseYScale: YScale
+    public var canvasSize: CGSize = .zero
+    var layoutCoalescingIntervalNanoseconds: UInt64 = 16_000_000
+    private var updateCounter: Int = 0
+    private var layoutTask: Task<Void, Never>?
+    private var selectionCycleIDs: [UUID] = []
+    private var selectionCycleIndex: Int = 0
+
+    public init(xScale: XScale, yScale: YScale) {
+        self.baseXScale = xScale
+        self.baseYScale = yScale
+        self.activeXScale = xScale
+        self.activeYScale = yScale
+    }
+
+    public func updateBaseScales(xScale: XScale, yScale: YScale) {
+        baseXScale = xScale
+        baseYScale = yScale
+    }
+
+    public func resetViewport() {
+        viewport.reset()
+        activeXScale = baseXScale
+        activeYScale = baseYScale
+    }
+
+    public var viewportState: ChartViewportState {
+        viewport.state
+    }
+
+    public var selectionState: ChartSelectionState {
+        ChartSelectionState(selectedX: highlightedPoints.first?.originalPoint.x)
+    }
+
+    deinit {
+        layoutTask?.cancel()
+    }
+
+    // MARK: - Data Updates & Live Tracking
+
+    public func handleDataChange(
+        series: [AnyChartSeries<Point>],
+        isLiveTrackingEnabled: Bool,
+        initialViewport: ChartInitialViewport? = nil,
+        isHorizontalScrollEnabled: Bool = true,
+        isVerticalScrollEnabled: Bool = true
+    ) {
+        let allData = series.flatMap { $0.data }
+        if allData.isEmpty { return }
+
+        if isLiveTrackingEnabled {
+            initializeViewport(
+                initialViewport: initialViewport,
+                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                isVerticalScrollEnabled: isVerticalScrollEnabled
+            )
+            let currentDomain = viewport.visibleXDomain ?? baseXScale.domain
+            let windowWidth = max(0, currentDomain.upperBound - currentDomain.lowerBound)
+            if viewport.visibleXDomain == nil {
+                viewport.visibleXDomain = currentDomain
+            }
+            viewport.applyLiveTracking(
+                newGlobalMax: baseXScale.domain.upperBound,
+                currentWindowWidth: windowWidth,
+                globalXDomain: baseXScale.domain
+            )
+            applyViewportToScales()
+        } else if !isLiveTrackingEnabled {
+            initializeViewport(
+                initialViewport: initialViewport,
+                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                isVerticalScrollEnabled: isVerticalScrollEnabled
+            )
+        }
+
+        let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
+        queueUpdate(series: series, in: canvasSize, animate: hasAnimation)
+    }
+
+    // MARK: - Gesture Handling
+
+    public func handleGestureEvent(
+        _ event: ChartGestureEvent,
+        isHorizontalScrollEnabled: Bool,
+        isVerticalScrollEnabled: Bool,
+        isHorizontalZoomEnabled: Bool,
+        isVerticalZoomEnabled: Bool,
+        minZoomScale: Double,
+        hitboxRadius: CGFloat,
+        selectionMode: ChartSelectionMode = .pointsInRadius,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
+        series: [AnyChartSeries<Point>]
+    ) {
+        switch event {
+        case .panChanged(let translation):
+            viewport.isDragging = true
+            highlightedPoints = []
+            resetSelectionCycle()
+            viewport.applyPan(
+                translationWidth:  translation.width,
+                translationHeight: translation.height,
+                canvasSize:        canvasSize,
+                globalXDomain:     baseXScale.domain,
+                globalYDomain:     baseYScale.domain,
+                scrollX:           isHorizontalScrollEnabled,
+                scrollY:           isVerticalScrollEnabled
+            )
+            applyViewportToScales()
+            queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
+
+        case .panEnded:
+            viewport.endPan()
+
+        case .zoomChanged(let magnification):
+            highlightedPoints = []
+            resetSelectionCycle()
+            viewport.applyZoom(
+                magnification:  magnification,
+                globalXDomain:  baseXScale.domain,
+                globalYDomain:  baseYScale.domain,
+                minZoomScale:   minZoomScale,
+                zoomX:          isHorizontalZoomEnabled,
+                zoomY:          isVerticalZoomEnabled
+            )
+            applyViewportToScales()
+            queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
+
+        case .zoomEnded:
+            viewport.endZoom()
+
+        case .highlight(let location):
+            highlightedPoints = selectPoints(
+                near: location,
+                radius: hitboxRadius,
+                mode: selectionMode,
+                overlappingSelectionMode: overlappingSelectionMode
+            )
+
+        case .highlightCleared:
+            highlightedPoints = []
+        }
+    }
+
+    func selectPoints(
+        near location: CGPoint,
+        radius: CGFloat,
+        mode: ChartSelectionMode,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .all
+    ) -> [ChartPointContext<Point>] {
+        let allContexts = seriesContexts.flatMap { $0 }
+        guard !allContexts.isEmpty else { return [] }
+
+        let selected: [ChartPointContext<Point>]
+        switch mode {
+        case .none:
+            selected = []
+
+        case .pointsInRadius:
+            let radiusSq = radius * radius
+            selected = allContexts.filter {
+                let dx = $0.position.x - location.x
+                let dy = $0.position.y - location.y
+                return (dx * dx + dy * dy) <= radiusSq
+            }
+
+        case .nearestPoint:
+            selected = allContexts.min {
+                distanceSquared(from: $0.position, to: location) <
+                distanceSquared(from: $1.position, to: location)
+            }.map { [$0] } ?? []
+
+        case .nearestX:
+            guard let nearest = allContexts.min(by: {
+                abs($0.position.x - location.x) < abs($1.position.x - location.x)
+            }) else {
+                return []
+            }
+            selected = allContexts.filter { $0.originalPoint.x == nearest.originalPoint.x }
+        }
+
+        return resolveOverlappingSelection(selected, mode: overlappingSelectionMode)
+    }
+
+    func selectNearestXValue(_ xValue: Double) -> [ChartPointContext<Point>] {
+        guard xValue.isFinite else { return [] }
+
+        let allContexts = seriesContexts.flatMap { $0 }
+        guard let nearest = allContexts.min(by: {
+            abs($0.originalPoint.x - xValue) < abs($1.originalPoint.x - xValue)
+        }) else {
+            return []
+        }
+
+        return allContexts.filter { $0.originalPoint.x == nearest.originalPoint.x }
+    }
+
+    public func applySelectionState(_ state: ChartSelectionState) {
+        guard let selectedX = state.selectedX else {
+            highlightedPoints = []
+            resetSelectionCycle()
+            return
+        }
+
+        highlightedPoints = selectNearestXValue(selectedX)
+        resetSelectionCycle()
+    }
+
+    private func resolveOverlappingSelection(
+        _ selected: [ChartPointContext<Point>],
+        mode: ChartOverlappingSelectionMode
+    ) -> [ChartPointContext<Point>] {
+        guard mode == .cycle, selected.count > 1 else {
+            if selected.count <= 1 {
+                resetSelectionCycle()
+            }
+            return selected
+        }
+
+        let ids = selected.map(\.id)
+        if ids == selectionCycleIDs {
+            selectionCycleIndex = (selectionCycleIndex + 1) % selected.count
+        } else {
+            selectionCycleIDs = ids
+            selectionCycleIndex = 0
+        }
+
+        return [selected[selectionCycleIndex]]
+    }
+
+    private func resetSelectionCycle() {
+        selectionCycleIDs = []
+        selectionCycleIndex = 0
+    }
+
+    public func applyViewportToScales() {
+        if let newXDomain = viewport.visibleXDomain,
+           let newScaleX: XScale = replacementScale(like: activeXScale, domain: newXDomain) {
+            activeXScale = newScaleX
+        }
+        if let newYDomain = viewport.visibleYDomain,
+           let newScaleY: YScale = replacementScale(like: activeYScale, domain: newYDomain) {
+            activeYScale = newScaleY
+        }
+    }
+
+    public func applyViewportState(_ state: ChartViewportState) {
+        activeXScale = baseXScale
+        activeYScale = baseYScale
+        viewport.applyState(
+            state,
+            globalXDomain: baseXScale.domain,
+            globalYDomain: baseYScale.domain
+        )
+        applyViewportToScales()
+    }
+
+    public func applyProgrammaticZoom(
+        magnification: Double,
+        minZoomScale: Double,
+        zoomX: Bool,
+        zoomY: Bool
+    ) {
+        viewport.applyProgrammaticZoom(
+            magnification: magnification,
+            globalXDomain: baseXScale.domain,
+            globalYDomain: baseYScale.domain,
+            minZoomScale: minZoomScale,
+            zoomX: zoomX,
+            zoomY: zoomY
+        )
+        applyViewportToScales()
+    }
+
+    public func initializeViewport(
+        initialViewport: ChartInitialViewport?,
+        isHorizontalScrollEnabled: Bool,
+        isVerticalScrollEnabled: Bool
+    ) {
+        viewport.initializeVisibleDomains(
+            globalXDomain: baseXScale.domain,
+            globalYDomain: baseYScale.domain,
+            initialViewport: initialViewport,
+            scrollX: isHorizontalScrollEnabled,
+            scrollY: isVerticalScrollEnabled
+        )
+        applyViewportToScales()
+    }
+
+    // MARK: - Layout Recalculation
+
+    public func queueUpdate(
+        series: [AnyChartSeries<Point>],
+        in size: CGSize,
+        animate: Bool,
+        coalesce: Bool = true
+    ) {
+        guard size.width > 0 && size.height > 0 else { return }
+
+        updateCounter += 1
+        let currentID = updateCounter
+        layoutTask?.cancel()
+
+        if !coalesce && !animate {
+            oldSeriesContexts = []
+            seriesContexts = calculateSeriesContexts(for: series, in: size)
+            animationProgress = 1.0
+            isAnimationActive = false
+            layoutTask = nil
+            return
+        }
+
+        layoutTask = Task { @MainActor in
+            if coalesce, layoutCoalescingIntervalNanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: layoutCoalescingIntervalNanoseconds)
+            }
+
+            guard !Task.isCancelled, currentID == self.updateCounter else { return }
+
+            if animate {
+                oldSeriesContexts = seriesContexts
+                animationProgress = 0.0
+                isAnimationActive = true
+                try? await Task.sleep(nanoseconds: 5_000_000)
+            } else {
+                oldSeriesContexts = []
+                animationProgress = 1.0
+                isAnimationActive = false
+            }
+
+            guard !Task.isCancelled, currentID == self.updateCounter else { return }
+
+            let newContexts = calculateSeriesContexts(for: series, in: size)
+
+            guard !Task.isCancelled, currentID == self.updateCounter else { return }
+            seriesContexts = newContexts
+
+            let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
+            if animate && hasAnimation {
+                let anim = series.first(where: { $0.animation.swiftUIAnimation != nil })?.animation.swiftUIAnimation
+                withAnimation(anim) { animationProgress = 1.0 }
+            } else {
+                animationProgress = 1.0
+            }
+
+            if currentID == self.updateCounter {
+                layoutTask = nil
+            }
+        }
+    }
+
+    private func calculateSeriesContexts(
+        for series: [AnyChartSeries<Point>],
+        in size: CGSize
+    ) -> [[ChartPointContext<Point>]] {
+        var newContexts: [[ChartPointContext<Point>]] = []
+        let sorted = series.sorted { $0.zIndex < $1.zIndex }
+
+        for s in sorted {
+            var coordinator = CartesianCoordinator<Point, XScale, YScale>(
+                xScale: activeXScale,
+                yScale: activeYScale
+            )
+            let contexts = coordinator.calculateLayout(for: s.data, in: size)
+
+            activeXScale = coordinator.xScale
+            activeYScale = coordinator.yScale
+            newContexts.append(contexts)
+        }
+
+        return newContexts
+    }
+}
+
+private func distanceSquared(from lhs: CGPoint, to rhs: CGPoint) -> CGFloat {
+    let dx = lhs.x - rhs.x
+    let dy = lhs.y - rhs.y
+    return dx * dx + dy * dy
+}
+
+private func replacementScale<S: Scale>(
+    like scale: S,
+    domain: ClosedRange<Double>
+) -> S? where S.InputType == Double, S.OutputType == CGFloat {
+    if let linear = scale as? LinearScale {
+        return LinearScale(
+            domain: domain,
+            range: linear.range,
+            isReversed: linear.isReversed
+        ) as? S
+    }
+
+    if let log = scale as? LogScale {
+        return LogScale(
+            domain: domain,
+            range: log.range,
+            isReversed: log.isReversed,
+            base: log.base
+        ) as? S
+    }
+
+    return nil
+}

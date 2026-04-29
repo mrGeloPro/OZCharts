@@ -2,470 +2,751 @@
 //  CartesianChartView.swift
 //  OZCharts
 //
-//  Created by Oleh Hulovatyi on 11.04.2026.
+//  Created by Oleh Hulovatyi.
+//  Copyright (c) 2026 Oleh Hulovatyi. All rights reserved.
 //
 
 import SwiftUI
 
-/// A high-performance, highly customizable charting view built on SwiftUI `Canvas`.
-///
-/// `CartesianChartView` supports independent zooming and panning across axes,
-/// live data tracking, off-screen culling, and complex chart types such as Violin and Stacked Bars.
-public struct CartesianChartView<Point: ChartDataPoint, XScale: Scale, YScale: Scale, TooltipContent: View>: View
+public struct CartesianChartView<
+    Point: ChartDataPoint,
+    XScale: Scale,
+    YScale: Scale,
+    TooltipContent: View
+>: View
 where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
       YScale.InputType == Point.YValue, YScale.OutputType == CGFloat,
       Point.XValue == Double, Point.YValue == Double {
-    
-    let data: [Point]
-    let type: ChartType<Point>
-    
+
+    // MARK: - Inputs
+
+    let series: [AnyChartSeries<Point>]
+
     let xAxes: [XAxisConfig]
     let yAxes: [YAxisConfig]
     let horizontalAnnotations: [HorizontalAnnotation]
-    let pointAnnotations: [PointAnnotation<Point.XValue, Point.YValue>]
-    let customViewAnnotations: [CustomViewAnnotation<Point.XValue, Point.YValue>]
-    let animationStyle: ChartAnimationStyle
-    
-    public var isHorizontalScrollEnabled: Bool
-    public var isVerticalScrollEnabled: Bool
-    public var isHorizontalZoomEnabled: Bool
-    public var isVerticalZoomEnabled: Bool
-    public var isLiveTrackingEnabled: Bool
+    let pointAnnotations: [PointAnnotation<Double, Double>]
+    let customViewAnnotations: [CustomViewAnnotation<Double, Double>]
+
+    var baseXScale: XScale
+    var baseYScale: YScale
+
+    // MARK: - Options
+
+    public var isHorizontalScrollEnabled: Bool = true
+    public var isVerticalScrollEnabled:   Bool = true
+    public var isHorizontalZoomEnabled:   Bool = true
+    public var isVerticalZoomEnabled:     Bool = true
+    public var isLiveTrackingEnabled:     Bool = false
+    public var initialViewport: ChartInitialViewport?
+    var viewportBinding: Binding<ChartViewportState>?
+    var selectionStateBinding: Binding<ChartSelectionState>?
+
+    public var hitboxRadius:    CGFloat    = 20
+    public var selectionMode:   ChartSelectionMode = .pointsInRadius
+    public var selectionBehavior: ChartSelectionBehavior = .tap
+    public var overlappingSelectionMode: ChartOverlappingSelectionMode = .all
+    public var clearsSelectionOnGestureEnd: Bool = true
+    public var isAnnotationSelectionEnabled: Bool = false
+    public var annotationHitboxRadius: CGFloat = 24
+    public var annotationOverlappingSelectionMode: ChartOverlappingSelectionMode = .cycle
+    public var crosshairStyle:  ChartCrosshairStyle = .hidden
+    public var tooltipPlacement: ChartTooltipPlacement = .automatic
+    public var tooltipOffset:   CGPoint    = CGPoint(x: 0, y: -20)
+    public var tooltipPadding:  CGFloat = 8
+    public var minZoomScale:    Double     = 0.01
+    public var showsZoomControls: Bool = false
+    public var zoomControlStep: Double = 2
+    public var legendPosition:  ChartLegendPosition = .hidden
+    public var legendSpacing:   CGFloat = 12
+    public var canvasRenderOrder: [CanvasLayer] = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart]
     public var emptyState: (() -> AnyView)?
-    
-    public var hitboxRadius: CGFloat = 20
-    public var tooltipOffset: CGPoint = CGPoint(x: 0, y: -20)
-    public var minZoomScale: Double = 0.01
-    public var canvasRenderOrder: [CanvasLayer]
-    
+    var customLegendContent: (([ChartLegendItem]) -> AnyView)?
+    var accessibilityDescriptor: ChartAccessibilityDescriptor<Point>?
+
     let tooltipContent: ([ChartPointContext<Point>]) -> TooltipContent
-    
-    let baseXScale: XScale
-    let baseYScale: YScale
-    @State private var activeXScale: XScale
-    @State private var activeYScale: YScale
-    
-    @State private var oldPointContexts: [ChartPointContext<Point>] = []
-    @State private var pointContexts: [ChartPointContext<Point>] = []
-    @State private var animationProgress: CGFloat = 1.0
-    
-    @State private var highlightedPoints: [ChartPointContext<Point>] = []
-    @State private var violinBackgrounds: [AnyHashable: Path] = [:]
-    
-    // Gesture states and performance optimization
-    @State private var visibleXDomain: ClosedRange<Double>?
-    @State private var dragStartDomain: ClosedRange<Double>?
-    @State private var zoomStartDomain: ClosedRange<Double>?
-    
-    @State private var visibleYDomain: ClosedRange<Double>?
-    @State private var dragStartYDomain: ClosedRange<Double>?
-    @State private var zoomStartYDomain: ClosedRange<Double>?
-    
-    @State private var isDraggingChart = false
-    
-    @State private var canvasSize: CGSize = .zero
-    @State private var updateCounter: Int = 0
-    
+    var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
+    var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
+    var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
+
+    // MARK: - State
+
+    @StateObject private var store: ChartStore<Point, XScale, YScale>
+    @State private var highlightedAnnotations: [ChartAnnotationContext] = []
+    @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
+
+    // MARK: - Init
+
     public init(
-        data: [Point], type: ChartType<Point>, xScale: XScale, yScale: YScale,
-        xAxes: [XAxisConfig] = [.init(position: .bottom)], yAxes: [YAxisConfig] = [.init(position: .leading)],
-        horizontalAnnotations: [HorizontalAnnotation] = [],
-        pointAnnotations: [PointAnnotation<Point.XValue, Point.YValue>] = [],
-        customViewAnnotations: [CustomViewAnnotation<Point.XValue, Point.YValue>] = [],
-        animationStyle: ChartAnimationStyle = .none,
-        isHorizontalScrollEnabled: Bool = true,
-        isHorizontalZoomEnabled: Bool = true,
-        isVerticalScrollEnabled: Bool = true,
-        isVerticalZoomEnabled: Bool = true,
-        isLiveTrackingEnabled: Bool = false,
-        canvasRenderOrder: [CanvasLayer] = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
-        emptyState: (() -> AnyView)? = nil,
+        series: [AnyChartSeries<Point>],
+        xScale: XScale,
+        yScale: YScale,
+        xAxes: [XAxisConfig]                                  = [.init(position: .bottom)],
+        yAxes: [YAxisConfig]                                  = [.init(position: .leading)],
+        horizontalAnnotations: [HorizontalAnnotation]         = [],
+        pointAnnotations: [PointAnnotation<Double, Double>]   = [],
+        customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
+        isHorizontalScrollEnabled: Bool                       = true,
+        isHorizontalZoomEnabled: Bool                         = true,
+        isVerticalScrollEnabled: Bool                         = true,
+        isVerticalZoomEnabled: Bool                           = true,
+        isLiveTrackingEnabled: Bool                           = false,
+        initialViewport: ChartInitialViewport?                = nil,
+        viewport: Binding<ChartViewportState>?                = nil,
+        selectionState: Binding<ChartSelectionState>?         = nil,
+        selectionMode: ChartSelectionMode                     = .pointsInRadius,
+        selectionBehavior: ChartSelectionBehavior             = .tap,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
+        clearsSelectionOnGestureEnd: Bool                     = true,
+        crosshairStyle: ChartCrosshairStyle                   = .hidden,
+        tooltipPlacement: ChartTooltipPlacement               = .automatic,
+        onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
+        canvasRenderOrder: [CanvasLayer]                      = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        emptyState: (() -> AnyView)?                          = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) {
-        self.data = data; self.type = type
-        self.baseXScale = xScale; self.baseYScale = yScale
-        self._activeXScale = State(initialValue: xScale); self._activeYScale = State(initialValue: yScale)
-        self.xAxes = xAxes; self.yAxes = yAxes
-        self.horizontalAnnotations = horizontalAnnotations;
-        self.animationStyle = animationStyle
-        self.pointAnnotations = pointAnnotations
-        self.customViewAnnotations = customViewAnnotations
+        self.series                    = series
+        self.baseXScale                = xScale
+        self.baseYScale                = yScale
+        self._store                    = StateObject(wrappedValue: ChartStore(xScale: xScale, yScale: yScale))
+        self.xAxes                     = xAxes
+        self.yAxes                     = yAxes
+        self.horizontalAnnotations     = horizontalAnnotations
+        self.pointAnnotations          = pointAnnotations
+        self.customViewAnnotations     = customViewAnnotations
         self.isHorizontalScrollEnabled = isHorizontalScrollEnabled
-        self.isHorizontalZoomEnabled = isHorizontalZoomEnabled
-        self.isVerticalScrollEnabled = isVerticalScrollEnabled
-        self.isVerticalZoomEnabled = isVerticalZoomEnabled
-        self.isLiveTrackingEnabled = isLiveTrackingEnabled
-        self.canvasRenderOrder = canvasRenderOrder
-        self.emptyState = emptyState
-        self.tooltipContent = tooltipContent
+        self.isHorizontalZoomEnabled   = isHorizontalZoomEnabled
+        self.isVerticalScrollEnabled   = isVerticalScrollEnabled
+        self.isVerticalZoomEnabled     = isVerticalZoomEnabled
+        self.isLiveTrackingEnabled     = isLiveTrackingEnabled
+        self.initialViewport           = initialViewport
+        self.viewportBinding           = viewport
+        self.selectionStateBinding     = selectionState
+        self.selectionMode             = selectionMode
+        self.selectionBehavior         = selectionBehavior
+        self.overlappingSelectionMode  = overlappingSelectionMode
+        self.clearsSelectionOnGestureEnd = clearsSelectionOnGestureEnd
+        self.crosshairStyle            = crosshairStyle
+        self.tooltipPlacement          = tooltipPlacement
+        self.onSelectionChanged        = onSelectionChanged
+        self.canvasRenderOrder         = canvasRenderOrder
+        self.emptyState                = emptyState
+        self.tooltipContent            = tooltipContent
     }
-    
-    private var visiblePointAnnotations: [PointAnnotation<Point.XValue, Point.YValue>] {
-        let currentXDomain = activeXScale.domain
-        let bufferX = (currentXDomain.upperBound - currentXDomain.lowerBound) * 0.1
-        return pointAnnotations.filter {
-            let xDouble = $0.x
-            return xDouble >= (currentXDomain.lowerBound - bufferX) && xDouble <= (currentXDomain.upperBound + bufferX)
-        }
+
+    public init<S: ChartSeriesProtocol>(
+        series: [S],
+        xScale: XScale,
+        yScale: YScale,
+        xAxes: [XAxisConfig]                                  = [.init(position: .bottom)],
+        yAxes: [YAxisConfig]                                  = [.init(position: .leading)],
+        horizontalAnnotations: [HorizontalAnnotation]         = [],
+        pointAnnotations: [PointAnnotation<Double, Double>]   = [],
+        customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
+        isHorizontalScrollEnabled: Bool                       = true,
+        isHorizontalZoomEnabled: Bool                         = true,
+        isVerticalScrollEnabled: Bool                         = true,
+        isVerticalZoomEnabled: Bool                           = true,
+        isLiveTrackingEnabled: Bool                           = false,
+        initialViewport: ChartInitialViewport?                = nil,
+        viewport: Binding<ChartViewportState>?                = nil,
+        selectionState: Binding<ChartSelectionState>?         = nil,
+        selectionMode: ChartSelectionMode                     = .pointsInRadius,
+        selectionBehavior: ChartSelectionBehavior             = .tap,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
+        clearsSelectionOnGestureEnd: Bool                     = true,
+        crosshairStyle: ChartCrosshairStyle                   = .hidden,
+        tooltipPlacement: ChartTooltipPlacement               = .automatic,
+        onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
+        canvasRenderOrder: [CanvasLayer]                      = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        emptyState: (() -> AnyView)?                          = nil,
+        @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
+    ) where S.Point == Point {
+        self.init(
+            series: series.map(AnyChartSeries.init),
+            xScale: xScale,
+            yScale: yScale,
+            xAxes: xAxes,
+            yAxes: yAxes,
+            horizontalAnnotations: horizontalAnnotations,
+            pointAnnotations: pointAnnotations,
+            customViewAnnotations: customViewAnnotations,
+            isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+            isHorizontalZoomEnabled: isHorizontalZoomEnabled,
+            isVerticalScrollEnabled: isVerticalScrollEnabled,
+            isVerticalZoomEnabled: isVerticalZoomEnabled,
+            isLiveTrackingEnabled: isLiveTrackingEnabled,
+            initialViewport: initialViewport,
+            viewport: viewport,
+            selectionState: selectionState,
+            selectionMode: selectionMode,
+            selectionBehavior: selectionBehavior,
+            overlappingSelectionMode: overlappingSelectionMode,
+            clearsSelectionOnGestureEnd: clearsSelectionOnGestureEnd,
+            crosshairStyle: crosshairStyle,
+            tooltipPlacement: tooltipPlacement,
+            onSelectionChanged: onSelectionChanged,
+            canvasRenderOrder: canvasRenderOrder,
+            emptyState: emptyState,
+            tooltipContent: tooltipContent
+        )
     }
-    
-    private var visibleCustomViewAnnotations: [CustomViewAnnotation<Point.XValue, Point.YValue>] {
-        let currentXDomain = activeXScale.domain
-        let bufferX = (currentXDomain.upperBound - currentXDomain.lowerBound) * 0.1
-        return customViewAnnotations.filter {
-            let xDouble = $0.x
-            return xDouble >= (currentXDomain.lowerBound - bufferX) && xDouble <= (currentXDomain.upperBound + bufferX)
-        }
-    }
-    
+
+    // MARK: - Body
+
     public var body: some View {
+        let allData = series.flatMap { $0.data }
+
         Group {
-            if data.isEmpty, let emptyView = emptyState?() {
-                emptyView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if allData.isEmpty, let emptyView = emptyState?() {
+                emptyView.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                let topHeight = xAxes.filter { $0.position == .top }.reduce(0) { $0 + $1.height }
-                let bottomHeight = xAxes.filter { $0.position == .bottom }.reduce(0) { $0 + $1.height }
-                
-                HStack(spacing: 0) {
-                    HStack(spacing: 0) {
-                        ForEach(0..<yAxes.count, id: \.self) { i in
-                            if yAxes[i].position == .leading {
-                                YAxisView(scale: activeYScale, config: yAxes[i]).frame(width: yAxes[i].width)
-                            }
-                        }
-                    }
-                    .padding(.top, topHeight).padding(.bottom, bottomHeight)
-                    
-                    VStack(spacing: 0) {
-                        ForEach(0..<xAxes.count, id: \.self) { i in
-                            if xAxes[i].position == .top {
-                                XAxisView(scale: activeXScale, config: xAxes[i]).frame(height: xAxes[i].height)
-                            }
-                        }
-                        
-                        GeometryReader { geometry in
-                            chartCanvas(size: geometry.size)
-                                .contentShape(Rectangle())
-                                .gesture(chartGestures())
-                                .onAppear {
-                                    canvasSize = geometry.size
-                                    queueUpdate(in: geometry.size, animate: false)
-                                }
-                                .onChange(of: geometry.size) { newSize in
-                                    canvasSize = newSize
-                                    queueUpdate(in: newSize, animate: false)
-                                }
-                        }
-                        
-                        ForEach(0..<xAxes.count, id: \.self) { i in
-                            if xAxes[i].position == .bottom {
-                                XAxisView(scale: activeXScale, config: xAxes[i]).frame(height: xAxes[i].height)
-                            }
-                        }
-                    }
-                    
-                    HStack(spacing: 0) {
-                        ForEach(0..<yAxes.count, id: \.self) { i in
-                            if yAxes[i].position == .trailing {
-                                YAxisView(scale: activeYScale, config: yAxes[i]).frame(width: yAxes[i].width)
-                            }
-                        }
-                    }
-                    .padding(.top, topHeight).padding(.bottom, bottomHeight)
-                }
+                let topH    = xAxes.filter { $0.position == .top      }.reduce(0) { $0 + $1.height }
+                let bottomH = xAxes.filter { $0.position == .bottom   }.reduce(0) { $0 + $1.height }
+
+                chartWithLegend(topH: topH, bottomH: bottomH)
             }
-        }.onChange(of: data.map(\.id)) { _ in
-            if data.isEmpty {
-                visibleXDomain = nil
-                visibleYDomain = nil
-                activeXScale = baseXScale
-                activeYScale = baseYScale
-                return
-            }
-            if isLiveTrackingEnabled {
-                // LIVE TRACKING MODE
-                // 1. If zoomed in and not currently panning, auto-scroll to the newest data point
-                if !isDraggingChart, let currentDomain = visibleXDomain {
-                    let currentWindowWidth = currentDomain.upperBound - currentDomain.lowerBound
-                    let newGlobalMax = (baseXScale.domain).upperBound
-                    let newDomain = (newGlobalMax - currentWindowWidth)...newGlobalMax
-                    visibleXDomain = newDomain
-                    
-                    if var newScaleX = LinearScale(domain: newDomain) as? XScale {
-                        newScaleX.range = activeXScale.range
-                        newScaleX.isReversed = activeXScale.isReversed
-                        activeXScale = newScaleX
-                    }
-                }
-                // 2. If at 100% zoom, simply adopt the new base scale
-                else if visibleXDomain == nil {
-                    activeXScale = baseXScale
-                }
-                // 3. Ignore auto-scroll if the user is actively panning (isDraggingChart == true)
-            } else {
-                visibleXDomain = nil
-                visibleYDomain = nil
-                activeXScale = baseXScale
-                activeYScale = baseYScale
-            }
-            queueUpdate(in: canvasSize, animate: animationStyle.swiftUIAnimation != nil)
         }
+        .onChange(of: series.map { $0.id }) { _ in
+            syncBaseScales()
+            store.handleDataChange(
+                series: series,
+                isLiveTrackingEnabled: isLiveTrackingEnabled,
+                initialViewport: initialViewport,
+                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                isVerticalScrollEnabled: isVerticalScrollEnabled
+            )
+        }
+        .onChange(of: baseXScale.domain) { _ in
+            handleScaleDomainChange()
+        }
+        .onChange(of: baseYScale.domain) { _ in
+            handleScaleDomainChange()
+        }
+        .onChange(of: boundViewportState) { newState in
+            applyBoundViewportState(newState)
+        }
+        .onChange(of: boundSelectionState) { newState in
+            applyBoundSelectionState(newState)
+        }
+        .accessibilityElement(children: accessibilityDescriptor == nil ? .contain : .ignore)
+        .accessibilityLabel(accessibilityDescriptor?.label ?? "")
+        .accessibilityValue(accessibilityDescriptor?.value(for: store.highlightedPoints) ?? "")
     }
-    
+
     @ViewBuilder
-    private func chartCanvas(size: CGSize) -> some View {
-        ZStack {
-            Canvas { context, size in
-                for layer in canvasRenderOrder {
-                    switch layer {
-                    case .grid:
-                        GridRenderer.draw(into: &context, size: size, xAxes: xAxes, yAxes: yAxes, activeXScale: activeXScale, activeYScale: activeYScale)
-                        
-                    case .horizontalAnnotations:
-                        AnnotationRenderer.drawHorizontal(into: &context, size: size, annotations: horizontalAnnotations, activeYScale: activeYScale)
-                        
-                    case .pointAnnotations:
-                        AnnotationRenderer.drawPoints(into: &context, size: size, annotations: visiblePointAnnotations, activeXScale: activeXScale, activeYScale: activeYScale)
-                        
-                    case .coreChart:
-                        ChartCoreRenderer.draw(
-                            into: &context, size: size, type: type, data: self.data,
-                            pointContexts: pointContexts, violinBackgrounds: violinBackgrounds,
-                            activeXScale: activeXScale, activeYScale: activeYScale
-                        )
-                    }
-                }
-            }
-            
-            if case .line(let lineWidth, let color) = type {
-                AnimatableChartLayer(oldPoints: oldPointContexts.map(\.position), newPoints: pointContexts.map(\.position), progress: animationProgress, animationStyle: animationStyle, lineColor: color, lineWidth: lineWidth, drawLine: true, drawDots: false)
-            } else if case .scatter(let pointSize, let color) = type {
-                AnimatableChartLayer(oldPoints: oldPointContexts.map(\.position), newPoints: pointContexts.map(\.position), progress: animationProgress, animationStyle: animationStyle, lineColor: color, lineWidth: pointSize, drawLine: false, drawDots: true)
-            }
-            
-            ForEach(visibleCustomViewAnnotations) { annotation in
-                let xPos = activeXScale.scale(annotation.x)
-                let yPos = size.height - activeYScale.scale(annotation.y)
-                
-                if xPos >= -50 && xPos <= size.width + 50 {
-                    annotation.content
-                        .position(x: xPos, y: yPos)
-                }
-            }
-            
-            if !highlightedPoints.isEmpty {
-                let avgX = highlightedPoints.map(\.position.x).reduce(0, +) / CGFloat(highlightedPoints.count)
-                let avgY = highlightedPoints.map(\.position.y).reduce(0, +) / CGFloat(highlightedPoints.count)
-                tooltipContent(highlightedPoints)
-                    .position(x: avgX + tooltipOffset.x, y: avgY + tooltipOffset.y)
+    private var legendView: some View {
+        let items = series.flatMap(\.legendItems)
+        if !items.isEmpty {
+            if let customLegendContent {
+                customLegendContent(items)
+            } else {
+                ChartLegendView(items: items, spacing: legendSpacing)
             }
         }
-        .clipped()
     }
-    
-    private func chartGestures() -> some Gesture {
-        let globalXDomain = baseXScale.domain
-        let globalYDomain = baseYScale.domain
-        
-        
-        let dragGesture = DragGesture(minimumDistance: 0)
-            .onChanged { value in
-                let isMoving = abs(value.translation.width) > 5 || abs(value.translation.height) > 5
-                
-                if (isHorizontalScrollEnabled || isVerticalScrollEnabled) && isMoving {
-                    isDraggingChart = true
-                    highlightedPoints = []
-                    
-                    if isHorizontalScrollEnabled {
-                        let currentXDomain = visibleXDomain ?? activeXScale.domain
-                        if dragStartDomain == nil { dragStartDomain = currentXDomain }
-                        if let startXDomain = dragStartDomain {
-                            let rangeX = startXDomain.upperBound - startXDomain.lowerBound
-                            let shiftX = -(value.translation.width / canvasSize.width) * rangeX
-                            
-                            var newMinX = startXDomain.lowerBound + shiftX
-                            var newMaxX = startXDomain.upperBound + shiftX
-                            
-                            if newMinX < globalXDomain.lowerBound {
-                                let corr = globalXDomain.lowerBound - newMinX
-                                newMinX += corr; newMaxX += corr
+
+    @ViewBuilder
+    private func chartWithLegend(topH: CGFloat, bottomH: CGFloat) -> some View {
+        switch legendPosition {
+        case .hidden:
+            chartContent(topH: topH, bottomH: bottomH)
+
+        case .top:
+            VStack(alignment: .leading, spacing: legendSpacing) {
+                legendView
+                chartContent(topH: topH, bottomH: bottomH)
+            }
+
+        case .bottom:
+            VStack(alignment: .leading, spacing: legendSpacing) {
+                chartContent(topH: topH, bottomH: bottomH)
+                legendView
+            }
+
+        case .leading:
+            HStack(alignment: .top, spacing: legendSpacing) {
+                legendView
+                chartContent(topH: topH, bottomH: bottomH)
+            }
+
+        case .trailing:
+            HStack(alignment: .top, spacing: legendSpacing) {
+                chartContent(topH: topH, bottomH: bottomH)
+                legendView
+            }
+        }
+    }
+
+    private func chartContent(topH: CGFloat, bottomH: CGFloat) -> some View {
+                HStack(spacing: 0) {
+                    // Leading Y axes
+                    HStack(spacing: 0) {
+                        ForEach(yAxes.indices, id: \.self) { i in
+                            if yAxes[i].position == .leading {
+                                YAxisView(scale: store.activeYScale, config: yAxes[i])
+                                    .frame(width: yAxes[i].width)
                             }
-                            if newMaxX > globalXDomain.upperBound {
-                                let corr = newMaxX - globalXDomain.upperBound
-                                newMinX -= corr; newMaxX -= corr
-                            }
-                            visibleXDomain = max(globalXDomain.lowerBound, newMinX)...min(globalXDomain.upperBound, newMaxX)
                         }
                     }
-                    
-                    if isVerticalScrollEnabled {
-                        let currentYDomain = visibleYDomain ?? activeYScale.domain
-                        if dragStartYDomain == nil { dragStartYDomain = currentYDomain }
-                        if let startYDomain = dragStartYDomain {
-                            let rangeY = startYDomain.upperBound - startYDomain.lowerBound
-                            let shiftY = (value.translation.height / canvasSize.height) * rangeY
-                            
-                            var newMinY = startYDomain.lowerBound + shiftY
-                            var newMaxY = startYDomain.upperBound + shiftY
-                            
-                            if newMinY < globalYDomain.lowerBound {
-                                let corr = globalYDomain.lowerBound - newMinY
-                                newMinY += corr; newMaxY += corr
+                    .padding(.top, topH).padding(.bottom, bottomH)
+
+                    VStack(spacing: 0) {
+                        // Top X axes
+                        ForEach(xAxes.indices, id: \.self) { i in
+                            if xAxes[i].position == .top {
+                                XAxisView(scale: store.activeXScale, config: xAxes[i])
+                                    .frame(height: xAxes[i].height)
                             }
-                            if newMaxY > globalYDomain.upperBound {
-                                let corr = newMaxY - globalYDomain.upperBound
-                                newMinY -= corr; newMaxY -= corr
+                        }
+
+                        // Canvas + gestures
+                        GeometryReader { geometry in
+                            ZStack {
+                                ChartCanvasView(
+                                    series:                    series.sorted { $0.zIndex < $1.zIndex },
+                                    seriesContexts:            store.seriesContexts,
+                                    oldSeriesContexts:         store.oldSeriesContexts,
+                                    animationProgress:         store.animationProgress,
+                                    isAnimationActive:         store.isAnimationActive,
+                                    animationStyle:            series.first?.animation ?? .none,
+                                    activeXScale:              store.activeXScale,
+                                    activeYScale:              store.activeYScale,
+                                    xAxes:                     xAxes,
+                                    yAxes:                     yAxes,
+                                    canvasRenderOrder:         canvasRenderOrder,
+                                    horizontalAnnotations:     horizontalAnnotations,
+                                    visiblePointAnnotations:   visiblePointAnnotations,
+                                    violinBackgrounds:         store.violinBackgrounds,
+                                    violinColorMapper:         nil,
+                                    highlightedPoints:         store.highlightedPoints,
+                                    crosshairStyle:            crosshairStyle,
+                                    tooltipPlacement:          tooltipPlacement,
+                                    tooltipOffset:             tooltipOffset,
+                                    tooltipPadding:            tooltipPadding,
+                                    tooltipContent:            tooltipContent
+                                )
+
+                                ChartGestureHandler(
+                                    config: ChartGestureConfig(
+                                        isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                                        isVerticalScrollEnabled:   isVerticalScrollEnabled,
+                                        isHorizontalZoomEnabled:   isHorizontalZoomEnabled,
+                                        isVerticalZoomEnabled:     isVerticalZoomEnabled,
+                                        hitboxRadius:              hitboxRadius,
+                                        selectionBehavior:         selectionBehavior,
+                                        clearsSelectionOnGestureEnd: clearsSelectionOnGestureEnd
+                                    ),
+                                    onEvent: { handleGestureEvent($0) }
+                                )
+
+                                ForEach(visibleCustomViewAnnotations) { annotation in
+                                    let xPos = store.activeXScale.scale(annotation.x)
+                                    let yPos = geometry.size.height - store.activeYScale.scale(annotation.y)
+                                    if geometry.size.width > 0,
+                                       geometry.size.height > 0,
+                                       xPos.isFinite,
+                                       yPos.isFinite,
+                                       xPos >= 0,
+                                       xPos <= geometry.size.width,
+                                       yPos >= 0,
+                                       yPos <= geometry.size.height {
+                                        annotation.content
+                                            .fixedSize()
+                                            .position(x: xPos, y: yPos)
+                                    }
+                                }
+
+                                if !highlightedAnnotations.isEmpty {
+                                    ChartAnnotationTooltipOverlay(
+                                        annotations: highlightedAnnotations,
+                                        canvasSize: geometry.size,
+                                        placement: tooltipPlacement,
+                                        offset: tooltipOffset,
+                                        padding: tooltipPadding,
+                                        content: annotationTooltipContent
+                                    )
+                                }
+
+                                if showsZoomControls {
+                                    ChartViewportControls(
+                                        onZoomIn: { applyProgrammaticZoom(magnification: zoomControlStep) },
+                                        onZoomOut: { applyProgrammaticZoom(magnification: 1 / zoomControlStep) },
+                                        onReset: { resetViewportFromControls() }
+                                    )
+                                    .padding(8)
+                                    .frame(
+                                        maxWidth: .infinity,
+                                        maxHeight: .infinity,
+                                        alignment: .topTrailing
+                                    )
+                                }
+
                             }
-                            visibleYDomain = max(globalYDomain.lowerBound, newMinY)...min(globalYDomain.upperBound, newMaxY)
+                            .clipped()
+                            .onAppear {
+                                syncBaseScales()
+                                store.canvasSize = geometry.size
+                                restoreBoundViewportOrInitialize()
+                                publishViewportState()
+                                store.queueUpdate(
+                                    series: series,
+                                    in: geometry.size,
+                                    animate: false,
+                                    coalesce: false
+                                )
+                                applyBoundSelectionState(boundSelectionState)
+                            }
+                            .onChange(of: geometry.size) { newSize in
+                                store.canvasSize = newSize
+                                store.queueUpdate(
+                                    series: series,
+                                    in: newSize,
+                                    animate: false,
+                                    coalesce: false
+                                )
+                                applyBoundSelectionState(boundSelectionState)
+                            }
+                        }
+
+                        // Bottom X axes
+                        ForEach(xAxes.indices, id: \.self) { i in
+                            if xAxes[i].position == .bottom {
+                                XAxisView(scale: store.activeXScale, config: xAxes[i])
+                                    .frame(height: xAxes[i].height)
+                            }
                         }
                     }
-                    updateDomainAndRedraw()
-                } else if !isDraggingChart {
-                    if case .donut = type { return }
-                    let radiusSq = hitboxRadius * hitboxRadius
-                    highlightedPoints = pointContexts.filter {
-                        let dx = $0.position.x - value.location.x; let dy = $0.position.y - value.location.y
-                        return (dx * dx + dy * dy) <= radiusSq
+
+                    // Trailing Y axes
+                    HStack(spacing: 0) {
+                        ForEach(yAxes.indices, id: \.self) { i in
+                            if yAxes[i].position == .trailing {
+                                YAxisView(scale: store.activeYScale, config: yAxes[i])
+                                    .frame(width: yAxes[i].width)
+                            }
+                        }
                     }
+                    .padding(.top, topH).padding(.bottom, bottomH)
                 }
-            }
-            .onEnded { _ in
-                dragStartDomain = nil
-                dragStartYDomain = nil
-                isDraggingChart = false
-                highlightedPoints = []
-            }
-        
-        let zoomGesture = MagnificationGesture()
-            .onChanged { value in
-                guard isHorizontalZoomEnabled || isVerticalZoomEnabled else { return }
-                highlightedPoints = []
-                
-                if isHorizontalZoomEnabled {
-                    let currentXDomain = visibleXDomain ?? activeXScale.domain
-                    if zoomStartDomain == nil { zoomStartDomain = currentXDomain }
-                    if let startXDomain = zoomStartDomain {
-                        let startRangeX = startXDomain.upperBound - startXDomain.lowerBound
-                        let globalRangeX = globalXDomain.upperBound - globalXDomain.lowerBound
-                        var newRangeX = startRangeX / value
-                        
-                        newRangeX = min(newRangeX, globalRangeX)
-                        newRangeX = max(newRangeX, globalRangeX * minZoomScale)
-                        
-                        let centerX = startXDomain.lowerBound + (startRangeX / 2)
-                        var newMinX = centerX - (newRangeX / 2)
-                        var newMaxX = centerX + (newRangeX / 2)
-                        
-                        if newMinX < globalXDomain.lowerBound { let c = globalXDomain.lowerBound - newMinX; newMinX += c; newMaxX += c }
-                        if newMaxX > globalXDomain.upperBound { let c = newMaxX - globalXDomain.upperBound; newMinX -= c; newMaxX -= c }
-                        visibleXDomain = newMinX...newMaxX
-                    }
-                }
-                
-                if isVerticalZoomEnabled {
-                    let currentYDomain = visibleYDomain ?? activeYScale.domain
-                    if zoomStartYDomain == nil { zoomStartYDomain = currentYDomain }
-                    if let startYDomain = zoomStartYDomain {
-                        let startRangeY = startYDomain.upperBound - startYDomain.lowerBound
-                        let globalRangeY = globalYDomain.upperBound - globalYDomain.lowerBound
-                        var newRangeY = startRangeY / value
-                        
-                        newRangeY = min(newRangeY, globalRangeY)
-                        newRangeY = max(newRangeY, globalRangeY * minZoomScale)
-                        
-                        let centerY = startYDomain.lowerBound + (startRangeY / 2)
-                        var newMinY = centerY - (newRangeY / 2)
-                        var newMaxY = centerY + (newRangeY / 2)
-                        
-                        if newMinY < globalYDomain.lowerBound { let c = globalYDomain.lowerBound - newMinY; newMinY += c; newMaxY += c }
-                        if newMaxY > globalYDomain.upperBound { let c = newMaxY - globalYDomain.upperBound; newMinY -= c; newMaxY -= c }
-                        visibleYDomain = newMinY...newMaxY
-                    }
-                }
-                updateDomainAndRedraw()
-            }
-            .onEnded { _ in
-                zoomStartDomain = nil
-                zoomStartYDomain = nil
-            }
-        
-        return dragGesture.simultaneously(with: zoomGesture)
     }
-    
-    @MainActor
-    private func updateDomainAndRedraw() {
-        var needsUpdate = false
-        
-        if let newXDomain = visibleXDomain, var newScaleX = LinearScale(domain: newXDomain) as? XScale {
-            newScaleX.range = activeXScale.range
-            newScaleX.isReversed = activeXScale.isReversed
-            self.activeXScale = newScaleX
-            needsUpdate = true
+
+    // MARK: - Gesture handling
+
+    private func handleGestureEvent(_ event: ChartGestureEvent) {
+        syncBaseScales()
+        if handleAnnotationGestureEvent(event) {
+            publishSelectionState()
+            publishViewportState()
+            return
         }
-        
-        if let newYDomain = visibleYDomain, var newScaleY = LinearScale(domain: newYDomain) as? YScale {
-            newScaleY.range = activeYScale.range
-            newScaleY.isReversed = activeYScale.isReversed
-            self.activeYScale = newScaleY
-            needsUpdate = true
-        }
-        
-        if needsUpdate {
-            queueUpdate(in: canvasSize, animate: false)
+
+        store.handleGestureEvent(
+            event,
+            isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+            isVerticalScrollEnabled: isVerticalScrollEnabled,
+            isHorizontalZoomEnabled: isHorizontalZoomEnabled,
+            isVerticalZoomEnabled: isVerticalZoomEnabled,
+            minZoomScale: minZoomScale,
+            hitboxRadius: hitboxRadius,
+            selectionMode: selectionMode,
+            overlappingSelectionMode: overlappingSelectionMode,
+            series: series
+        )
+        notifySelectionChange(for: event)
+        publishSelectionState()
+        publishViewportState()
+    }
+
+    private func notifySelectionChange(for event: ChartGestureEvent) {
+        switch event {
+        case .highlight, .highlightCleared, .panChanged, .zoomChanged:
+            onSelectionChanged(store.highlightedPoints)
+        case .panEnded, .zoomEnded:
+            break
         }
     }
-    
-    @MainActor
-    private func queueUpdate(in size: CGSize, animate: Bool) {
-        updateCounter += 1
-        let currentID = updateCounter
-        
-        Task {
-            if animate {
-                oldPointContexts = pointContexts
-                animationProgress = 0.0
-                try? await Task.sleep(nanoseconds: 5_000_000)
+
+    private func handleAnnotationGestureEvent(_ event: ChartGestureEvent) -> Bool {
+        switch event {
+        case .highlight(let location):
+            guard isAnnotationSelectionEnabled else { return false }
+
+            var cycle = annotationSelectionCycle
+            let selected = ChartAnnotationSelectionResolver.select(
+                near: location,
+                contexts: selectableAnnotationContexts,
+                defaultRadius: annotationHitboxRadius,
+                overlappingMode: annotationOverlappingSelectionMode,
+                cycle: &cycle
+            )
+            annotationSelectionCycle = cycle
+
+            highlightedAnnotations = selected
+            onAnnotationSelectionChanged(selected)
+
+            if !selected.isEmpty {
+                store.highlightedPoints = []
+                onSelectionChanged([])
+                return true
             }
-            
-            guard currentID == self.updateCounter else { return }
-            
-            if case .violin(let pointSize, let centerX, let maxWidth, let bandwidth, let resolution, let groupMapper, let sideMapper, _) = type {
-                let coordinator = ViolinCoordinator<Point, XScale, YScale>(xScale: activeXScale, yScale: activeYScale)
-                
-                let layout = await coordinator.calculateLayout(
-                    for: data,
-                    in: size,
-                    centerX: centerX,
-                    maxWidth: maxWidth,
-                    pointSize: pointSize,
-                    bandwidth: bandwidth,
-                    resolution: resolution,
-                    groupMapper: groupMapper,
-                    sideMapper: sideMapper
+
+            return false
+
+        case .highlightCleared:
+            if !highlightedAnnotations.isEmpty {
+                highlightedAnnotations = []
+                onAnnotationSelectionChanged([])
+            }
+            return false
+
+        case .panChanged, .zoomChanged:
+            annotationSelectionCycle.reset()
+            if !highlightedAnnotations.isEmpty {
+                highlightedAnnotations = []
+                onAnnotationSelectionChanged([])
+            }
+            return false
+
+        case .panEnded, .zoomEnded:
+            return false
+        }
+    }
+
+    // MARK: - Scale sync
+
+    private func syncBaseScales() {
+        store.updateBaseScales(xScale: baseXScale, yScale: baseYScale)
+    }
+
+    private func handleScaleDomainChange() {
+        syncBaseScales()
+        if !isLiveTrackingEnabled {
+            store.resetViewport()
+            initializeViewportIfNeeded()
+        }
+        store.queueUpdate(series: series, in: store.canvasSize, animate: false)
+        publishViewportState()
+    }
+
+    private func initializeViewportIfNeeded() {
+        store.initializeViewport(
+            initialViewport: initialViewport,
+            isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+            isVerticalScrollEnabled: isVerticalScrollEnabled
+        )
+    }
+
+    private func restoreBoundViewportOrInitialize() {
+        if let state = boundViewportState,
+           state.visibleXDomain != nil || state.visibleYDomain != nil {
+            store.applyViewportState(state)
+        } else {
+            initializeViewportIfNeeded()
+        }
+    }
+
+    private var boundViewportState: ChartViewportState? {
+        viewportBinding?.wrappedValue
+    }
+
+    private var boundSelectionState: ChartSelectionState? {
+        selectionStateBinding?.wrappedValue
+    }
+
+    private func applyBoundViewportState(_ state: ChartViewportState?) {
+        guard let state, state != store.viewportState else { return }
+        syncBaseScales()
+        store.applyViewportState(state)
+        store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
+    }
+
+    private func publishViewportState() {
+        let state = store.viewportState
+        if viewportBinding?.wrappedValue != state {
+            viewportBinding?.wrappedValue = state
+        }
+    }
+
+    private func applyBoundSelectionState(_ state: ChartSelectionState?) {
+        guard let state, state != store.selectionState else { return }
+        store.applySelectionState(state)
+        highlightedAnnotations = []
+        onAnnotationSelectionChanged([])
+        onSelectionChanged(store.highlightedPoints)
+    }
+
+    private func publishSelectionState() {
+        let state = store.selectionState
+        if selectionStateBinding?.wrappedValue != state {
+            selectionStateBinding?.wrappedValue = state
+        }
+    }
+
+    private func applyProgrammaticZoom(magnification: Double) {
+        syncBaseScales()
+        store.applyProgrammaticZoom(
+            magnification: magnification,
+            minZoomScale: minZoomScale,
+            zoomX: isHorizontalZoomEnabled,
+            zoomY: isVerticalZoomEnabled
+        )
+        store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
+        publishViewportState()
+    }
+
+    private func resetViewportFromControls() {
+        syncBaseScales()
+        store.resetViewport()
+        initializeViewportIfNeeded()
+        store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
+        publishViewportState()
+    }
+
+    // MARK: - Off-screen culling
+
+    private var visiblePointAnnotations: [PointAnnotation<Double, Double>] {
+        let domain  = store.activeXScale.domain
+        let buffer  = (domain.upperBound - domain.lowerBound) * 0.1
+        return pointAnnotations.filter {
+            $0.x >= (domain.lowerBound - buffer) && $0.x <= (domain.upperBound + buffer)
+        }
+    }
+
+    private var visibleCustomViewAnnotations: [CustomViewAnnotation<Double, Double>] {
+        let xDomain = store.activeXScale.domain
+        let yDomain = store.activeYScale.domain
+        return customViewAnnotations.filter {
+            $0.x >= xDomain.lowerBound &&
+            $0.x <= xDomain.upperBound &&
+            $0.y >= yDomain.lowerBound &&
+            $0.y <= yDomain.upperBound
+        }
+    }
+
+    private var selectableAnnotationContexts: [ChartAnnotationContext] {
+        pointAnnotationContexts + customViewAnnotationContexts
+    }
+
+    private var pointAnnotationContexts: [ChartAnnotationContext] {
+        visiblePointAnnotations.compactMap { annotation in
+            guard annotation.isSelectable else { return nil }
+            let position = annotationPosition(x: annotation.x, y: annotation.y)
+            guard isValidCanvasPosition(position) else { return nil }
+            return ChartAnnotationContext(
+                id: annotation.id,
+                kind: .point,
+                x: annotation.x,
+                y: annotation.y,
+                position: position,
+                label: annotation.label,
+                hitboxRadius: annotation.hitboxRadius ?? max(annotation.size / 2, annotationHitboxRadius)
+            )
+        }
+    }
+
+    private var customViewAnnotationContexts: [ChartAnnotationContext] {
+        visibleCustomViewAnnotations.compactMap { annotation in
+            guard annotation.isSelectable else { return nil }
+            let position = annotationPosition(x: annotation.x, y: annotation.y)
+            guard isValidCanvasPosition(position) else { return nil }
+            return ChartAnnotationContext(
+                id: annotation.id,
+                kind: .customView,
+                x: annotation.x,
+                y: annotation.y,
+                position: position,
+                label: annotation.label,
+                hitboxRadius: annotation.hitboxRadius
+            )
+        }
+    }
+
+    private func annotationPosition(x: Double, y: Double) -> CGPoint {
+        CGPoint(
+            x: store.activeXScale.scale(x),
+            y: store.canvasSize.height - store.activeYScale.scale(y)
+        )
+    }
+
+    private func isValidCanvasPosition(_ position: CGPoint) -> Bool {
+        store.canvasSize.width > 0 &&
+        store.canvasSize.height > 0 &&
+        position.x.isFinite &&
+        position.y.isFinite &&
+        position.x >= 0 &&
+        position.x <= store.canvasSize.width &&
+        position.y >= 0 &&
+        position.y <= store.canvasSize.height
+    }
+}
+
+private struct ChartAnnotationTooltipOverlay: View {
+    let annotations: [ChartAnnotationContext]
+    let canvasSize: CGSize
+    let placement: ChartTooltipPlacement
+    let offset: CGPoint
+    let padding: CGFloat
+    let content: (([ChartAnnotationContext]) -> AnyView)?
+
+    @State private var tooltipSize: CGSize = .zero
+
+    var body: some View {
+        if let anchor = ChartTooltipLayout.anchor(for: annotations.map(\.position)) {
+            resolvedContent
+                .fixedSize()
+                .readSize { tooltipSize = $0 }
+                .position(
+                    ChartTooltipLayout.position(
+                        anchor: anchor,
+                        tooltipSize: tooltipSize,
+                        canvasSize: canvasSize,
+                        placement: placement,
+                        offset: offset,
+                        padding: padding
+                    )
                 )
-                
-                guard currentID == self.updateCounter else { return }
-                self.pointContexts = layout.points
-                self.violinBackgrounds = layout.backgroundPaths
-                self.activeXScale = coordinator.xScale
-                self.activeYScale = coordinator.yScale
+        }
+    }
+
+    private var resolvedContent: some View {
+        Group {
+            if let content {
+                content(annotations)
             } else {
-                let coordinator = CartesianCoordinator<Point, XScale, YScale>(xScale: activeXScale, yScale: activeYScale)
-                let newContexts = await coordinator.calculateLayout(for: data, in: size)
-                
-                guard currentID == self.updateCounter else { return }
-                pointContexts = newContexts
-                self.activeXScale = coordinator.xScale
-                self.activeYScale = coordinator.yScale
-            }
-            
-            if animate, let customAnimation = animationStyle.swiftUIAnimation {
-                withAnimation(customAnimation) { animationProgress = 1.0 }
-            } else {
-                if animate { oldPointContexts = pointContexts }
-                animationProgress = 1.0
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(annotations) { annotation in
+                        Text(annotation.label ?? "\(annotation.x), \(annotation.y)")
+                    }
+                }
+                .font(.caption)
+                .padding(8)
+                .background(Color.black.opacity(0.78))
+                .foregroundColor(.white)
+                .cornerRadius(8)
             }
         }
+    }
+}
+
+private struct ChartViewportControls: View {
+    let onZoomIn: () -> Void
+    let onZoomOut: () -> Void
+    let onReset: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(action: onZoomOut) {
+                Image(systemName: "minus.magnifyingglass")
+            }
+            Button(action: onZoomIn) {
+                Image(systemName: "plus.magnifyingglass")
+            }
+            Button(action: onReset) {
+                Image(systemName: "arrow.counterclockwise")
+            }
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
     }
 }
