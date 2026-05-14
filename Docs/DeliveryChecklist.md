@@ -34,7 +34,9 @@ Use this checklist before sending the framework to an external company or using 
 * Axis display transforms use `AxisTransform`.
 * Axis and plot-area math go through `ChartLayoutEngine`.
 * Custom SwiftUI annotations use collision-aware `ChartLabelCollisionResolver` placement.
+* Canvas range and value labels use collision-aware placement.
 * Element and point hit-testing go through `ChartHitTestResolver`.
+* Selected non-point elements have a visible `ChartSelectedElementStyle` overlay.
 * Tooltip placement clamps content inside the plot bounds.
 * Tooltip width can be capped with `.chartTooltipMaxWidth`.
 

@@ -18,6 +18,12 @@ struct StackedBarSegmentLayout<GroupID: Hashable> {
     let rowYValue: Double
 }
 
+private struct PendingStackedBarLabel {
+    let id: UUID
+    let label: String
+    let anchor: CGPoint
+}
+
 public struct StackedBarSeries<P: GroupedChartDataPoint>: ChartSeriesProtocol
 where P.XValue == Double, P.YValue == Double {
 
@@ -88,20 +94,53 @@ where P.XValue == Double, P.YValue == Double {
         let rowLabels = Dictionary(grouping: layouts, by: { $0.rect.midY }).compactMap { _, row -> StackedBarSegmentLayout<P.GroupID>? in
             row.max { $0.rowEndX < $1.rowEndX }
         }
-        for row in rowLabels {
-            let text = Text(valueLabelStyle.formatter(row.rowValue))
-                .font(valueLabelStyle.font)
-                .foregroundColor(valueLabelStyle.color)
+
+        let pendingLabels = rowLabels.map { row -> PendingStackedBarLabel in
+            let label = valueLabelStyle.formatter(row.rowValue)
             let x: CGFloat
             switch valueLabelStyle.position {
             case .hidden:
-                continue
+                x = row.rect.midX
             case .inside:
                 x = max(row.rect.minX + 8, row.rowEndX - 22)
             case .outside:
                 x = row.rowEndX + 24
             }
-            context.draw(text, at: CGPoint(x: x, y: row.rect.midY), anchor: .center)
+            return PendingStackedBarLabel(
+                id: row.pointID ?? UUID(),
+                label: label,
+                anchor: CGPoint(x: x, y: row.rect.midY)
+            )
+        }
+
+        let placements: [ChartLabelPlacement] = valueLabelStyle.position == .outside
+            ? [.trailing, .leading]
+            : [.center]
+        let candidates = pendingLabels.map { pending in
+            ChartLabelCandidate(
+                id: pending.id,
+                anchor: pending.anchor,
+                size: ChartTextMetrics.estimatedSize(for: pending.label),
+                preferredPlacements: placements,
+                padding: 2,
+                spacing: 4,
+                canHide: true
+            )
+        }
+        let resolvedLabels = ChartLabelCollisionResolver.resolve(
+            candidates: candidates,
+            canvasSize: size
+        )
+        let resolvedByID: [UUID: ChartResolvedLabel] = Dictionary(
+            uniqueKeysWithValues: resolvedLabels.map { ($0.id, $0) }
+        )
+
+        for pending in pendingLabels {
+            guard let resolved = resolvedByID[pending.id], resolved.isVisible else { continue }
+            let text = Text(pending.label)
+                .font(valueLabelStyle.font)
+                .foregroundColor(valueLabelStyle.color)
+            context.draw(text, at: resolved.position, anchor: .center)
         }
     }
 

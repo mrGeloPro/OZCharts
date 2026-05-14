@@ -41,6 +41,8 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
     let violinColorMapper: ((AnyHashable) -> Color)?
 
     let highlightedPoints: [ChartPointContext<Point>]
+    let selectedElementContexts: [ChartElementContext]
+    let selectedElementStyle: ChartSelectedElementStyle
     let crosshairStyle: ChartCrosshairStyle
     let tooltipPlacement: ChartTooltipPlacement
     let tooltipOffset: CGPoint
@@ -103,6 +105,12 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
                         size: size,
                         points: highlightedPoints,
                         style: crosshairStyle
+                    )
+
+                    ChartSelectedElementRenderer.draw(
+                        into: &context,
+                        elements: selectedElementContexts,
+                        style: selectedElementStyle
                     )
                 }
 

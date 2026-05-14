@@ -29,6 +29,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
     @Published public var highlightedPoints: [ChartPointContext<Point>] = []
     @Published public var selectedElements: [ChartSelectedElement] = []
+    @Published public var selectedElementContexts: [ChartElementContext] = []
     @Published public var selectableElements: [ChartElementContext] = []
     @Published public var violinBackgrounds: [AnyHashable: Path] = [:]
 
@@ -142,6 +143,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             viewport.isDragging = true
             highlightedPoints = []
             selectedElements = []
+            selectedElementContexts = []
             resetSelectionCycle()
             viewport.applyPan(
                 translationWidth:  translation.width,
@@ -161,6 +163,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         case .zoomChanged(let magnification):
             highlightedPoints = []
             selectedElements = []
+            selectedElementContexts = []
             resetSelectionCycle()
             viewport.applyZoom(
                 magnification:  magnification,
@@ -177,11 +180,13 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             viewport.endZoom()
 
         case .highlight(let location):
-            let elements = selectElements(near: location)
-            if !elements.isEmpty {
-                selectedElements = elements
+            let elementContexts = selectElementContexts(near: location)
+            if !elementContexts.isEmpty {
+                selectedElementContexts = elementContexts
+                selectedElements = elementContexts.map(\.payload)
                 highlightedPoints = []
             } else {
+                selectedElementContexts = []
                 selectedElements = []
                 highlightedPoints = selectPoints(
                     near: location,
@@ -194,11 +199,16 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         case .highlightCleared:
             highlightedPoints = []
             selectedElements = []
+            selectedElementContexts = []
         }
     }
 
     func selectElements(near location: CGPoint) -> [ChartSelectedElement] {
-        ChartHitTestResolver.elements(
+        selectElementContexts(near: location).map(\.payload)
+    }
+
+    func selectElementContexts(near location: CGPoint) -> [ChartElementContext] {
+        ChartHitTestResolver.elementContexts(
             near: location,
             contexts: selectableElements
         )
@@ -253,10 +263,19 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             .filter { selectedIDs.contains($0.elementID) }
     }
 
+    func selectElementContexts(byIDs elementIDs: [UUID]) -> [ChartElementContext] {
+        guard !elementIDs.isEmpty else { return [] }
+
+        let selectedIDs = Set(elementIDs)
+        return selectableElements
+            .filter { selectedIDs.contains($0.payload.elementID) }
+    }
+
     public func applySelectionState(_ state: ChartSelectionState) {
         if !state.selectedElements.isEmpty {
-            let selectedByID = selectElements(byIDs: state.selectedElements.map(\.elementID))
-            selectedElements = selectedByID
+            let selectedContextsByID = selectElementContexts(byIDs: state.selectedElements.map(\.elementID))
+            selectedElementContexts = selectedContextsByID
+            selectedElements = selectedContextsByID.map(\.payload)
             highlightedPoints = []
             resetSelectionCycle()
             return
@@ -267,23 +286,28 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             if !selectedByID.isEmpty || state.selectedX == nil {
                 highlightedPoints = selectedByID
                 selectedElements = []
+                selectedElementContexts = []
                 resetSelectionCycle()
                 return
             }
             highlightedPoints = selectNearestXValue(state.selectedX ?? 0)
             selectedElements = []
+            selectedElementContexts = []
             resetSelectionCycle()
             return
         }
 
         guard let selectedX = state.selectedX else {
             highlightedPoints = []
+            selectedElements = []
+            selectedElementContexts = []
             resetSelectionCycle()
             return
         }
 
         highlightedPoints = selectNearestXValue(selectedX)
         selectedElements = []
+        selectedElementContexts = []
         resetSelectionCycle()
     }
 
@@ -300,6 +324,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         seriesContexts = []
         highlightedPoints = []
         selectedElements = []
+        selectedElementContexts = []
         selectableElements = []
         violinBackgrounds = [:]
         animationProgress = 1.0

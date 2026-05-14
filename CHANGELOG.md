@@ -13,6 +13,7 @@
 * `ChartLayoutEngine` / `ChartPlotLayout` for shared plot-area and axis inset calculations.
 * `ChartLabelCollisionResolver` and `ChartLabelPlacement` for collision-aware custom annotation placement.
 * `ChartHitTestResolver` for centralized element and point hit-testing.
+* `ChartSelectedElementStyle` and built-in selected element overlay rendering.
 * Range annotation label positioning for dense product charts.
 * Tooltip max-width support and safer automatic placement.
 * `ChartSelectedElement` and element hit-testing for bars, stacked-bar segments, and donut segments.
@@ -28,6 +29,7 @@
 * DemoApp now includes product-style graph recreations and event-driven scenarios.
 * Donut segments can expose product labels through `segmentLabelMapper`.
 * Custom SwiftUI annotations are clamped and resolved through the shared label collision engine.
+* Canvas-drawn range and value labels now use shared collision/clamping rules.
 
 ## 2.0.0
 

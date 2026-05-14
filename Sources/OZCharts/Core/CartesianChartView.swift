@@ -61,6 +61,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     public var zoomControlStep: Double = 2
     public var legendPosition:  ChartLegendPosition = .hidden
     public var legendSpacing:   CGFloat = 12
+    public var selectedElementStyle: ChartSelectedElementStyle = .product
     public var canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
     public var emptyState: (() -> AnyView)?
     var customLegendContent: (([ChartLegendItem]) -> AnyView)?
@@ -338,6 +339,8 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                                     violinBackgrounds:         store.violinBackgrounds,
                                     violinColorMapper:         nil,
                                     highlightedPoints:         store.highlightedPoints,
+                                    selectedElementContexts:   store.selectedElementContexts,
+                                    selectedElementStyle:      selectedElementStyle,
                                     crosshairStyle:            crosshairStyle,
                                     tooltipPlacement:          tooltipPlacement,
                                     tooltipOffset:             tooltipOffset,

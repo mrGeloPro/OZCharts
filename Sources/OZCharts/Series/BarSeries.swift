@@ -108,22 +108,60 @@ where P.XValue == Double, P.YValue == Double {
         }
 
         guard let valueLabelStyle, valueLabelStyle.position != .hidden else { return }
-        for (layout, chartContext) in zip(layouts, contexts) {
+        let labelInputs = zip(layouts, contexts).compactMap { layout, chartContext -> (layout: BarLayout, chartContext: ChartPointContext<P>, label: String, resolved: ChartResolvedLabel)? in
             let value = chartContext.originalPoint.y
-            let text = Text(valueLabelStyle.formatter(value))
-                .font(valueLabelStyle.font)
-                .foregroundColor(valueLabelStyle.color)
             let x = layout.rect.midX
-            let y: CGFloat
+            let anchor: CGPoint
+            let placements: [ChartLabelPlacement]
             switch valueLabelStyle.position {
             case .hidden:
-                continue
+                return nil
             case .inside:
-                y = layout.rect.minY + 10
+                anchor = CGPoint(x: x, y: layout.rect.midY)
+                placements = [.center]
             case .outside:
-                y = layout.rect.minY - 10
+                anchor = CGPoint(x: x, y: layout.rect.minY)
+                placements = [.top, .bottom]
             }
-            context.draw(text, at: CGPoint(x: x, y: y), anchor: .center)
+            let label = valueLabelStyle.formatter(value)
+            return (
+                layout,
+                chartContext,
+                label,
+                ChartResolvedLabel(
+                    id: chartContext.originalPoint.id,
+                    anchor: anchor,
+                    position: anchor,
+                    size: ChartTextMetrics.estimatedSize(for: label),
+                    placement: placements.first ?? .center,
+                    isVisible: true
+                )
+            )
+        }
+
+        let candidates = labelInputs.map { input in
+            ChartLabelCandidate(
+                id: input.chartContext.originalPoint.id,
+                anchor: input.resolved.anchor,
+                size: input.resolved.size,
+                preferredPlacements: [input.resolved.placement],
+                padding: 2,
+                spacing: 4,
+                canHide: true
+            )
+        }
+        let resolvedLabels = ChartLabelCollisionResolver.resolve(
+            candidates: candidates,
+            canvasSize: size
+        )
+        let resolvedByID = Dictionary(uniqueKeysWithValues: resolvedLabels.map { ($0.id, $0) })
+
+        for input in labelInputs {
+            guard let resolved = resolvedByID[input.chartContext.originalPoint.id], resolved.isVisible else { continue }
+            let text = Text(input.label)
+                .font(valueLabelStyle.font)
+                .foregroundColor(valueLabelStyle.color)
+            context.draw(text, at: resolved.position, anchor: .center)
         }
     }
 

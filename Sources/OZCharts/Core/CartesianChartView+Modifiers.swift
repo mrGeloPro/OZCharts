@@ -91,6 +91,12 @@ public extension CartesianChartView {
         return copy
     }
 
+    func chartSelectedElementStyle(_ style: ChartSelectedElementStyle) -> Self {
+        var copy = self
+        copy.selectedElementStyle = style
+        return copy
+    }
+
     func chartAnnotationTooltip<AnnotationTooltipContent: View>(
         @ViewBuilder content: @escaping ([ChartAnnotationContext]) -> AnnotationTooltipContent
     ) -> Self {

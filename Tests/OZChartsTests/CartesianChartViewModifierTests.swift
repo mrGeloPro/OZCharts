@@ -84,6 +84,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartSelectionState(.constant(ChartSelectionState(selectedX: 4)))
             .chartZoomControls(step: 1.5)
             .chartLegend(.trailing, spacing: 8)
+            .chartSelectedElementStyle(ChartSelectedElementStyle(lineWidth: 4, cornerRadius: 9))
             .chartCanvasRenderOrder([.coreChart, .grid])
 
         XCTAssertEqual(view.crosshairStyle.mode, .both)
@@ -99,6 +100,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.zoomControlStep, 1.5)
         XCTAssertEqual(view.legendPosition, .trailing)
         XCTAssertEqual(view.legendSpacing, 8)
+        XCTAssertEqual(view.selectedElementStyle.lineWidth, 4)
+        XCTAssertEqual(view.selectedElementStyle.cornerRadius, 9)
         XCTAssertEqual(view.canvasRenderOrder, [.coreChart, .grid])
     }
 

@@ -172,6 +172,21 @@ Hit-testing is resolved through a shared core path:
 
 This keeps tap behavior predictable across chart types.
 
+Selected bars, stacked-bar segments, and donut segments also get a built-in
+overlay. Tune or disable it with `chartSelectedElementStyle`.
+
+```swift
+chart
+    .chartSelectedElementStyle(
+        ChartSelectedElementStyle(
+            strokeColor: .white.opacity(0.95),
+            fillColor: .white.opacity(0.14),
+            lineWidth: 2,
+            cornerRadius: 4
+        )
+    )
+```
+
 ## Layout And Plot Area
 
 OZCharts uses `ChartLayoutEngine` to calculate axis insets and plot area consistently. Apps usually do not need to call it directly, but it is public for custom containers and snapshot checks.

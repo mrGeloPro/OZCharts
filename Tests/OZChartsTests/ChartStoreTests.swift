@@ -448,6 +448,7 @@ final class ChartStoreTests: XCTestCase {
 
         XCTAssertTrue(store.highlightedPoints.isEmpty)
         XCTAssertEqual(store.selectedElements.count, 1)
+        XCTAssertEqual(store.selectedElementContexts.count, 1)
         XCTAssertEqual(store.selectedElements.first?.kind, .bar)
         XCTAssertEqual(store.selectedElements.first?.pointID, pointID)
         XCTAssertEqual(store.selectedElements.first?.value, 6)
@@ -525,6 +526,7 @@ final class ChartStoreTests: XCTestCase {
         store.applySelectionState(ChartSelectionState(selectedElements: selected))
 
         XCTAssertEqual(store.selectedElements.first?.pointID, secondID)
+        XCTAssertEqual(store.selectedElementContexts.first?.payload.pointID, secondID)
         XCTAssertTrue(store.highlightedPoints.isEmpty)
     }
 

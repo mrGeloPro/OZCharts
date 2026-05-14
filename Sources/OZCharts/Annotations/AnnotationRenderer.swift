@@ -8,6 +8,12 @@
 
 import SwiftUI
 
+private struct PendingRangeAnnotationLabel {
+    let annotation: RangeAnnotation
+    let label: String
+    let candidate: ChartLabelCandidate
+}
+
 public struct AnnotationRenderer {
 
     // MARK: - Range bands
@@ -18,6 +24,8 @@ public struct AnnotationRenderer {
         annotations: [RangeAnnotation],
         activeYScale: YScale
     ) where YScale.InputType == Double, YScale.OutputType == CGFloat {
+
+        var pendingLabels: [PendingRangeAnnotationLabel] = []
 
         for annotation in annotations {
             let lowerY = size.height - activeYScale.scale(annotation.yRange.lowerBound)
@@ -38,18 +46,40 @@ public struct AnnotationRenderer {
             context.fill(Path(rect), with: .color(annotation.color.opacity(annotation.opacity)))
 
             if annotation.showsLabel, let label = annotation.label {
-                let text = Text(label)
-                    .font(annotation.labelFont)
-                    .foregroundColor(annotation.labelColor)
-                context.draw(
-                    text,
-                    at: CGPoint(
-                        x: min(max(annotation.labelXPosition, 0), 1) * size.width,
-                        y: rect.midY + annotation.labelYOffset
-                    ),
-                    anchor: annotation.labelAnchor
+                let anchor = CGPoint(
+                    x: min(max(annotation.labelXPosition, 0), 1) * size.width,
+                    y: rect.midY + annotation.labelYOffset
+                )
+                pendingLabels.append(
+                    PendingRangeAnnotationLabel(
+                        annotation: annotation,
+                        label: label,
+                        candidate: ChartLabelCandidate(
+                            anchor: anchor,
+                            size: ChartTextMetrics.estimatedSize(for: label),
+                            priority: 0,
+                            preferredPlacements: [.fixed(anchor), .automatic],
+                            padding: 4,
+                            spacing: 4,
+                            canHide: false
+                        )
+                    )
                 )
             }
+        }
+
+        let resolvedLabels = ChartLabelCollisionResolver.resolve(
+            candidates: pendingLabels.map(\.candidate),
+            canvasSize: size
+        )
+        let resolvedByID = Dictionary(uniqueKeysWithValues: resolvedLabels.map { ($0.id, $0) })
+
+        for pendingLabel in pendingLabels {
+            guard let resolved = resolvedByID[pendingLabel.candidate.id], resolved.isVisible else { continue }
+            let text = Text(pendingLabel.label)
+                .font(pendingLabel.annotation.labelFont)
+                .foregroundColor(pendingLabel.annotation.labelColor)
+            context.draw(text, at: resolved.position, anchor: .center)
         }
     }
 

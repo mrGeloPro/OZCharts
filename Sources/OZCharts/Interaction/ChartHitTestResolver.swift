@@ -14,6 +14,13 @@ enum ChartHitTestResolver {
         near location: CGPoint,
         contexts: [ChartElementContext]
     ) -> [ChartSelectedElement] {
+        elementContexts(near: location, contexts: contexts).map(\.payload)
+    }
+
+    static func elementContexts(
+        near location: CGPoint,
+        contexts: [ChartElementContext]
+    ) -> [ChartElementContext] {
         contexts
             .filter { $0.contains(location) }
             .sorted {
@@ -23,7 +30,7 @@ enum ChartHitTestResolver {
                 return $0.zIndex > $1.zIndex
             }
             .first
-            .map { [$0.payload] } ?? []
+            .map { [$0] } ?? []
     }
 
     static func points<Point: ChartDataPoint>(

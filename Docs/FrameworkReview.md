@@ -4,7 +4,7 @@ This review summarizes readiness from four perspectives: framework architect, in
 
 ## Executive Summary
 
-OZCharts is strong enough for a serious demo and controlled product integration. The framework now covers the product-style chart requirements: real domain events, polished series styling, violin distributions, donut charts, stacked bars, stacked area, smooth lines, annotations, tooltips, secondary-axis display transforms, linked selection, non-point element selection, shared plot-area layout, collision-aware custom annotations, and centralized hit-testing.
+OZCharts is strong enough for a serious demo and controlled product integration. The framework now covers the product-style chart requirements: real domain events, polished series styling, violin distributions, donut charts, stacked bars, stacked area, smooth lines, annotations, tooltips, secondary-axis display transforms, linked selection, non-point element selection, selected-element overlays, shared plot-area layout, collision-aware annotations, collision-aware value labels, and centralized hit-testing.
 
 The main remaining risks are not about whether the charts can be drawn. They are about production hardening: API stability, visual regression discipline, accessibility depth, performance budgets on device, and a few customization gaps that larger customers will expect.
 
@@ -27,7 +27,7 @@ Risks:
 * Some chart features are implemented as product-driven options directly on model structs; continued growth may make initializers too large.
 * Snapshot signatures are useful smoke guards, but they are not pixel baselines and will not catch all visual regressions.
 * More interactive series may need a shared selection/highlight rendering model, not only payload callbacks.
-* Collision avoidance currently covers custom SwiftUI annotations and reusable layout logic; Canvas-drawn text labels should adopt the same resolver over time.
+* Collision avoidance now covers custom SwiftUI annotations plus Canvas-drawn range and value labels. Very complex multi-layer label priority may still need product-level tuning.
 
 ## Integrating Developer Review
 
@@ -69,7 +69,7 @@ Risks:
 
 Strengths:
 
-* Tooltips and custom annotations are clamped and can be capped by width or collision priority.
+* Tooltips, custom annotations, and Canvas value labels are clamped and can be capped by width or collision priority.
 * Smooth lines, gradients, shadows, target annotations, and legends support polished visual output.
 * Selection behavior can be tuned for tap, drag, linked charts, and overlapping points.
 * Product chart references are now much closer visually.
@@ -125,13 +125,12 @@ This matters if another company will integrate without constant support.
 
 Current product snapshot tests verify render shape and non-empty output. Add pixel or perceptual baselines for the key product charts if the visual match is contractual.
 
-### P1: Selection Highlight Rendering
+### P1: Selected-State Customization Depth
 
-The framework publishes selected elements, but it does not yet provide a consistent built-in selected visual style for bars, stacked bar segments, and donut slices. Product teams can implement detail panels, but a full chart framework should also offer selected-element highlighting.
-
-### P1: Apply Collision Resolver To Canvas Labels
-
-`ChartLabelCollisionResolver` now exists and custom SwiftUI annotations use it. Next, route Canvas-drawn value labels and range labels through the same placement pass so all label classes share the same collision rules.
+The framework now provides a built-in selected-element overlay for bars, stacked
+bar segments, and donut slices. Product teams may still want richer selected
+states, such as dimming non-selected series, custom segment expansion, or
+per-series selected styling.
 
 ### P1: Accessibility Deepening
 
