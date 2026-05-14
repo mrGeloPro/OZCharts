@@ -9,6 +9,10 @@
 * `StackedAreaSeries` for cumulative grouped metrics.
 * Product render styling helpers, including gradients, stripes, shadows, and callout presets.
 * `AxisTransform` support for display-only secondary-axis values.
+* Composable `AxisTransform` helpers for offset, percentage, clamping, finite fallback, and transform chaining.
+* `ChartLayoutEngine` / `ChartPlotLayout` for shared plot-area and axis inset calculations.
+* `ChartLabelCollisionResolver` and `ChartLabelPlacement` for collision-aware custom annotation placement.
+* `ChartHitTestResolver` for centralized element and point hit-testing.
 * Range annotation label positioning for dense product charts.
 * Tooltip max-width support and safer automatic placement.
 * `ChartSelectedElement` and element hit-testing for bars, stacked-bar segments, and donut segments.
@@ -16,12 +20,14 @@
 * `selectedElements` support in `ChartSelectionState`.
 * `selectedElementFormatter` support in chart accessibility descriptors.
 * Stable `id:` parameters for chart series and custom view annotations.
+* Placement, collision priority, and padding controls for `CustomViewAnnotation`.
 * Product snapshot signature tests and optional performance benchmark tests.
 
 ### Changed
 
 * DemoApp now includes product-style graph recreations and event-driven scenarios.
 * Donut segments can expose product labels through `segmentLabelMapper`.
+* Custom SwiftUI annotations are clamped and resolved through the shared label collision engine.
 
 ## 2.0.0
 

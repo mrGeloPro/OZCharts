@@ -16,9 +16,9 @@ CartesianChartView(
         YAxisConfig(
             position: .trailing,
             explicitValues: deltaTicks,
-            axisTransform: AxisTransform { delta in
-                Int(delta.rounded()) == 330 ? 200 : 60_000 / delta
-            },
+            axisTransform: AxisTransform
+                .reciprocal(numerator: 60_000)
+                .replacingNonFinite(with: 0),
             labelFormatter: { "\(Int($0))" },
             title: "Rhythm (bpm)"
         )
@@ -87,6 +87,26 @@ chart
 The placement engine clamps the callout to the plot bounds and resolves a final
 attachment side, so custom arrow/pointer styles can follow the real placement
 instead of assuming that the preferred side always fit.
+
+For anchored SwiftUI overlays such as selected-row detail panels or value
+labels, use `CustomViewAnnotation` placement metadata instead of manual screen
+offsets:
+
+```swift
+CustomViewAnnotation(
+    id: selectedRowID,
+    x: selectedX,
+    y: selectedRowY,
+    placement: .automatic,
+    collisionPriority: 20,
+    avoidsCollisions: true,
+    padding: 10
+) {
+    achievementCallout
+        .frame(width: 176, alignment: .leading)
+        .chartCalloutStyle(.productLight)
+}
+```
 
 Use element selection for row/segment callouts. `StackedBarSeries` now exposes
 the tapped segment as `ChartSelectedElement`, so apps can position their detail

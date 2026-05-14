@@ -178,6 +178,10 @@ public struct CustomViewAnnotation<X: Comparable, Y: Comparable>: Identifiable {
     public let x: X
     public let y: Y
     public let label: String?
+    public let placement: ChartLabelPlacement
+    public let collisionPriority: Int
+    public let avoidsCollisions: Bool
+    public let padding: CGFloat
     public let isSelectable: Bool
     public let hitboxRadius: CGFloat?
     public let content: AnyView
@@ -187,6 +191,10 @@ public struct CustomViewAnnotation<X: Comparable, Y: Comparable>: Identifiable {
         x: X,
         y: Y,
         label: String? = nil,
+        placement: ChartLabelPlacement = .center,
+        collisionPriority: Int = 0,
+        avoidsCollisions: Bool = true,
+        padding: CGFloat = 8,
         isSelectable: Bool = false,
         hitboxRadius: CGFloat? = nil,
         @ViewBuilder content: () -> V
@@ -195,6 +203,10 @@ public struct CustomViewAnnotation<X: Comparable, Y: Comparable>: Identifiable {
         self.x = x
         self.y = y
         self.label = label
+        self.placement = placement
+        self.collisionPriority = collisionPriority
+        self.avoidsCollisions = avoidsCollisions
+        self.padding = padding
         self.isSelectable = isSelectable
         self.hitboxRadius = hitboxRadius
         self.content = AnyView(content())

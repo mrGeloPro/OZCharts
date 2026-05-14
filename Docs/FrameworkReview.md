@@ -4,7 +4,7 @@ This review summarizes readiness from four perspectives: framework architect, in
 
 ## Executive Summary
 
-OZCharts is strong enough for a serious demo and controlled product integration. The framework now covers the product-style chart requirements: real domain events, polished series styling, violin distributions, donut charts, stacked bars, stacked area, smooth lines, annotations, tooltips, secondary-axis display transforms, linked selection, and non-point element selection.
+OZCharts is strong enough for a serious demo and controlled product integration. The framework now covers the product-style chart requirements: real domain events, polished series styling, violin distributions, donut charts, stacked bars, stacked area, smooth lines, annotations, tooltips, secondary-axis display transforms, linked selection, non-point element selection, shared plot-area layout, collision-aware custom annotations, and centralized hit-testing.
 
 The main remaining risks are not about whether the charts can be drawn. They are about production hardening: API stability, visual regression discipline, accessibility depth, performance budgets on device, and a few customization gaps that larger customers will expect.
 
@@ -15,6 +15,9 @@ Strengths:
 * Series are isolated behind `ChartSeriesProtocol` and `AnyChartSeries`.
 * Rendering is Canvas-first, which is the right default for performance.
 * Gesture state is centralized in `ChartStore`.
+* Plot-area math is centralized in `ChartLayoutEngine`.
+* Label placement and clamping now have a reusable `ChartLabelCollisionResolver`.
+* Element and point hit-testing share `ChartHitTestResolver`.
 * Scales, domains, axes, series, annotations, styling, and interaction are reasonably separated.
 * The framework has real tests, render smoke tests, product snapshot signatures, and optional benchmarks.
 
@@ -24,6 +27,7 @@ Risks:
 * Some chart features are implemented as product-driven options directly on model structs; continued growth may make initializers too large.
 * Snapshot signatures are useful smoke guards, but they are not pixel baselines and will not catch all visual regressions.
 * More interactive series may need a shared selection/highlight rendering model, not only payload callbacks.
+* Collision avoidance currently covers custom SwiftUI annotations and reusable layout logic; Canvas-drawn text labels should adopt the same resolver over time.
 
 ## Integrating Developer Review
 
@@ -34,6 +38,8 @@ Strengths:
 * Domain-event modeling is documented.
 * Stable ids can now be passed to series, points, and custom annotations.
 * `ChartSelectedElement` makes stacked bars and donut slices usable in real product workflows.
+* Custom annotations can opt into `.automatic`, edge-based, centered, or fixed placement with priority-based collision handling.
+* `AxisTransform` includes composable helpers for secondary-axis display units.
 
 Risks:
 
@@ -63,7 +69,7 @@ Risks:
 
 Strengths:
 
-* Tooltips are clamped and can be capped by width.
+* Tooltips and custom annotations are clamped and can be capped by width or collision priority.
 * Smooth lines, gradients, shadows, target annotations, and legends support polished visual output.
 * Selection behavior can be tuned for tap, drag, linked charts, and overlapping points.
 * Product chart references are now much closer visually.
@@ -122,6 +128,10 @@ Current product snapshot tests verify render shape and non-empty output. Add pix
 ### P1: Selection Highlight Rendering
 
 The framework publishes selected elements, but it does not yet provide a consistent built-in selected visual style for bars, stacked bar segments, and donut slices. Product teams can implement detail panels, but a full chart framework should also offer selected-element highlighting.
+
+### P1: Apply Collision Resolver To Canvas Labels
+
+`ChartLabelCollisionResolver` now exists and custom SwiftUI annotations use it. Next, route Canvas-drawn value labels and range labels through the same placement pass so all label classes share the same collision rules.
 
 ### P1: Accessibility Deepening
 

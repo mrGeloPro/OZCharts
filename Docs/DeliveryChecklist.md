@@ -32,6 +32,9 @@ Use this checklist before sending the framework to an external company or using 
 * Linked interaction uses `ChartSelectionState`.
 * Linked viewport uses `ChartViewportState`.
 * Axis display transforms use `AxisTransform`.
+* Axis and plot-area math go through `ChartLayoutEngine`.
+* Custom SwiftUI annotations use collision-aware `ChartLabelCollisionResolver` placement.
+* Element and point hit-testing go through `ChartHitTestResolver`.
 * Tooltip placement clamps content inside the plot bounds.
 * Tooltip width can be capped with `.chartTooltipMaxWidth`.
 
@@ -51,6 +54,9 @@ Expected coverage:
 * element-selection tests for bar, stacked bar, and donut
 * annotation tests
 * tooltip placement tests
+* label collision resolver tests
+* plot layout tests
+* hit-test resolver tests
 * rendering smoke tests
 * product snapshot signature tests
 * JSON scenario decoding tests

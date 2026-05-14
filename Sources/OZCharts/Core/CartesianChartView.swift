@@ -77,6 +77,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     @StateObject private var store: ChartStore<Point, XScale, YScale>
     @State private var highlightedAnnotations: [ChartAnnotationContext] = []
     @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
+    @State private var customAnnotationSizes: [UUID: CGSize] = [:]
 
     // MARK: - Init
 
@@ -215,10 +216,9 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             if allData.isEmpty, let emptyView = emptyState?() {
                 emptyView.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                let topH    = xAxes.filter { $0.position == .top      }.reduce(0) { $0 + $1.height }
-                let bottomH = xAxes.filter { $0.position == .bottom   }.reduce(0) { $0 + $1.height }
+                let insets = ChartLayoutEngine.insets(xAxes: xAxes, yAxes: yAxes)
 
-                chartWithLegend(topH: topH, bottomH: bottomH)
+                chartWithLegend(topH: insets.top, bottomH: insets.bottom)
             }
         }
         .onChange(of: series.map { $0.id }) { _ in
@@ -359,20 +359,18 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                                     onEvent: { handleGestureEvent($0) }
                                 )
 
+                                let resolvedAnnotations = resolvedCustomViewAnnotations(in: geometry.size)
                                 ForEach(visibleCustomViewAnnotations) { annotation in
-                                    let xPos = store.activeXScale.scale(annotation.x)
-                                    let yPos = geometry.size.height - store.activeYScale.scale(annotation.y)
-                                    if geometry.size.width > 0,
-                                       geometry.size.height > 0,
-                                       xPos.isFinite,
-                                       yPos.isFinite,
-                                       xPos >= 0,
-                                       xPos <= geometry.size.width,
-                                       yPos >= 0,
-                                       yPos <= geometry.size.height {
+                                    if let resolved = resolvedAnnotations[annotation.id], resolved.isVisible {
                                         annotation.content
                                             .fixedSize()
-                                            .position(x: xPos, y: yPos)
+                                            .readSize { customAnnotationSizes[annotation.id] = $0 }
+                                            .position(resolved.position)
+                                    } else {
+                                        annotation.content
+                                            .fixedSize()
+                                            .hidden()
+                                            .readSize { customAnnotationSizes[annotation.id] = $0 }
                                     }
                                 }
 
@@ -645,6 +643,32 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             $0.y >= yDomain.lowerBound &&
             $0.y <= yDomain.upperBound
         }
+    }
+
+    private func resolvedCustomViewAnnotations(
+        in canvasSize: CGSize
+    ) -> [UUID: ChartResolvedLabel] {
+        let candidates = visibleCustomViewAnnotations.compactMap { annotation -> ChartLabelCandidate? in
+            let anchor = annotationPosition(x: annotation.x, y: annotation.y)
+            guard isValidCanvasPosition(anchor) else { return nil }
+            let measuredSize = customAnnotationSizes[annotation.id] ?? CGSize(width: 1, height: 1)
+            return ChartLabelCandidate(
+                id: annotation.id,
+                anchor: anchor,
+                size: measuredSize,
+                priority: annotation.collisionPriority,
+                preferredPlacements: [annotation.placement],
+                padding: annotation.padding,
+                spacing: 6,
+                canHide: annotation.avoidsCollisions
+            )
+        }
+
+        let resolved = ChartLabelCollisionResolver.resolve(
+            candidates: candidates,
+            canvasSize: canvasSize
+        )
+        return Dictionary(uniqueKeysWithValues: resolved.map { ($0.id, $0) })
     }
 
     private var selectableAnnotationContexts: [ChartAnnotationContext] {

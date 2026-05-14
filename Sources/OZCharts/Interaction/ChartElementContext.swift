@@ -10,6 +10,7 @@ import CoreGraphics
 import Foundation
 
 public enum ChartElementHitShape: Equatable {
+    case circle(center: CGPoint, radius: CGFloat)
     case rect(CGRect)
     case donutSegment(
         center: CGPoint,
@@ -21,6 +22,13 @@ public enum ChartElementHitShape: Equatable {
 
     public var bounds: CGRect {
         switch self {
+        case .circle(let center, let radius):
+            return CGRect(
+                x: center.x - radius,
+                y: center.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            )
         case .rect(let rect):
             return rect
         case .donutSegment(let center, _, let outerRadius, _, _):
@@ -35,6 +43,11 @@ public enum ChartElementHitShape: Equatable {
 
     public func contains(_ point: CGPoint) -> Bool {
         switch self {
+        case .circle(let center, let radius):
+            let dx = point.x - center.x
+            let dy = point.y - center.y
+            return (dx * dx + dy * dy) <= radius * radius
+
         case .rect(let rect):
             return rect.contains(point)
 

@@ -30,8 +30,16 @@ final class AxisPresetTests: XCTestCase {
     func testAxisTransformMapsDisplayValues() {
         XCTAssertEqual(AxisTransform.identity(42), 42)
         XCTAssertEqual(AxisTransform.linear(multiplier: 2, offset: 1)(4), 9)
+        XCTAssertEqual(AxisTransform.offset(5)(4), 9)
+        XCTAssertEqual(AxisTransform.percentage(of: 200)(50), 25)
         XCTAssertEqual(AxisTransform.reciprocal(numerator: 60_000)(500), 120)
         XCTAssertEqual(AxisTransform.reciprocal(numerator: 60_000)(0), 0)
+        XCTAssertEqual(AxisTransform.linear(multiplier: 10).clamped(to: 0...100)(20), 100)
+        XCTAssertEqual(AxisTransform { _ in Double.infinity }.replacingNonFinite(with: -1)(20), -1)
+        XCTAssertEqual(
+            AxisTransform.linear(multiplier: 2).combined(with: .linear(offset: 1))(4),
+            9
+        )
     }
 
     func testAxisConfigStoresTransform() {

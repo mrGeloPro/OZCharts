@@ -11,9 +11,9 @@ A high-performance, fully customizable, and mathematically precise charting fram
 * **Versatile chart types:** Line, area, vertical bar, scatter, stacked horizontal bar, donut, and mathematically accurate violin charts.
 * **Canvas-first rendering:** Smooth interaction with off-screen culling and synchronous gesture layouts.
 * **Advanced gestures:** Independent horizontal and vertical scrolling/zooming with conflict handling between pan and pinch.
-* **Hybrid layering:** Combine Canvas-rendered series with SwiftUI custom annotations.
+* **Hybrid layering:** Combine Canvas-rendered series with collision-aware SwiftUI custom annotations.
 * **Auto domains and presets:** Start quickly with `.auto(...)`, nice ticks, collision-aware labels, `ChartTheme`, and axis presets.
-* **Interaction toolkit:** Selection modes, crosshair, selection behavior, and live tracking.
+* **Interaction toolkit:** Selection modes, centralized hit-testing, crosshair, selection behavior, and live tracking.
 * **Production helpers:** Legend, accessibility descriptors, range annotations, event markers, LTTB downsampling, log/time/category scales, and smoke-tested rendering contracts.
 
 ## Installation (Swift Package Manager)

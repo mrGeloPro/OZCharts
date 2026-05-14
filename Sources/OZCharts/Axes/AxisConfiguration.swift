@@ -30,11 +30,41 @@ public struct AxisTransform {
         AxisTransform { $0 * multiplier + offset }
     }
 
+    public static func offset(_ value: Double) -> AxisTransform {
+        linear(offset: value)
+    }
+
+    public static func percentage(of total: Double) -> AxisTransform {
+        AxisTransform { value in
+            guard total != 0 else { return 0 }
+            return value / total * 100
+        }
+    }
+
     public static func reciprocal(numerator: Double) -> AxisTransform {
         AxisTransform { value in
             guard value != 0 else { return 0 }
             return numerator / value
         }
+    }
+
+    public func clamped(to range: ClosedRange<Double>) -> AxisTransform {
+        AxisTransform { value in
+            let transformed = self(value)
+            guard transformed.isFinite else { return transformed }
+            return min(max(transformed, range.lowerBound), range.upperBound)
+        }
+    }
+
+    public func replacingNonFinite(with fallback: Double) -> AxisTransform {
+        AxisTransform { value in
+            let transformed = self(value)
+            return transformed.isFinite ? transformed : fallback
+        }
+    }
+
+    public func combined(with next: AxisTransform) -> AxisTransform {
+        AxisTransform { next(self($0)) }
     }
 }
 

@@ -198,16 +198,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     }
 
     func selectElements(near location: CGPoint) -> [ChartSelectedElement] {
-        selectableElements
-            .filter { $0.contains(location) }
-            .sorted {
-                if $0.zIndex == $1.zIndex {
-                    return ($0.payload.seriesIndex ?? 0) > ($1.payload.seriesIndex ?? 0)
-                }
-                return $0.zIndex > $1.zIndex
-            }
-            .first
-            .map { [$0.payload] } ?? []
+        ChartHitTestResolver.elements(
+            near: location,
+            contexts: selectableElements
+        )
     }
 
     func selectPoints(
@@ -217,37 +211,15 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all
     ) -> [ChartPointContext<Point>] {
         let allContexts = seriesContexts.flatMap { $0 }
-        guard !allContexts.isEmpty else { return [] }
-
-        let selected: [ChartPointContext<Point>]
-        switch mode {
-        case .none:
-            selected = []
-
-        case .pointsInRadius:
-            let radiusSq = radius * radius
-            selected = allContexts.filter {
-                let dx = $0.position.x - location.x
-                let dy = $0.position.y - location.y
-                return (dx * dx + dy * dy) <= radiusSq
-            }
-
-        case .nearestPoint:
-            selected = allContexts.min {
-                distanceSquared(from: $0.position, to: location) <
-                distanceSquared(from: $1.position, to: location)
-            }.map { [$0] } ?? []
-
-        case .nearestX:
-            guard let nearest = allContexts.min(by: {
-                abs($0.position.x - location.x) < abs($1.position.x - location.x)
-            }) else {
-                return []
-            }
-            selected = allContexts.filter { $0.originalPoint.x == nearest.originalPoint.x }
-        }
-
-        return resolveOverlappingSelection(selected, mode: overlappingSelectionMode)
+        return ChartHitTestResolver.points(
+            near: location,
+            contexts: allContexts,
+            radius: radius,
+            mode: mode,
+            overlappingSelectionMode: overlappingSelectionMode,
+            cycleIDs: &selectionCycleIDs,
+            cycleIndex: &selectionCycleIndex
+        )
     }
 
     func selectNearestXValue(_ xValue: Double) -> [ChartPointContext<Point>] {
@@ -313,28 +285,6 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         highlightedPoints = selectNearestXValue(selectedX)
         selectedElements = []
         resetSelectionCycle()
-    }
-
-    private func resolveOverlappingSelection(
-        _ selected: [ChartPointContext<Point>],
-        mode: ChartOverlappingSelectionMode
-    ) -> [ChartPointContext<Point>] {
-        guard mode == .cycle, selected.count > 1 else {
-            if selected.count <= 1 {
-                resetSelectionCycle()
-            }
-            return selected
-        }
-
-        let ids = selected.map(\.id)
-        if ids == selectionCycleIDs {
-            selectionCycleIndex = (selectionCycleIndex + 1) % selected.count
-        } else {
-            selectionCycleIDs = ids
-            selectionCycleIndex = 0
-        }
-
-        return [selected[selectionCycleIndex]]
     }
 
     private func resetSelectionCycle() {
@@ -538,12 +488,6 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             )
         }
     }
-}
-
-private func distanceSquared(from lhs: CGPoint, to rhs: CGPoint) -> CGFloat {
-    let dx = lhs.x - rhs.x
-    let dy = lhs.y - rhs.y
-    return dx * dx + dy * dy
 }
 
 private func replacementScale<S: Scale>(

@@ -117,6 +117,26 @@ RangeAnnotation(
 )
 ```
 
+Custom annotations can be anchored to chart values while still using collision-aware placement and clamping. Prefer this for value labels, selected row callouts, badges, and product-specific overlays.
+
+```swift
+CustomViewAnnotation(
+    id: calloutID,
+    x: selectedX,
+    y: selectedY,
+    label: "Selected point",
+    placement: .automatic,
+    collisionPriority: 10,
+    avoidsCollisions: true,
+    padding: 10
+) {
+    Text("Target 120 bpm")
+        .chartCalloutStyle(.productLight)
+}
+```
+
+When space is tight, higher-priority annotations are kept first. Lower-priority annotations can be moved or hidden so labels do not cover each other or clip outside the plot.
+
 ## Non-Point Selection
 
 Bars, stacked-bar segments, and donut segments publish `ChartSelectedElement`.
@@ -142,6 +162,47 @@ chart
 * `bounds`
 
 Use this for product callouts, selected segment highlighting, or external detail panels.
+
+Hit-testing is resolved through a shared core path:
+
+* element hit-testing for bars, stacked bars, donut segments, and future custom element shapes
+* point hit-testing for line, area, scatter, and other point-based series
+* deterministic z-index ordering when interactive elements overlap
+* cycle support for overlapping point clusters
+
+This keeps tap behavior predictable across chart types.
+
+## Layout And Plot Area
+
+OZCharts uses `ChartLayoutEngine` to calculate axis insets and plot area consistently. Apps usually do not need to call it directly, but it is public for custom containers and snapshot checks.
+
+```swift
+let layout = ChartLayoutEngine.layout(
+    in: CGSize(width: 320, height: 240),
+    xAxes: [.init(position: .bottom, height: 32)],
+    yAxes: [.init(position: .leading, width: 44)]
+)
+
+print(layout.plotArea)
+```
+
+Use this when building custom chart wrappers that need to align external controls, legends, or overlays with the chart plot area.
+
+## Axis Display Transforms
+
+Use `AxisTransform` when an axis should render labels in a derived unit while the chart still uses the original domain values.
+
+```swift
+YAxisConfig(
+    position: .trailing,
+    explicitValues: [900, 800, 700, 600, 500, 400, 330],
+    axisTransform: .reciprocal(numerator: 60_000).replacingNonFinite(with: 0),
+    labelFormatter: { "\(Int($0))" },
+    title: "Rhythm (bpm)"
+)
+```
+
+Useful transforms include `.linear`, `.offset`, `.percentage(of:)`, `.reciprocal`, `.clamped(to:)`, `.replacingNonFinite(with:)`, and `.combined(with:)`.
 
 ## Linked Charts
 
