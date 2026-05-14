@@ -43,6 +43,37 @@ final class LineSeriesTests: XCTestCase {
         )
     }
 
+    func testMonotoneInterpolationBuildsCubicSegmentsBetweenPoints() {
+        let series = LineSeries<Point2D>(data: [], color: .blue, interpolation: .monotone)
+        let points = [
+            CGPoint(x: 0, y: 10),
+            CGPoint(x: 30, y: 40),
+            CGPoint(x: 60, y: 20)
+        ]
+
+        let segments = series.monotoneSegments(from: points)
+
+        XCTAssertEqual(segments.count, 2)
+        XCTAssertEqual(segments.first?.end, points[1])
+        XCTAssertEqual(segments.last?.end, points[2])
+        XCTAssertEqual(segments.first?.control1.x, 10)
+        XCTAssertEqual(segments.first?.control2.x, 20)
+    }
+
+    func testMonotoneInterpolationFlattensTangentAtDirectionChanges() {
+        let series = LineSeries<Point2D>(data: [], color: .blue, interpolation: .monotone)
+        let points = [
+            CGPoint(x: 0, y: 10),
+            CGPoint(x: 20, y: 40),
+            CGPoint(x: 40, y: 12)
+        ]
+
+        let segments = series.monotoneSegments(from: points)
+
+        XCTAssertEqual(segments[0].control2.y, points[1].y)
+        XCTAssertEqual(segments[1].control1.y, points[1].y)
+    }
+
     func testLTTBDownsamplingKeepsFirstAndLastContexts() {
         let data = (0..<20).map { Point2D(x: Double($0), y: Double(($0 % 3) * 10)) }
         let contexts = data.map {

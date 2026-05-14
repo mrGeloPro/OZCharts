@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+* Real-world JSON demo scenarios for medical, sport, financial, and operational chart examples.
+* Product chart recipes and integration handoff documentation.
+* `StackedAreaSeries` for cumulative grouped metrics.
+* Product render styling helpers, including gradients, stripes, shadows, and callout presets.
+* `AxisTransform` support for display-only secondary-axis values.
+* Range annotation label positioning for dense product charts.
+* Tooltip max-width support and safer automatic placement.
+* `ChartSelectedElement` and element hit-testing for bars, stacked-bar segments, and donut segments.
+* `.chartElementSelection(...)` for non-point interaction callbacks.
+* `selectedElements` support in `ChartSelectionState`.
+* `selectedElementFormatter` support in chart accessibility descriptors.
+* Stable `id:` parameters for chart series and custom view annotations.
+* Product snapshot signature tests and optional performance benchmark tests.
+
+### Changed
+
+* DemoApp now includes product-style graph recreations and event-driven scenarios.
+* Donut segments can expose product labels through `segmentLabelMapper`.
+
 ## 2.0.0
 
 ### Added

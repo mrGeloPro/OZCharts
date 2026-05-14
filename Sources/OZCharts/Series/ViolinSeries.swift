@@ -17,7 +17,7 @@ public enum ViolinSide {
 public struct ViolinSeries<P: GroupedChartDataPoint>: ChartSeriesProtocol
 where P.XValue == Double, P.YValue == Double {
 
-    public let id = UUID()
+    public let id: UUID
     public var data: [P]
     public var zIndex: Int
     public var animation: ChartAnimationStyle
@@ -26,6 +26,7 @@ where P.XValue == Double, P.YValue == Double {
     public var maxHalfWidth: CGFloat
     public var sideMapper: (P.GroupID) -> ViolinSide
     public var colorMapper: (P.GroupID) -> Color
+    public var fillStyleMapper: ((P.GroupID) -> ChartFillStyle)?
     public var groupLabel: ((P.GroupID) -> String?)?
 
     public var fillOpacity: Double
@@ -33,37 +34,44 @@ where P.XValue == Double, P.YValue == Double {
     public var showScatter: Bool
     public var scatterSize: CGFloat
     public var scatterOpacity: Double
+    public var shadow: ChartShadowStyle?
     public var bandwidth: Double?
     public var sampleCount: Int
 
     public init(
         data: [P],
+        id: UUID = UUID(),
         centerX: Double,
         maxHalfWidth: CGFloat                           = 120,
         sideMapper: @escaping (P.GroupID) -> ViolinSide,
         colorMapper: @escaping (P.GroupID) -> Color,
+        fillStyleMapper: ((P.GroupID) -> ChartFillStyle)? = nil,
         groupLabel: ((P.GroupID) -> String?)?            = nil,
         fillOpacity: Double                             = 0.35,
         strokeWidth: CGFloat                            = 1,
         showScatter: Bool                               = true,
         scatterSize: CGFloat                            = 5,
         scatterOpacity: Double                          = 0.9,
+        shadow: ChartShadowStyle?                       = nil,
         bandwidth: Double?                              = nil,
         sampleCount: Int                                = 80,
         animation: ChartAnimationStyle                  = .none,
         zIndex: Int                                     = 0
     ) {
+        self.id             = id
         self.data           = data
         self.centerX        = centerX
         self.maxHalfWidth   = maxHalfWidth
         self.sideMapper     = sideMapper
         self.colorMapper    = colorMapper
+        self.fillStyleMapper = fillStyleMapper
         self.groupLabel     = groupLabel
         self.fillOpacity    = fillOpacity
         self.strokeWidth    = strokeWidth
         self.showScatter    = showScatter
         self.scatterSize    = scatterSize
         self.scatterOpacity = scatterOpacity
+        self.shadow         = shadow
         self.bandwidth      = bandwidth
         self.sampleCount    = sampleCount
         self.animation      = animation
@@ -163,7 +171,16 @@ where P.XValue == Double, P.YValue == Double {
             }
             path.closeSubpath()
 
-            context.fill(path, with: .color(color.opacity(fillOpacity)))
+            let fillStyle = fillStyleMapper?(groupID) ?? .color(color.opacity(fillOpacity))
+            let rect = CGRect(origin: .zero, size: size)
+            if let shadow {
+                context.drawLayer { layer in
+                    layer.addFilter(.shadow(color: shadow.color, radius: shadow.radius, x: shadow.x, y: shadow.y))
+                    layer.fill(path, with: fillStyle, in: rect)
+                }
+            } else {
+                context.fill(path, with: fillStyle, in: rect)
+            }
             if strokeWidth > 0 {
                 context.stroke(path, with: .color(color.opacity(0.7)), lineWidth: strokeWidth)
             }
@@ -171,7 +188,7 @@ where P.XValue == Double, P.YValue == Double {
             if showScatter {
                 for ctx in groupCtxs {
                     let y = ctx.originalPoint.y
-                    let density = kdeDensity(y, data: ys, h: h) / maxDensity
+                    let density = interpolatedDensity(at: y, samples: samples) / maxDensity
                     let halfW = CGFloat(density) * maxHalfWidth
                     let screenY = scaleYRef(y)
                     let jitter = deterministicJitter(for: ctx.originalPoint.id)
@@ -222,10 +239,36 @@ where P.XValue == Double, P.YValue == Double {
     }
 
     func deterministicJitter(for id: UUID) -> Double {
-        var hasher = Hasher()
-        hasher.combine(id)
-        let h = hasher.finalize()
-        return Double(UInt(bitPattern: h) % 1000) / 1000.0
+        let bytes = withUnsafeBytes(of: id.uuid) { Array($0) }
+        let hash = bytes.reduce(UInt64(14_695_981_039_346_656_037)) { partial, byte in
+            (partial ^ UInt64(byte)) &* 1_099_511_628_211
+        }
+        return Double(hash % 1_000) / 1_000.0
+    }
+
+    func interpolatedDensity(at y: Double, samples: [(y: Double, density: Double)]) -> Double {
+        guard let first = samples.first else { return 0 }
+        guard y > first.y else { return first.density }
+        guard let last = samples.last, y < last.y else { return samples.last?.density ?? 0 }
+
+        var lowerIndex = 0
+        var upperIndex = samples.count - 1
+        while lowerIndex + 1 < upperIndex {
+            let midIndex = (lowerIndex + upperIndex) / 2
+            if samples[midIndex].y <= y {
+                lowerIndex = midIndex
+            } else {
+                upperIndex = midIndex
+            }
+        }
+
+        let lower = samples[lowerIndex]
+        let upper = samples[upperIndex]
+        let span = upper.y - lower.y
+        guard span > 0 else { return lower.density }
+
+        let progress = (y - lower.y) / span
+        return lower.density + (upper.density - lower.density) * progress
     }
 
     private var orderedGroups: [P.GroupID] {

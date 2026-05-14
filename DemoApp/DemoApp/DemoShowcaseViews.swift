@@ -38,6 +38,13 @@ struct OZDemoHomeView: View {
             icon: "cursorarrow.click.2",
             tint: DemoColors.pink,
             destination: AnyView(SelectableAnnotationsDemoView())
+        ),
+        DemoRoute(
+            title: "Real-world Data",
+            subtitle: "JSON event streams adapted into scenarios",
+            icon: "list.bullet.rectangle.portrait",
+            tint: DemoColors.purple,
+            destination: AnyView(RealWorldScenariosView())
         )
     ]
 
@@ -702,7 +709,7 @@ struct DemoLegend: View {
     let items: [(String, Color)]
 
     var body: some View {
-        HStack(spacing: 18) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 10)], spacing: 10) {
             ForEach(items, id: \.0) { item in
                 HStack(spacing: 8) {
                     Circle()
@@ -714,6 +721,7 @@ struct DemoLegend: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity)

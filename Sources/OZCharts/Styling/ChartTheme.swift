@@ -50,6 +50,20 @@ public struct ChartTheme {
         seriesColors: [.cyan, .yellow, .mint, .pink, .orange]
     )
 
+    public static let darkProduct = ChartTheme(
+        foregroundColor: .white,
+        secondaryForegroundColor: .white.opacity(0.78),
+        gridColor: .white.opacity(0.18),
+        axisLineColor: .white.opacity(0.66),
+        tickColor: .white.opacity(0.48),
+        seriesColors: [
+            Color(red: 0.05, green: 0.86, blue: 0.92),
+            Color(red: 0.70, green: 0.15, blue: 0.96),
+            Color(red: 1.00, green: 0.76, blue: 0.02),
+            Color(red: 1.00, green: 0.55, blue: 0.02)
+        ]
+    )
+
     public static let `default` = ChartTheme.light
 
     public func xAxis(

@@ -29,6 +29,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
 
     func testSelectionModifierUpdatesModeHitboxAndCallback() {
         var callbackWasCalled = false
+        var elementCallbackWasCalled = false
         let view = makeChart()
             .chartSelection(
                 .nearestX,
@@ -43,6 +44,9 @@ final class CartesianChartViewModifierTests: XCTestCase {
             ) { _ in
                 callbackWasCalled = true
             }
+            .chartElementSelection { _ in
+                elementCallbackWasCalled = true
+            }
 
         XCTAssertEqual(view.selectionMode, .nearestX)
         XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
@@ -55,6 +59,9 @@ final class CartesianChartViewModifierTests: XCTestCase {
 
         view.onAnnotationSelectionChanged([])
         XCTAssertTrue(callbackWasCalled)
+
+        view.onElementSelectionChanged([])
+        XCTAssertTrue(elementCallbackWasCalled)
     }
 
     func testAnnotationTooltipModifierInstallsBuilder() {
@@ -70,6 +77,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartCrosshair(.both())
             .chartTooltipOffset(x: 4, y: -12)
             .chartTooltipPlacement(.trailing, padding: 14)
+            .chartTooltipMaxWidth(180)
             .chartLiveTracking()
             .chartInitialViewport(xWindow: 8, anchor: .trailing)
             .chartViewport(.constant(ChartViewportState(visibleXDomain: 0...8)))
@@ -82,6 +90,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 4, y: -12))
         XCTAssertEqual(view.tooltipPlacement, .trailing)
         XCTAssertEqual(view.tooltipPadding, 14)
+        XCTAssertEqual(view.tooltipMaxWidth, 180)
         XCTAssertTrue(view.isLiveTrackingEnabled)
         XCTAssertEqual(view.initialViewport, .xWindow(length: 8, anchor: .trailing))
         XCTAssertEqual(view.viewportBinding?.wrappedValue.visibleXDomain, 0...8)

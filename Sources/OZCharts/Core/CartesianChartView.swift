@@ -24,6 +24,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
     let xAxes: [XAxisConfig]
     let yAxes: [YAxisConfig]
+    let rangeAnnotations: [RangeAnnotation]
     let horizontalAnnotations: [HorizontalAnnotation]
     let pointAnnotations: [PointAnnotation<Double, Double>]
     let customViewAnnotations: [CustomViewAnnotation<Double, Double>]
@@ -54,18 +55,20 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     public var tooltipPlacement: ChartTooltipPlacement = .automatic
     public var tooltipOffset:   CGPoint    = CGPoint(x: 0, y: -20)
     public var tooltipPadding:  CGFloat = 8
+    public var tooltipMaxWidth: CGFloat?
     public var minZoomScale:    Double     = 0.01
     public var showsZoomControls: Bool = false
     public var zoomControlStep: Double = 2
     public var legendPosition:  ChartLegendPosition = .hidden
     public var legendSpacing:   CGFloat = 12
-    public var canvasRenderOrder: [CanvasLayer] = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart]
+    public var canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
     public var emptyState: (() -> AnyView)?
     var customLegendContent: (([ChartLegendItem]) -> AnyView)?
     var accessibilityDescriptor: ChartAccessibilityDescriptor<Point>?
 
     let tooltipContent: ([ChartPointContext<Point>]) -> TooltipContent
     var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
+    var onElementSelectionChanged: ([ChartSelectedElement]) -> Void = { _ in }
     var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
     var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
 
@@ -83,8 +86,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         yScale: YScale,
         xAxes: [XAxisConfig]                                  = [.init(position: .bottom)],
         yAxes: [YAxisConfig]                                  = [.init(position: .leading)],
+        rangeAnnotations: [RangeAnnotation]                   = [],
         horizontalAnnotations: [HorizontalAnnotation]         = [],
         pointAnnotations: [PointAnnotation<Double, Double>]   = [],
+        eventMarkers: [ChartEventMarker]                      = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
         isHorizontalScrollEnabled: Bool                       = true,
         isHorizontalZoomEnabled: Bool                         = true,
@@ -101,7 +106,8 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         crosshairStyle: ChartCrosshairStyle                   = .hidden,
         tooltipPlacement: ChartTooltipPlacement               = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
-        canvasRenderOrder: [CanvasLayer]                      = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        canvasRenderOrder: [CanvasLayer]                      = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)?                          = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) {
@@ -111,8 +117,9 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         self._store                    = StateObject(wrappedValue: ChartStore(xScale: xScale, yScale: yScale))
         self.xAxes                     = xAxes
         self.yAxes                     = yAxes
+        self.rangeAnnotations          = rangeAnnotations
         self.horizontalAnnotations     = horizontalAnnotations
-        self.pointAnnotations          = pointAnnotations
+        self.pointAnnotations          = pointAnnotations + eventMarkers.map(\.pointAnnotation)
         self.customViewAnnotations     = customViewAnnotations
         self.isHorizontalScrollEnabled = isHorizontalScrollEnabled
         self.isHorizontalZoomEnabled   = isHorizontalZoomEnabled
@@ -129,6 +136,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         self.crosshairStyle            = crosshairStyle
         self.tooltipPlacement          = tooltipPlacement
         self.onSelectionChanged        = onSelectionChanged
+        self.onElementSelectionChanged = onElementSelectionChanged
         self.canvasRenderOrder         = canvasRenderOrder
         self.emptyState                = emptyState
         self.tooltipContent            = tooltipContent
@@ -140,8 +148,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         yScale: YScale,
         xAxes: [XAxisConfig]                                  = [.init(position: .bottom)],
         yAxes: [YAxisConfig]                                  = [.init(position: .leading)],
+        rangeAnnotations: [RangeAnnotation]                   = [],
         horizontalAnnotations: [HorizontalAnnotation]         = [],
         pointAnnotations: [PointAnnotation<Double, Double>]   = [],
+        eventMarkers: [ChartEventMarker]                      = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
         isHorizontalScrollEnabled: Bool                       = true,
         isHorizontalZoomEnabled: Bool                         = true,
@@ -158,7 +168,8 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         crosshairStyle: ChartCrosshairStyle                   = .hidden,
         tooltipPlacement: ChartTooltipPlacement               = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
-        canvasRenderOrder: [CanvasLayer]                      = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        canvasRenderOrder: [CanvasLayer]                      = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)?                          = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) where S.Point == Point {
@@ -168,8 +179,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             yScale: yScale,
             xAxes: xAxes,
             yAxes: yAxes,
+            rangeAnnotations: rangeAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
+            eventMarkers: eventMarkers,
             customViewAnnotations: customViewAnnotations,
             isHorizontalScrollEnabled: isHorizontalScrollEnabled,
             isHorizontalZoomEnabled: isHorizontalZoomEnabled,
@@ -186,6 +199,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             crosshairStyle: crosshairStyle,
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
+            onElementSelectionChanged: onElementSelectionChanged,
             canvasRenderOrder: canvasRenderOrder,
             emptyState: emptyState,
             tooltipContent: tooltipContent
@@ -231,7 +245,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         }
         .accessibilityElement(children: accessibilityDescriptor == nil ? .contain : .ignore)
         .accessibilityLabel(accessibilityDescriptor?.label ?? "")
-        .accessibilityValue(accessibilityDescriptor?.value(for: store.highlightedPoints) ?? "")
+        .accessibilityValue(accessibilityDescriptor?.value(
+            for: store.highlightedPoints,
+            selectedElements: store.selectedElements
+        ) ?? "")
     }
 
     @ViewBuilder
@@ -315,6 +332,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                                     xAxes:                     xAxes,
                                     yAxes:                     yAxes,
                                     canvasRenderOrder:         canvasRenderOrder,
+                                    rangeAnnotations:          rangeAnnotations,
                                     horizontalAnnotations:     horizontalAnnotations,
                                     visiblePointAnnotations:   visiblePointAnnotations,
                                     violinBackgrounds:         store.violinBackgrounds,
@@ -324,6 +342,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                                     tooltipPlacement:          tooltipPlacement,
                                     tooltipOffset:             tooltipOffset,
                                     tooltipPadding:            tooltipPadding,
+                                    tooltipMaxWidth:           tooltipMaxWidth,
                                     tooltipContent:            tooltipContent
                                 )
 
@@ -364,6 +383,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                                         placement: tooltipPlacement,
                                         offset: tooltipOffset,
                                         padding: tooltipPadding,
+                                        maxWidth: tooltipMaxWidth,
                                         content: annotationTooltipContent
                                     )
                                 }
@@ -383,7 +403,6 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                                 }
 
                             }
-                            .clipped()
                             .onAppear {
                                 syncBaseScales()
                                 store.canvasSize = geometry.size
@@ -462,6 +481,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         switch event {
         case .highlight, .highlightCleared, .panChanged, .zoomChanged:
             onSelectionChanged(store.highlightedPoints)
+            onElementSelectionChanged(store.selectedElements)
         case .panEnded, .zoomEnded:
             break
         }
@@ -487,7 +507,9 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
             if !selected.isEmpty {
                 store.highlightedPoints = []
+                store.selectedElements = []
                 onSelectionChanged([])
+                onElementSelectionChanged([])
                 return true
             }
 
@@ -574,6 +596,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         highlightedAnnotations = []
         onAnnotationSelectionChanged([])
         onSelectionChanged(store.highlightedPoints)
+        onElementSelectionChanged(store.selectedElements)
     }
 
     private func publishSelectionState() {
@@ -687,6 +710,7 @@ private struct ChartAnnotationTooltipOverlay: View {
     let placement: ChartTooltipPlacement
     let offset: CGPoint
     let padding: CGFloat
+    let maxWidth: CGFloat?
     let content: (([ChartAnnotationContext]) -> AnyView)?
 
     @State private var tooltipSize: CGSize = .zero
@@ -694,17 +718,18 @@ private struct ChartAnnotationTooltipOverlay: View {
     var body: some View {
         if let anchor = ChartTooltipLayout.anchor(for: annotations.map(\.position)) {
             resolvedContent
-                .fixedSize()
+                .frame(maxWidth: maxWidth, alignment: .leading)
+                .fixedSize(horizontal: maxWidth == nil, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(
-                    ChartTooltipLayout.position(
+                    ChartTooltipLayout.resolve(
                         anchor: anchor,
                         tooltipSize: tooltipSize,
                         canvasSize: canvasSize,
                         placement: placement,
                         offset: offset,
                         padding: padding
-                    )
+                    ).position
                 )
         }
     }

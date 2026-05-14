@@ -10,6 +10,49 @@ import SwiftUI
 
 public struct AnnotationRenderer {
 
+    // MARK: - Range bands
+
+    public static func drawRanges<YScale: Scale>(
+        into context: inout GraphicsContext,
+        size: CGSize,
+        annotations: [RangeAnnotation],
+        activeYScale: YScale
+    ) where YScale.InputType == Double, YScale.OutputType == CGFloat {
+
+        for annotation in annotations {
+            let lowerY = size.height - activeYScale.scale(annotation.yRange.lowerBound)
+            let upperY = size.height - activeYScale.scale(annotation.yRange.upperBound)
+            guard lowerY.isFinite, upperY.isFinite else { continue }
+
+            let minY = min(lowerY, upperY)
+            let maxY = max(lowerY, upperY)
+            guard maxY >= 0, minY <= size.height else { continue }
+
+            let rect = CGRect(
+                x: 0,
+                y: max(minY, 0),
+                width: size.width,
+                height: min(maxY, size.height) - max(minY, 0)
+            )
+            guard rect.height > 0 else { continue }
+            context.fill(Path(rect), with: .color(annotation.color.opacity(annotation.opacity)))
+
+            if annotation.showsLabel, let label = annotation.label {
+                let text = Text(label)
+                    .font(annotation.labelFont)
+                    .foregroundColor(annotation.labelColor)
+                context.draw(
+                    text,
+                    at: CGPoint(
+                        x: min(max(annotation.labelXPosition, 0), 1) * size.width,
+                        y: rect.midY + annotation.labelYOffset
+                    ),
+                    anchor: annotation.labelAnchor
+                )
+            }
+        }
+    }
+
     // MARK: - Horizontal lines
 
     public static func drawHorizontal<YScale: Scale>(

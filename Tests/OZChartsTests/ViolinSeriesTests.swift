@@ -59,6 +59,26 @@ final class ViolinSeriesTests: XCTestCase {
         XCTAssertLessThan(first, 1)
     }
 
+    func testDeterministicJitterIsStableForKnownID() {
+        let series = makeSeries()
+        let id = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+
+        XCTAssertEqual(series.deterministicJitter(for: id), 0.010, accuracy: 0.0001)
+    }
+
+    func testInterpolatedDensityUsesNearestSamples() {
+        let series = makeSeries()
+        let samples = [
+            (y: 0.0, density: 0.2),
+            (y: 10.0, density: 0.8),
+            (y: 20.0, density: 0.4)
+        ]
+
+        XCTAssertEqual(series.interpolatedDensity(at: -2, samples: samples), 0.2, accuracy: 0.0001)
+        XCTAssertEqual(series.interpolatedDensity(at: 5, samples: samples), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(series.interpolatedDensity(at: 20, samples: samples), 0.4, accuracy: 0.0001)
+    }
+
     private func makeSeries() -> ViolinSeries<GroupedPoint2D<Group>> {
         ViolinSeries(
             data: [],

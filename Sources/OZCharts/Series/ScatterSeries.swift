@@ -15,7 +15,7 @@ import SwiftUI
 public struct ScatterSeries<P: ChartDataPoint>: ChartSeriesProtocol
 where P.XValue == Double, P.YValue == Double {
 
-    public let id = UUID()
+    public let id: UUID
     public var data: [P]
     public var zIndex: Int
     public var animation: ChartAnimationStyle
@@ -30,6 +30,7 @@ where P.XValue == Double, P.YValue == Double {
 
     public init(
         data: [P],
+        id: UUID = UUID(),
         color: Color              = .purple,
         label: String?            = nil,
         pointSize: CGFloat        = 8,
@@ -39,6 +40,7 @@ where P.XValue == Double, P.YValue == Double {
         animation: ChartAnimationStyle = .none,
         zIndex: Int               = 0
     ) {
+        self.id          = id
         self.data        = data
         self.label       = label
         self.color       = color

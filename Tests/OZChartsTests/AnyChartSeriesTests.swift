@@ -37,6 +37,17 @@ final class AnyChartSeriesTests: XCTestCase {
         XCTAssertNil(line.legendItem)
     }
 
+    func testSeriesInitializersAcceptStableIDs() {
+        let id = UUID()
+        let points = [Point2D(x: 0, y: 10), Point2D(x: 1, y: 20)]
+
+        XCTAssertEqual(LineSeries(data: points, id: id, color: .blue).id, id)
+        XCTAssertEqual(AreaSeries(data: points, id: id, color: .blue).id, id)
+        XCTAssertEqual(BarSeries(data: points, id: id).id, id)
+        XCTAssertEqual(ScatterSeries(data: points, id: id).id, id)
+        XCTAssertEqual(DonutSeries(data: points, id: id, colors: [.blue]).id, id)
+    }
+
     func testStaticSeriesDoNotOptIntoAnimatableOverlayByDefault() {
         let points = [Point2D(x: 0, y: 10), Point2D(x: 1, y: 20)]
         let donut = DonutSeries(data: points, colors: [.blue, .green])

@@ -19,11 +19,12 @@ public protocol ChartDataPoint: Identifiable, Equatable {
 // MARK: - Concrete types
 
 public struct Point2D: ChartDataPoint {
-    public let id = UUID()
+    public let id: UUID
     public var x: Double
     public var y: Double
 
-    public init(x: Double, y: Double) {
+    public init(id: UUID = UUID(), x: Double, y: Double) {
+        self.id = id
         self.x = x
         self.y = y
     }
@@ -35,12 +36,13 @@ public protocol GroupedChartDataPoint: ChartDataPoint {
 }
 
 public struct GroupedPoint2D<GroupID: Hashable>: GroupedChartDataPoint {
-    public let id = UUID()
+    public let id: UUID
     public var x: Double
     public var y: Double
     public var group: GroupID
 
-    public init(x: Double, y: Double, group: GroupID) {
+    public init(id: UUID = UUID(), x: Double, y: Double, group: GroupID) {
+        self.id = id
         self.x = x
         self.y = y
         self.group = group

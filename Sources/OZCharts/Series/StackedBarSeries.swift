@@ -11,12 +11,17 @@ import SwiftUI
 struct StackedBarSegmentLayout<GroupID: Hashable> {
     let group: GroupID
     let rect: CGRect
+    let rowValue: Double
+    let rowEndX: CGFloat
+    let segmentValue: Double
+    let pointID: UUID?
+    let rowYValue: Double
 }
 
 public struct StackedBarSeries<P: GroupedChartDataPoint>: ChartSeriesProtocol
 where P.XValue == Double, P.YValue == Double {
 
-    public let id = UUID()
+    public let id: UUID
     public var data: [P]
     public var zIndex: Int
     public var animation: ChartAnimationStyle
@@ -26,23 +31,31 @@ where P.XValue == Double, P.YValue == Double {
     public var segmentGap: CGFloat
     public var stackOrder: [P.GroupID]
     public var colorMapper: (P.GroupID) -> Color
+    public var fillStyleMapper: ((P.GroupID) -> ChartFillStyle)?
     public var groupLabel: ((P.GroupID) -> String?)?
+    public var valueLabelStyle: ChartValueLabelStyle?
 
     public init(
         data: [P],
+        id: UUID = UUID(),
         stackOrder: [P.GroupID],
         colorMapper: @escaping (P.GroupID) -> Color,
+        fillStyleMapper: ((P.GroupID) -> ChartFillStyle)? = nil,
         groupLabel: ((P.GroupID) -> String?)? = nil,
+        valueLabelStyle: ChartValueLabelStyle? = nil,
         barHeight: CGFloat             = 28,
         cornerRadius: CGFloat          = 4,
         segmentGap: CGFloat            = 2,
         animation: ChartAnimationStyle = .none,
         zIndex: Int                    = 0
     ) {
+        self.id           = id
         self.data         = data
         self.stackOrder   = stackOrder
         self.colorMapper  = colorMapper
+        self.fillStyleMapper = fillStyleMapper
         self.groupLabel   = groupLabel
+        self.valueLabelStyle = valueLabelStyle
         self.barHeight    = barHeight
         self.cornerRadius = cornerRadius
         self.segmentGap   = segmentGap
@@ -64,28 +77,56 @@ where P.XValue == Double, P.YValue == Double {
         size: CGSize
     ) {
         guard !contexts.isEmpty else { return }
-        for segment in segmentLayouts(contexts: contexts) {
+        let layouts = segmentLayouts(contexts: contexts)
+        for segment in layouts {
             let path = Path(roundedRect: segment.rect, cornerRadius: cornerRadius)
-            context.fill(path, with: .color(colorMapper(segment.group)))
+            let style = fillStyleMapper?(segment.group) ?? .color(colorMapper(segment.group))
+            context.fill(path, with: style, in: segment.rect)
+        }
+
+        guard let valueLabelStyle, valueLabelStyle.position != .hidden else { return }
+        let rowLabels = Dictionary(grouping: layouts, by: { $0.rect.midY }).compactMap { _, row -> StackedBarSegmentLayout<P.GroupID>? in
+            row.max { $0.rowEndX < $1.rowEndX }
+        }
+        for row in rowLabels {
+            let text = Text(valueLabelStyle.formatter(row.rowValue))
+                .font(valueLabelStyle.font)
+                .foregroundColor(valueLabelStyle.color)
+            let x: CGFloat
+            switch valueLabelStyle.position {
+            case .hidden:
+                continue
+            case .inside:
+                x = max(row.rect.minX + 8, row.rowEndX - 22)
+            case .outside:
+                x = row.rowEndX + 24
+            }
+            context.draw(text, at: CGPoint(x: x, y: row.rect.midY), anchor: .center)
         }
     }
 
     func segmentLayouts(contexts: [ChartPointContext<P>]) -> [StackedBarSegmentLayout<P.GroupID>] {
         guard !contexts.isEmpty else { return [] }
-        var rows: [Double: [(group: P.GroupID, value: Double, screenY: CGFloat)]] = [:]
+        var rows: [Double: [P.GroupID: (value: Double, screenY: CGFloat, pointID: UUID?)]] = [:]
         for ctx in contexts {
             let p = ctx.originalPoint
-            rows[p.y, default: []].append((p.group, p.x, ctx.position.y))
+            let existing = rows[p.y, default: [:]][p.group]
+            rows[p.y, default: [:]][p.group] = (
+                value: (existing?.value ?? 0) + p.x,
+                screenY: existing?.screenY ?? ctx.position.y,
+                pointID: existing?.pointID ?? p.id
+            )
         }
         let baselineX = contexts.first?.scaleX(0) ?? 0
         var layouts: [StackedBarSegmentLayout<P.GroupID>] = []
 
-        for (_, segments) in rows {
+        for (rowYValue, segmentsByGroup) in rows {
             let ordered = stackOrder.compactMap { g in
-                segments.first(where: { $0.group == g })
+                segmentsByGroup[g].map { (group: g, value: $0.value, screenY: $0.screenY, pointID: $0.pointID) }
             }
             guard let firstSeg = ordered.first else { continue }
             let rowY = firstSeg.screenY
+            let rowValue = ordered.map(\.value).reduce(0, +)
             var cursorX: CGFloat = baselineX
 
             for seg in ordered {
@@ -103,11 +144,52 @@ where P.XValue == Double, P.YValue == Double {
                     width: drawWidth,
                     height: barHeight
                 )
-                layouts.append(StackedBarSegmentLayout(group: seg.group, rect: rect))
+                let rowEndX = contexts.first?.scaleX(rowValue) ?? cursorX + drawWidth
+                layouts.append(
+                    StackedBarSegmentLayout(
+                        group: seg.group,
+                        rect: rect,
+                        rowValue: rowValue,
+                        rowEndX: rowEndX,
+                        segmentValue: seg.value,
+                        pointID: seg.pointID,
+                        rowYValue: rowYValue
+                    )
+                )
 
                 cursorX += widthPx
             }
         }
         return layouts
+    }
+
+    public func selectionElements(
+        contexts: [ChartPointContext<P>],
+        size: CGSize
+    ) -> [ChartElementContext] {
+        segmentLayouts(contexts: contexts).enumerated().map { index, segment in
+            let label = groupLabel?(segment.group)
+            let elementID = segment.pointID ?? UUID()
+            let payload = ChartSelectedElement(
+                elementID: elementID,
+                kind: .stackedBarSegment,
+                seriesID: id,
+                pointID: segment.pointID,
+                segmentIndex: index,
+                groupLabel: label ?? String(describing: segment.group),
+                label: label,
+                x: segment.segmentValue,
+                y: segment.rowYValue,
+                value: segment.segmentValue,
+                position: CGPoint(x: segment.rect.midX, y: segment.rect.midY),
+                bounds: segment.rect
+            )
+
+            return ChartElementContext(
+                payload: payload,
+                hitShape: .rect(segment.rect),
+                zIndex: zIndex
+            )
+        }
     }
 }

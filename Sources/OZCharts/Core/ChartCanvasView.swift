@@ -33,6 +33,7 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
     let yAxes: [YAxisConfig]
     let canvasRenderOrder: [CanvasLayer]
 
+    let rangeAnnotations: [RangeAnnotation]
     let horizontalAnnotations: [HorizontalAnnotation]
     let visiblePointAnnotations: [PointAnnotation<Double, Double>]
 
@@ -44,6 +45,7 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
     let tooltipPlacement: ChartTooltipPlacement
     let tooltipOffset: CGPoint
     let tooltipPadding: CGFloat
+    let tooltipMaxWidth: CGFloat?
     @ViewBuilder let tooltipContent: ([ChartPointContext<Point>]) -> TooltipContent
 
     var body: some View {
@@ -59,6 +61,13 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
                                 into: &context, size: size,
                                 xAxes: xAxes, yAxes: yAxes,
                                 activeXScale: activeXScale, activeYScale: activeYScale
+                            )
+
+                        case .rangeAnnotations:
+                            AnnotationRenderer.drawRanges(
+                                into: &context, size: size,
+                                annotations: rangeAnnotations,
+                                activeYScale: activeYScale
                             )
 
                         case .horizontalAnnotations:
@@ -117,11 +126,11 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
                         placement: tooltipPlacement,
                         offset: tooltipOffset,
                         padding: tooltipPadding,
+                        maxWidth: tooltipMaxWidth,
                         content: tooltipContent
                     )
                 }
             }
-            .clipped()
         }
     }
 }
@@ -133,6 +142,7 @@ where Point.XValue == Double, Point.YValue == Double {
     let placement: ChartTooltipPlacement
     let offset: CGPoint
     let padding: CGFloat
+    let maxWidth: CGFloat?
     let content: ([ChartPointContext<Point>]) -> Content
 
     @State private var tooltipSize: CGSize = .zero
@@ -140,17 +150,18 @@ where Point.XValue == Double, Point.YValue == Double {
     var body: some View {
         if let anchor = ChartTooltipLayout.anchor(for: points) {
             content(points)
-                .fixedSize()
+                .frame(maxWidth: maxWidth, alignment: .leading)
+                .fixedSize(horizontal: maxWidth == nil, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(
-                    ChartTooltipLayout.position(
+                    ChartTooltipLayout.resolve(
                         anchor: anchor,
                         tooltipSize: tooltipSize,
                         canvasSize: canvasSize,
                         placement: placement,
                         offset: offset,
                         padding: padding
-                    )
+                    ).position
                 )
         }
     }

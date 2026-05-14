@@ -8,6 +8,7 @@
 
 public enum CanvasLayer: Hashable {
     case grid
+    case rangeAnnotations
     case horizontalAnnotations
     case pointAnnotations
     case coreChart

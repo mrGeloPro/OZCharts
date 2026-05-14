@@ -30,7 +30,7 @@ final class ChartTooltipLayoutTests: XCTestCase {
     }
 
     func testAutomaticPlacementPrefersTopWhenThereIsRoom() {
-        let position = ChartTooltipLayout.position(
+        let result = ChartTooltipLayout.resolve(
             anchor: CGPoint(x: 100, y: 100),
             tooltipSize: CGSize(width: 40, height: 20),
             canvasSize: CGSize(width: 200, height: 200),
@@ -39,8 +39,10 @@ final class ChartTooltipLayoutTests: XCTestCase {
             padding: 8
         )
 
-        XCTAssertEqual(position.x, 100)
-        XCTAssertEqual(position.y, 90)
+        XCTAssertEqual(result.position.x, 100)
+        XCTAssertEqual(result.position.y, 90)
+        XCTAssertEqual(result.attachment, .top)
+        XCTAssertFalse(result.wasClamped)
     }
 
     func testPlacementClampsTooltipIntoCanvas() {
@@ -55,5 +57,47 @@ final class ChartTooltipLayoutTests: XCTestCase {
 
         XCTAssertEqual(position.x, 48)
         XCTAssertEqual(position.y, 28)
+    }
+
+    func testAutomaticPlacementPrefersBottomWhenTopHasNoRoom() {
+        let result = ChartTooltipLayout.resolve(
+            anchor: CGPoint(x: 100, y: 12),
+            tooltipSize: CGSize(width: 70, height: 50),
+            canvasSize: CGSize(width: 200, height: 100),
+            placement: .automatic,
+            offset: .zero,
+            padding: 8
+        )
+
+        XCTAssertEqual(result.attachment, .bottom)
+        XCTAssertFalse(result.wasClamped)
+    }
+
+    func testAutomaticPlacementChoosesCandidateWithLeastOverflowWhenNoneFits() {
+        let result = ChartTooltipLayout.resolve(
+            anchor: CGPoint(x: 180, y: 12),
+            tooltipSize: CGSize(width: 70, height: 50),
+            canvasSize: CGSize(width: 200, height: 100),
+            placement: .automatic,
+            offset: .zero,
+            padding: 8
+        )
+
+        XCTAssertEqual(result.attachment, .leading)
+        XCTAssertTrue(result.wasClamped)
+    }
+
+    func testFixedPlacementCanKeepWideTooltipInsideCanvas() {
+        let position = ChartTooltipLayout.position(
+            anchor: CGPoint(x: 0, y: 0),
+            tooltipSize: CGSize(width: 188, height: 92),
+            canvasSize: CGSize(width: 260, height: 240),
+            placement: .fixed(CGPoint(x: 142, y: 100)),
+            offset: .zero,
+            padding: 8
+        )
+
+        XCTAssertEqual(position.x, 142)
+        XCTAssertEqual(position.y, 100)
     }
 }

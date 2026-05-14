@@ -342,8 +342,8 @@ struct DonutScoreDemoView: View {
     ]
 
     let legend: [(String, Double, Color)] = [
-        ("Basic", 85.2, DemoColors.purple),
-        ("Bonus", 11.3, DemoColors.pink),
+        ("Basic", 85.2, DemoColors.cyan),
+        ("Bonus", 11.3, DemoColors.purple),
         ("Streak", 3.5, .yellow)
     ]
 
@@ -356,8 +356,22 @@ struct DonutScoreDemoView: View {
                             DonutSeries(
                                 data: mockData,
                                 colors: legend.map(\.2),
-                                thickness: 34,
-                                gapAngle: .degrees(6),
+                                segmentStyles: [
+                                    DonutSegmentStyle(
+                                        fill: .gradient([DemoColors.cyan, DemoColors.cyan.opacity(0.78)]),
+                                        shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.28), radius: 8)
+                                    ),
+                                    DonutSegmentStyle(
+                                        fill: .gradient([DemoColors.purple, DemoColors.purple.opacity(0.78)]),
+                                        explodedOffset: 10
+                                    ),
+                                    DonutSegmentStyle(
+                                        fill: .gradient([.yellow, DemoColors.orange]),
+                                        explodedOffset: 12
+                                    )
+                                ],
+                                thickness: 38,
+                                gapAngle: .degrees(9),
                                 startAngle: .degrees(-90),
                                 lineCap: .butt
                             )
@@ -371,7 +385,7 @@ struct DonutScoreDemoView: View {
                         isVerticalScrollEnabled: false,
                         isVerticalZoomEnabled: false
                     ) { _ in EmptyView() }
-                    .frame(height: 290)
+                    .frame(height: 260)
 
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(legend, id: \.0) { item in
@@ -413,7 +427,14 @@ struct HeightDemoView: View {
                             LineSeries(
                                 data: mockData,
                                 color: DemoColors.purple,
-                                lineWidth: 3
+                                lineWidth: 4,
+                                interpolation: .monotone,
+                                strokeStyle: .gradient([DemoColors.purple, DemoColors.pink], startPoint: .leading, endPoint: .trailing),
+                                shadow: ChartShadowStyle(color: DemoColors.purple.opacity(0.36), radius: 8),
+                                area: AreaStyle(
+                                    fillStyle: .gradient([DemoColors.purple.opacity(0.34), DemoColors.purple.opacity(0.02)]),
+                                    baseline: 0
+                                )
                             )
                         ],
                         xScale: LinearScale(domain: 1...20),
@@ -495,12 +516,30 @@ struct HeightDemoView: View {
 enum ViolinGroup: Hashable { case result, best }
 
 struct AccuracyDemoView: View {
-    let mockData: [GroupedPoint2D<ViolinGroup>] = (0...150).map { i in
-        let group: ViolinGroup = i % 2 == 0 ? .result : .best
-        let x = group == .result ? Double.random(in: 10...48) : Double.random(in: 52...90)
-        let y = Double.random(in: 0...1) > 0.3 ? Double.random(in: 100...140) : Double.random(in: 80...200)
-        return GroupedPoint2D(x: x, y: y, group: group)
-    }
+    let mockData: [GroupedPoint2D<ViolinGroup>] = {
+        var rng = SystemRandomSource(seed: 7_120)
+        var points: [GroupedPoint2D<ViolinGroup>] = []
+
+        for i in 0..<72 {
+            let core = 500 + rng.gauss() * 42
+            let tail = rng.uniform() > 0.72 ? 650 + rng.gauss() * 70 : core
+            let y = min(900, max(330, tail))
+            let x = 50 - 5 - rng.uniform() * 22
+            points.append(GroupedPoint2D(id: UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", i))")!, x: x, y: y, group: .result))
+        }
+
+        for i in 0..<48 {
+            let core = 462 + rng.gauss() * 30
+            let tail = rng.uniform() > 0.82 ? 545 + rng.gauss() * 24 : core
+            let y = min(900, max(330, tail))
+            let x = 50 + 5 + rng.uniform() * 20
+            points.append(GroupedPoint2D(id: UUID(uuidString: "00000000-0000-0000-0001-\(String(format: "%012d", i))")!, x: x, y: y, group: .best))
+        }
+
+        return points
+    }()
+
+    private let deltaTicks: [Double] = [330, 400, 500, 600, 700, 800, 900]
 
     var body: some View {
         ScrollView {
@@ -513,24 +552,50 @@ struct AccuracyDemoView: View {
                                 centerX: 50,
                                 maxHalfWidth: 40,
                                 sideMapper: { $0 == .result ? .left : .right },
-                                colorMapper: { $0 == .result ? DemoColors.cyan : DemoColors.purple }
+                                colorMapper: { $0 == .result ? DemoColors.cyan : DemoColors.purple },
+                                fillStyleMapper: { group in
+                                    group == .result
+                                        ? .gradient([DemoColors.cyan.opacity(0.58), DemoColors.cyan.opacity(0.24)], startPoint: .leading, endPoint: .trailing)
+                                        : .gradient([DemoColors.purple.opacity(0.58), DemoColors.purple.opacity(0.24)], startPoint: .trailing, endPoint: .leading)
+                                },
+                                shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.18), radius: 8)
                             )
                         ],
                         xScale: LinearScale(domain: 0...100),
-                        yScale: LinearScale(domain: 60...240),
+                        yScale: LinearScale(domain: 330...900),
                         xAxes: [
-                            XAxisConfig(position: .bottom, tickCount: 0, labelFormatter: { _ in "" })
+                            XAxisConfig(position: .bottom, tickCount: 0, labelFormatter: { _ in "" }, height: 34, title: "ΔT distributions", titleColor: .white)
                         ],
                         yAxes: [
-                            YAxisConfig(position: .leading, tickCount: 7, labelFormatter: { "\(Int($0))" }),
-                            YAxisConfig(position: .trailing, tickCount: 7, labelFormatter: { bpm in
-                                if bpm == 0 { return "0" }
-                                let ms = 60000.0 / bpm
-                                return "\(Int(ms))"
-                            })
+                            YAxisConfig(position: .leading, explicitValues: deltaTicks, labelFormatter: { "\(Int($0))" }, width: 62, title: "ΔT (ms)", titleColor: .white),
+                            YAxisConfig(
+                                position: .trailing,
+                                explicitValues: deltaTicks,
+                                axisTransform: AxisTransform { delta in
+                                    Int(delta.rounded()) == 330 ? 200 : 60_000 / delta
+                                },
+                                labelFormatter: { "\(Int($0))" },
+                                width: 74,
+                                title: "Rhythm (bpm)",
+                                titleColor: .white
+                            )
+                        ],
+                        rangeAnnotations: [
+                            RangeAnnotation(
+                                yRange: 496...504,
+                                label: "Target 120 bpm",
+                                color: .yellow,
+                                opacity: 0,
+                                labelColor: .yellow,
+                                labelFont: .caption2.weight(.semibold),
+                                showsLabel: true,
+                                labelXPosition: 0.57,
+                                labelAnchor: .leading,
+                                labelYOffset: -16
+                            )
                         ],
                         horizontalAnnotations: [
-                            HorizontalAnnotation(yValue: 120, label: "Target 120 BPM", color: .yellow)
+                            HorizontalAnnotation(yValue: 500, label: "Target 120 bpm", color: .yellow)
                         ],
                         isHorizontalScrollEnabled: false,
                         isHorizontalZoomEnabled: false,
@@ -551,6 +616,7 @@ struct AccuracyDemoView: View {
         .navigationTitle("Accuracy Overview")
         .navigationBarTitleDisplayMode(.inline)
     }
+
 }
 
 private struct SystemRandomSource {
@@ -573,28 +639,37 @@ private struct SystemRandomSource {
 
 // MARK: - Stacked Area Demo
 
+enum PointsLayer: Hashable { case basic, bonus, streak }
+
 struct PointsDistributionDemoView: View {
     struct LayerData {
         let basic:  [Point2D]
         let bonus:  [Point2D]
         let streak: [Point2D]
+        let stacked: [GroupedPoint2D<PointsLayer>]
     }
 
     let layers: LayerData = {
         var basic:  [Point2D] = []
         var bonus:  [Point2D] = []
         var streak: [Point2D] = []
+        var stacked: [GroupedPoint2D<PointsLayer>] = []
         let xValues: [Double] = [0, 1, 2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 17, 19, 21, 23, 25, 27, 28, 30, 32]
 
         for (i, x) in xValues.enumerated() {
             let basicY  = 60 + Double(i) * 18
-            let bonusY  = basicY + 40 + Double(i) * 3
-            let streakY = bonusY + 35 + Double(i) * 2
+            let bonusDelta = 40 + Double(i) * 3
+            let streakDelta = 35 + Double(i) * 2
+            let bonusY  = basicY + bonusDelta
+            let streakY = bonusY + streakDelta
             basic.append(Point2D(x: x, y: basicY))
             bonus.append(Point2D(x: x, y: bonusY))
             streak.append(Point2D(x: x, y: streakY))
+            stacked.append(GroupedPoint2D(x: x, y: basicY, group: .basic))
+            stacked.append(GroupedPoint2D(x: x, y: bonusDelta, group: .bonus))
+            stacked.append(GroupedPoint2D(x: x, y: streakDelta, group: .streak))
         }
-        return LayerData(basic: basic, bonus: bonus, streak: streak)
+        return LayerData(basic: basic, bonus: bonus, streak: streak, stacked: stacked)
     }()
 
     let legend: [(String, Color)] = [
@@ -609,33 +684,33 @@ struct PointsDistributionDemoView: View {
                 DemoChartPanel {
                     CartesianChartView(
                         series: [
-                            LineSeries(
-                                data: layers.streak,
-                                color: .yellow,
-                                lineWidth: 3,
+                            StackedAreaSeries(
+                                data: layers.stacked,
+                                stackOrder: [.basic, .bonus, .streak],
+                                colorMapper: { layer in
+                                    switch layer {
+                                    case .basic: return DemoColors.cyan
+                                    case .bonus: return DemoColors.purple
+                                    case .streak: return .yellow
+                                    }
+                                },
+                                fillStyleMapper: { layer in
+                                    switch layer {
+                                    case .basic:
+                                        return .gradient([DemoColors.cyan.opacity(0.36), DemoColors.cyan.opacity(0.10)])
+                                    case .bonus:
+                                        return .gradient([DemoColors.purple.opacity(0.38), DemoColors.purple.opacity(0.12)])
+                                    case .streak:
+                                        return .gradient([Color.yellow.opacity(0.34), DemoColors.orange.opacity(0.10)])
+                                    }
+                                },
                                 interpolation: .step,
-                                area: AreaStyle(fillColor: .yellow, fillOpacity: 0.35),
-                                zIndex: 0
-                            ),
-                            LineSeries(
-                                data: layers.bonus,
-                                color: DemoColors.purple,
                                 lineWidth: 3,
-                                interpolation: .step,
-                                area: AreaStyle(fillColor: DemoColors.purple, fillOpacity: 0.55),
-                                zIndex: 1
-                            ),
-                            LineSeries(
-                                data: layers.basic,
-                                color: DemoColors.cyan,
-                                lineWidth: 3,
-                                interpolation: .step,
-                                area: AreaStyle(fillColor: DemoColors.cyan, fillOpacity: 0.45),
-                                zIndex: 2
+                                shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.16), radius: 6)
                             )
                         ],
                         xScale: LinearScale(domain: 0...32),
-                        yScale: LinearScale(domain: 0...700),
+                        yScale: LinearScale(domain: 0...640),
                         xAxes: [
                             XAxisConfig(
                                 position: .bottom,
@@ -648,9 +723,9 @@ struct PointsDistributionDemoView: View {
                         yAxes: [
                             YAxisConfig(
                                 position: .leading,
+                                explicitValues: [0, 100, 200, 300, 400, 500, 600],
                                 gridColor: .gray.opacity(0.2),
                                 gridLineDash: [4, 4],
-                                tickCount: 8,
                                 labelFormatter: { "\(Int($0))" },
                                 showAxisLine: true
                             )
@@ -671,27 +746,33 @@ struct PointsDistributionDemoView: View {
 
 // MARK: - Stacked Bar Demo
 
-enum StarType: Hashable { case s1, s2, s3 }
+enum StarType: Hashable { case s1, s2, s3, remainder }
 
 struct StarAchievementDemoView: View {
+    @State private var selectedTooltipRow: Int? = nil
+
     /// y=0 Current, y=1 Last, y=2 Average, y=3 High score.
     let mockData: [GroupedPoint2D<StarType>] = [
         // Current
         GroupedPoint2D(x: 12, y: 0, group: .s1),
         GroupedPoint2D(x: 20, y: 0, group: .s2),
         GroupedPoint2D(x: 23, y: 0, group: .s3),
+        GroupedPoint2D(x: 0, y: 0, group: .remainder),
         // Last
         GroupedPoint2D(x: 10, y: 1, group: .s1),
         GroupedPoint2D(x: 18, y: 1, group: .s2),
         GroupedPoint2D(x: 14, y: 1, group: .s3),
+        GroupedPoint2D(x: 43, y: 1, group: .remainder),
         // Average
         GroupedPoint2D(x: 13, y: 2, group: .s1),
         GroupedPoint2D(x: 22, y: 2, group: .s2),
         GroupedPoint2D(x: 18, y: 2, group: .s3),
+        GroupedPoint2D(x: 32, y: 2, group: .remainder),
         // High score
         GroupedPoint2D(x: 10, y: 3, group: .s1),
         GroupedPoint2D(x: 20, y: 3, group: .s2),
-        GroupedPoint2D(x: 40, y: 3, group: .s3)
+        GroupedPoint2D(x: 40, y: 3, group: .s3),
+        GroupedPoint2D(x: 16, y: 3, group: .remainder)
     ]
 
     let yLabels: [Int: String] = [0: "Current", 1: "Last", 2: "Average", 3: "High score"]
@@ -705,12 +786,27 @@ struct StarAchievementDemoView: View {
                         series: [
                             StackedBarSeries(
                                 data: mockData,
-                                stackOrder: [.s1, .s2, .s3],
+                                stackOrder: [.s1, .s2, .s3, .remainder],
                                 colorMapper: { star in
                                     switch star {
                                     case .s1: return .yellow
-                                    case .s2: return DemoColors.orange
-                                    case .s3: return DemoColors.purple.opacity(0.55)
+                                    case .s2: return Color(red: 1.00, green: 0.72, blue: 0.00)
+                                    case .s3: return DemoColors.orange
+                                    case .remainder: return DemoColors.surface
+                                    }
+                                },
+                                fillStyleMapper: { star in
+                                    switch star {
+                                    case .s1: return .gradient([.yellow, Color.yellow.opacity(0.86)], startPoint: .leading, endPoint: .trailing)
+                                    case .s2: return .gradient([Color.yellow.opacity(0.92), DemoColors.orange], startPoint: .leading, endPoint: .trailing)
+                                    case .s3: return .gradient([DemoColors.orange, Color.orange], startPoint: .leading, endPoint: .trailing)
+                                    case .remainder:
+                                        return .stripes(
+                                            foreground: Color.white.opacity(0.12),
+                                            background: DemoColors.surface.opacity(0.70),
+                                            lineWidth: 3,
+                                            spacing: 9
+                                        )
                                     }
                                 },
                                 barHeight: 26,
@@ -718,13 +814,13 @@ struct StarAchievementDemoView: View {
                                 segmentGap: 2
                             )
                         ],
-                        xScale: LinearScale(domain: 0...90),
+                        xScale: LinearScale(domain: 0...100),
                         yScale: LinearScale(domain: -0.8...3.8),
                         xAxes: [
                             XAxisConfig(
                                 position: .bottom,
                                 showGrid: false,
-                                tickCount: 10,
+                                explicitValues: stride(from: 0.0, through: 90.0, by: 10.0).map { $0 },
                                 labelFormatter: { "\(Int($0))" },
                                 showAxisLine: true
                             )
@@ -735,24 +831,46 @@ struct StarAchievementDemoView: View {
                                 showGrid: false,
                                 explicitValues: [0, 1, 2, 3],
                                 tickCount: 4,
-                                labelFormatter: { [yLabels] v in
-                                    yLabels[Int(v.rounded())] ?? ""
-                                },
+                                labelFormatter: { [yLabels] v in yLabels[Int(v.rounded())] ?? "" },
                                 width: 78,
-                                showAxisLine: true
+                                showAxisLine: true,
+                                customLabelBuilder: { [yLabels] value in
+                                    let index = Int(value.rounded())
+                                    let title = yLabels[index] ?? ""
+                                    let display = index == 3 ? "High\nscore" : title
+                                    return AnyView(
+                                        Text(display)
+                                            .font(.caption2)
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.trailing)
+                                            .lineLimit(2)
+                                            .fixedSize(horizontal: true, vertical: true)
+                                    )
+                                }
                             )
                         ],
+                        customViewAnnotations: scoreLabels,
                         isHorizontalScrollEnabled: false,
                         isHorizontalZoomEnabled: false,
                         isVerticalScrollEnabled: false,
                         isVerticalZoomEnabled: false
-                    ) { _ in EmptyView() }
+                    ) { points in
+                        StarAchievementTooltip(
+                            rowTitle: selectedRowTitle(from: points),
+                            lines: selectedStarLines(from: points)
+                        )
+                    }
+                    .chartSelection(.nearestPoint, behavior: .tapAndDrag, hitboxRadius: 80, clearsOnEnd: false) { points in
+                        selectedTooltipRow = selectedRow(from: points)
+                    }
+                    .chartTooltipPlacement(.fixed(tooltipAnchor(for: selectedTooltipRow)), padding: 8)
+                    .chartTooltipOffset(.zero)
                     .frame(height: 340)
 
                     DemoLegend(items: [
                         ("Star 1", .yellow),
-                        ("Star 2", DemoColors.orange),
-                        ("Star 3", DemoColors.purple)
+                        ("Star 2", Color(red: 1.00, green: 0.72, blue: 0.00)),
+                        ("Star 3", DemoColors.orange)
                     ])
                 }
             }
@@ -761,6 +879,112 @@ struct StarAchievementDemoView: View {
         .demoScreenBackground()
         .navigationTitle("Star Achievement")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var scoreLabels: [CustomViewAnnotation<Double, Double>] {
+        totals.map { row, score in
+            CustomViewAnnotation(x: 94, y: Double(row)) {
+                Text(String(format: "%.2f", score))
+                    .font(.caption.weight(.bold))
+                    .foregroundColor(.white)
+                    .fixedSize()
+            }
+        }
+    }
+
+    private func selectedRowTitle(from points: [ChartPointContext<GroupedPoint2D<StarType>>]) -> String {
+        guard let row = selectedRow(from: points) else { return "Result" }
+        return yLabels[row] ?? "Result"
+    }
+
+    private func selectedStarLines(from points: [ChartPointContext<GroupedPoint2D<StarType>>]) -> [String] {
+        guard let row = selectedRow(from: points) else { return [] }
+        let segments = visibleSegments(for: row)
+        var cumulative = 0.0
+
+        return segments.enumerated().map { index, item in
+            cumulative += item.value
+            let title = starTitle(for: item.group)
+            let minutesValue = index == 0 ? item.value / 10 : cumulative / 10
+            let suffix = index == 0 ? "" : " (total)"
+            return "\(title): \(String(format: "%.2f", minutesValue))min\(suffix)"
+        }
+    }
+
+    private func selectedRow(from points: [ChartPointContext<GroupedPoint2D<StarType>>]) -> Int? {
+        points.first.map { Int($0.originalPoint.y.rounded()) }
+    }
+
+    private func tooltipAnchor(for row: Int?) -> CGPoint {
+        switch row {
+        case 3: return CGPoint(x: 120, y: 72)
+        case 2: return CGPoint(x: 120, y: 132)
+        case 1: return CGPoint(x: 120, y: 192)
+        case 0: return CGPoint(x: 120, y: 240)
+        default: return CGPoint(x: 120, y: 132)
+        }
+    }
+
+    private func visibleSegments(for row: Int) -> [(group: StarType, value: Double)] {
+        mockData
+            .filter { Int($0.y.rounded()) == row && $0.group != .remainder }
+            .sorted { lhs, rhs in
+                starOrder(lhs.group) < starOrder(rhs.group)
+            }
+            .map { ($0.group, $0.x) }
+    }
+
+    private func starTitle(for star: StarType) -> String {
+        switch star {
+        case .s1: return "Star 1"
+        case .s2: return "Star 2"
+        case .s3: return "Star 3"
+        case .remainder: return ""
+        }
+    }
+
+    private func starOrder(_ star: StarType) -> Int {
+        switch star {
+        case .s1: return 0
+        case .s2: return 1
+        case .s3: return 2
+        case .remainder: return 3
+        }
+    }
+}
+
+private struct StarAchievementTooltip: View {
+    let rowTitle: String
+    let lines: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(rowTitle)
+                .font(.caption2.weight(.bold))
+            ForEach(lines, id: \.self) { line in
+                Text(line)
+                    .font(.caption2.weight(.semibold))
+            }
+        }
+        .frame(width: 156, alignment: .leading)
+        .chartCalloutStyle(.productLight)
+        .overlay(alignment: .top) {
+            TooltipTriangle()
+                .fill(Color.white)
+                .frame(width: 14, height: 8)
+                .offset(y: -7)
+        }
+    }
+}
+
+private struct TooltipTriangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 

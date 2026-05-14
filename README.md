@@ -14,7 +14,7 @@ A high-performance, fully customizable, and mathematically precise charting fram
 * **Hybrid layering:** Combine Canvas-rendered series with SwiftUI custom annotations.
 * **Auto domains and presets:** Start quickly with `.auto(...)`, nice ticks, collision-aware labels, `ChartTheme`, and axis presets.
 * **Interaction toolkit:** Selection modes, crosshair, selection behavior, and live tracking.
-* **Production helpers:** Legend, accessibility descriptors, LTTB downsampling, log/time/category scales, and smoke-tested rendering contracts.
+* **Production helpers:** Legend, accessibility descriptors, range annotations, event markers, LTTB downsampling, log/time/category scales, and smoke-tested rendering contracts.
 
 ## Installation (Swift Package Manager)
 
@@ -64,6 +64,11 @@ struct ContentView: View {
 
 ## Common Patterns
 
+For product integration, start with the [Integration Guide](Docs/IntegrationGuide.md).
+For recreating polished product charts, use [Product Chart Recipes](Docs/ProductCharts.md).
+For handoff readiness, use the [Delivery Checklist](Docs/DeliveryChecklist.md).
+For architectural risks and priorities, see the [Framework Review](Docs/FrameworkReview.md).
+
 ### Explicit Domains
 
 Use fixed domains when the visual range is part of the product design:
@@ -90,6 +95,20 @@ let cleanAxis = XAxisConfig(
 )
 ```
 
+Use `axisTransform` when chart geometry should stay in the source domain, but an axis should display derived units. This is useful for secondary axes such as ΔT in milliseconds on the left and rhythm in bpm on the right:
+
+```swift
+YAxisConfig(
+    position: .trailing,
+    explicitValues: [330, 400, 500, 600, 700, 800, 900],
+    axisTransform: AxisTransform { delta in
+        Int(delta.rounded()) == 330 ? 200 : 60_000 / delta
+    },
+    labelFormatter: { "\(Int($0))" },
+    title: "Rhythm (bpm)"
+)
+```
+
 ### Custom Annotations
 
 ```swift
@@ -97,6 +116,18 @@ CartesianChartView(
     series: [LineSeries(data: data, color: .blue)],
     xDomain: .auto(),
     yDomain: .auto(),
+    rangeAnnotations: [
+        RangeAnnotation(yRange: 70...180, label: "Target range", color: .green)
+    ],
+    eventMarkers: [
+        ChartEventMarker(
+            x: 2.4,
+            y: 145,
+            label: "Insulin 4U",
+            shape: .diamond,
+            color: .orange
+        )
+    ],
     pointAnnotations: [
         PointAnnotation(
             x: 2,
@@ -121,6 +152,10 @@ CartesianChartView(
     ]
 ) { _ in EmptyView() }
 ```
+
+Use `RangeAnnotation` for target bands such as glucose, heart-rate zones, latency SLOs, or portfolio guardrails. Use `ChartEventMarker` when the app has domain events and wants selectable chart markers without manually building `PointAnnotation` values.
+
+Range labels can be nudged away from dense data with `labelXPosition`, `labelAnchor`, and `labelYOffset`.
 
 Selectable annotations can show their own detail overlay without replacing the data-point tooltip:
 
@@ -269,9 +304,32 @@ For overlapping points, cycle one selected item at a time and keep the details v
     clearsOnEnd: false
 )
 .chartTooltipPlacement(.automatic, padding: 12)
+.chartTooltipMaxWidth(220)
 ```
 
 Tooltip placements: `.automatic`, `.top`, `.bottom`, `.leading`, `.trailing`, `.center`, `.fixed(CGPoint)`.
+`ChartSelectionState` keeps the old `selectedX` behavior for linked crosshair charts and also exposes `selectedPoints` with stable point ids, series ids, series indices, and domain values for richer product interactions.
+
+Non-point charts can publish selected visual elements:
+
+```swift
+.chartElementSelection { elements in
+    guard let element = elements.first else { return }
+    print(element.kind, element.label ?? "", element.value ?? 0)
+}
+```
+
+`ChartSelectedElement` is used by bars, stacked bar segments, and donut
+segments. It includes stable ids, series metadata, `bounds`, `position`,
+domain values, labels, and the element kind, which makes product callouts and
+external detail panels much easier to implement.
+
+When a series is created inside a SwiftUI `body`, pass a stable `id:` if
+selection, animation continuity, or linked chart state matters:
+
+```swift
+LineSeries(data: readings, id: glucoseSeriesID, color: .cyan)
+```
 
 ### Legend
 
@@ -331,6 +389,110 @@ LineSeries(
 )
 ```
 
+### Smooth Lines
+
+Use monotone interpolation when the line should be smooth without introducing artificial overshoot between measured values:
+
+```swift
+LineSeries(
+    data: glucoseReadings,
+    color: .green,
+    lineWidth: 3,
+    interpolation: .monotone
+)
+```
+
+Available interpolation modes are `.linear`, `.step`, and `.monotone`.
+
+### Product Styling
+
+Use reusable render styles when matching polished product charts:
+
+```swift
+LineSeries(
+    data: streaks,
+    color: .purple,
+    lineWidth: 4,
+    interpolation: .monotone,
+    strokeStyle: .gradient([.purple, .pink], startPoint: .leading, endPoint: .trailing),
+    shadow: ChartShadowStyle(color: .purple.opacity(0.35), radius: 8),
+    area: AreaStyle(
+        fillStyle: .gradient([.purple.opacity(0.34), .purple.opacity(0.02)]),
+        baseline: 0
+    )
+)
+```
+
+`ChartFillStyle` supports solid colors, linear gradients, and striped fills. Stripes are useful for remainder or unavailable segments in stacked bars.
+
+```swift
+StackedBarSeries(
+    data: achievementRows,
+    stackOrder: [.star1, .star2, .star3, .remainder],
+    colorMapper: palette.color,
+    fillStyleMapper: { group in
+        group == .remainder
+            ? .stripes(foreground: .white.opacity(0.14), background: .gray.opacity(0.2))
+            : .color(palette.color(group))
+    },
+    valueLabelStyle: ChartValueLabelStyle(position: .outside)
+)
+```
+
+Donut segments can be rounded, separated, gradient-filled, shadowed, and offset:
+
+```swift
+DonutSeries(
+    data: scoreShare,
+    colors: [.cyan, .purple, .yellow],
+    segmentStyles: [
+        DonutSegmentStyle(fill: .gradient([.cyan, .mint])),
+        DonutSegmentStyle(fill: .gradient([.purple, .pink]), explodedOffset: 10),
+        DonutSegmentStyle(fill: .gradient([.yellow, .orange]), explodedOffset: 14)
+    ],
+    segmentLabelMapper: { point in label(for: point) },
+    thickness: 42,
+    gapAngle: .degrees(7),
+    lineCap: .round
+)
+```
+
+Control donut spacing with `gapAngle`, per-segment `explodedOffset`,
+`thickness`, and `lineCap`. Use `segmentLabelMapper` when selection or
+accessibility should speak in product terms such as "Basic", "Bonus", or
+"Streak". Use smaller gaps for dashboard summaries and larger exploded offsets
+when the chart needs to match a product mockup with separated arcs.
+
+Use `StackedAreaSeries` when values are incremental and should accumulate visually by group:
+
+```swift
+StackedAreaSeries(
+    data: pointEvents,
+    stackOrder: [.basic, .bonus, .streak],
+    colorMapper: palette.color,
+    fillStyleMapper: palette.fill,
+    interpolation: .step
+)
+```
+
+### Real-World Event Data
+
+The demo app includes `DemoScenarios.json`, which models chart inputs as domain events instead of drawing coordinates. This is closer to how production apps usually receive data from an API:
+
+For product-style recreations of the demo charts, see [Product Chart Recipes](Docs/ProductCharts.md).
+
+```json
+{
+  "timestamp": "2026-04-24T07:10:00Z",
+  "kind": "insulin",
+  "value": 4.5,
+  "unit": "U",
+  "label": "Breakfast bolus"
+}
+```
+
+The demo adapter maps measured events into series points, maps domain events into `ChartEventMarker`, and maps target ranges into `RangeAnnotation`. The included scenarios cover glucose care, interval training, portfolio tracking, and API latency.
+
 ### Area And Bar Series
 
 ```swift
@@ -363,7 +525,7 @@ let dateAxis = XAxisConfig.date()
 
 ## Running the Demo App
 
-This repository includes a comprehensive `DemoApp` demonstrating advanced use cases like Hybrid Layering, Custom Axes, and Live Animations.
+This repository includes a comprehensive `DemoApp` demonstrating advanced use cases like Hybrid Layering, Custom Axes, Live Animations, and real-world JSON event streams.
 
 1. Clone the repository.
 2. Open `DemoApp/DemoApp.xcodeproj` in Xcode.

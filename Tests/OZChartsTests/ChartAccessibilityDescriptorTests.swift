@@ -36,4 +36,31 @@ final class ChartAccessibilityDescriptorTests: XCTestCase {
 
         XCTAssertEqual(value, "Value 42")
     }
+
+    func testDescriptorPrefersSelectedElementFormatter() {
+        let descriptor = ChartAccessibilityDescriptor<Point2D>(
+            label: "Score chart",
+            summary: "Score summary",
+            selectedValueFormatter: { _ in "Point value" },
+            selectedElementFormatter: { elements in
+                elements.first?.label.map { "Segment \($0)" }
+            }
+        )
+
+        let value = descriptor.value(
+            for: [],
+            selectedElements: [
+                ChartSelectedElement(
+                    elementID: UUID(),
+                    kind: .donutSegment,
+                    label: "Basic",
+                    value: 85.2,
+                    position: .zero,
+                    bounds: .zero
+                )
+            ]
+        )
+
+        XCTAssertEqual(value, "Segment Basic")
+    }
 }

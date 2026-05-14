@@ -11,6 +11,33 @@ import SwiftUI
 public enum XAxisPosition { case top, bottom }
 public enum YAxisPosition { case leading, trailing }
 
+// MARK: - AxisTransform
+
+public struct AxisTransform {
+    private let transform: (Double) -> Double
+
+    public init(_ transform: @escaping (Double) -> Double) {
+        self.transform = transform
+    }
+
+    public func callAsFunction(_ value: Double) -> Double {
+        transform(value)
+    }
+
+    public static let identity = AxisTransform { $0 }
+
+    public static func linear(multiplier: Double = 1, offset: Double = 0) -> AxisTransform {
+        AxisTransform { $0 * multiplier + offset }
+    }
+
+    public static func reciprocal(numerator: Double) -> AxisTransform {
+        AxisTransform { value in
+            guard value != 0 else { return 0 }
+            return numerator / value
+        }
+    }
+}
+
 // MARK: - XAxisConfig
 
 public struct XAxisConfig {
@@ -24,6 +51,7 @@ public struct XAxisConfig {
     public var gridLineWidth: CGFloat
     public var gridLineDash: [CGFloat]
     public var tickCount: Int
+    public var axisTransform: AxisTransform
     public var labelFormatter: (Double) -> String
     public var font: Font
     public var textColor: Color
@@ -36,6 +64,9 @@ public struct XAxisConfig {
     public var tickWidth: CGFloat
     public var labelSpacing: CGFloat
     public var customLabelBuilder: ((Double) -> AnyView)?
+    public var title: String?
+    public var titleFont: Font
+    public var titleColor: Color
 
     public init(
         position: XAxisPosition                 = .bottom,
@@ -48,6 +79,7 @@ public struct XAxisConfig {
         gridLineWidth: CGFloat                  = 1,
         gridLineDash: [CGFloat]                 = [],
         tickCount: Int                          = 5,
+        axisTransform: AxisTransform            = .identity,
         labelFormatter: @escaping (Double) -> String = { String(format: "%.0f", $0) },
         font: Font                              = .caption2,
         textColor: Color                        = .gray,
@@ -59,7 +91,10 @@ public struct XAxisConfig {
         tickColor: Color                        = .gray.opacity(0.5),
         tickWidth: CGFloat                      = 1,
         labelSpacing: CGFloat                   = 4,
-        customLabelBuilder: ((Double) -> AnyView)? = nil
+        customLabelBuilder: ((Double) -> AnyView)? = nil,
+        title: String?                          = nil,
+        titleFont: Font                         = .caption,
+        titleColor: Color                       = .gray
     ) {
         self.position           = position
         self.showGrid           = showGrid
@@ -71,6 +106,7 @@ public struct XAxisConfig {
         self.gridLineWidth      = gridLineWidth
         self.gridLineDash       = gridLineDash
         self.tickCount          = tickCount
+        self.axisTransform      = axisTransform
         self.labelFormatter     = labelFormatter
         self.font               = font
         self.textColor          = textColor
@@ -83,6 +119,9 @@ public struct XAxisConfig {
         self.tickWidth          = tickWidth
         self.labelSpacing       = labelSpacing
         self.customLabelBuilder = customLabelBuilder
+        self.title              = title
+        self.titleFont          = titleFont
+        self.titleColor         = titleColor
     }
 }
 
@@ -99,6 +138,7 @@ public struct YAxisConfig {
     public var gridLineWidth: CGFloat
     public var gridLineDash: [CGFloat]
     public var tickCount: Int
+    public var axisTransform: AxisTransform
     public var labelFormatter: (Double) -> String
     public var font: Font
     public var textColor: Color
@@ -111,6 +151,9 @@ public struct YAxisConfig {
     public var tickWidth: CGFloat
     public var labelSpacing: CGFloat
     public var customLabelBuilder: ((Double) -> AnyView)?
+    public var title: String?
+    public var titleFont: Font
+    public var titleColor: Color
 
     public init(
         position: YAxisPosition                 = .leading,
@@ -123,6 +166,7 @@ public struct YAxisConfig {
         gridLineWidth: CGFloat                  = 1,
         gridLineDash: [CGFloat]                 = [],
         tickCount: Int                          = 5,
+        axisTransform: AxisTransform            = .identity,
         labelFormatter: @escaping (Double) -> String = { String(format: "%.0f", $0) },
         font: Font                              = .caption2,
         textColor: Color                        = .gray,
@@ -134,7 +178,10 @@ public struct YAxisConfig {
         tickColor: Color                        = .gray.opacity(0.5),
         tickWidth: CGFloat                      = 1,
         labelSpacing: CGFloat                   = 4,
-        customLabelBuilder: ((Double) -> AnyView)? = nil 
+        customLabelBuilder: ((Double) -> AnyView)? = nil,
+        title: String?                          = nil,
+        titleFont: Font                         = .caption,
+        titleColor: Color                       = .gray
     ) {
         self.position           = position
         self.showGrid           = showGrid
@@ -146,6 +193,7 @@ public struct YAxisConfig {
         self.gridLineWidth      = gridLineWidth
         self.gridLineDash       = gridLineDash
         self.tickCount          = tickCount
+        self.axisTransform      = axisTransform
         self.labelFormatter     = labelFormatter
         self.font               = font
         self.textColor          = textColor
@@ -158,5 +206,8 @@ public struct YAxisConfig {
         self.tickWidth          = tickWidth
         self.labelSpacing       = labelSpacing
         self.customLabelBuilder = customLabelBuilder
+        self.title              = title
+        self.titleFont          = titleFont
+        self.titleColor         = titleColor
     }
 }

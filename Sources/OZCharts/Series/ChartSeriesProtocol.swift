@@ -26,6 +26,11 @@ public protocol ChartSeriesProtocol: Identifiable {
         contexts: [ChartPointContext<Point>],
         size: CGSize
     )
+
+    func selectionElements(
+        contexts: [ChartPointContext<Point>],
+        size: CGSize
+    ) -> [ChartElementContext]
     
     @ViewBuilder
     func animatableView(
@@ -45,6 +50,7 @@ where Point.XValue == Double, Point.YValue == Double {
     public let legendItems: [ChartLegendItem]
 
     private let renderBody: (inout GraphicsContext, [ChartPointContext<Point>], CGSize) -> Void
+    private let selectionElementsBody: ([ChartPointContext<Point>], CGSize) -> [ChartElementContext]
     private let animatableBody: ([ChartPointContext<Point>], [ChartPointContext<Point>], CGFloat) -> AnyView
     public let usesAnimatableOverlay: Bool
 
@@ -58,6 +64,9 @@ where Point.XValue == Double, Point.YValue == Double {
         self.usesAnimatableOverlay = series.usesAnimatableOverlay
         self.renderBody = { context, contexts, size in
             series.render(into: &context, contexts: contexts, size: size)
+        }
+        self.selectionElementsBody = { contexts, size in
+            series.selectionElements(contexts: contexts, size: size)
         }
         self.animatableBody = { oldContexts, newContexts, progress in
             series.animatableView(
@@ -83,12 +92,34 @@ where Point.XValue == Double, Point.YValue == Double {
     ) -> AnyView {
         animatableBody(oldContexts, newContexts, progress)
     }
+
+    public func selectionElements(
+        contexts: [ChartPointContext<Point>],
+        size: CGSize
+    ) -> [ChartElementContext] {
+        selectionElementsBody(contexts, size)
+    }
 }
 
 public extension ChartSeriesProtocol {
     var usesAnimatableOverlay: Bool { false }
     var legendItem: ChartLegendItem? { nil }
     var legendItems: [ChartLegendItem] { legendItem.map { [$0] } ?? [] }
+
+    func selectionElements(
+        contexts: [ChartPointContext<Point>],
+        size: CGSize
+    ) -> [ChartElementContext] {
+        []
+    }
+
+    func animatableView(
+        oldContexts: [ChartPointContext<Point>],
+        newContexts: [ChartPointContext<Point>],
+        progress: CGFloat
+    ) -> AnyView {
+        AnyView(EmptyView())
+    }
 
     func eraseToAnyChartSeries() -> AnyChartSeries<Point> {
         AnyChartSeries(self)

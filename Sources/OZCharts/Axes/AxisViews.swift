@@ -49,6 +49,18 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
                         }
                         .position(x: tick.position, y: geometry.size.height / 2)
                     }
+
+                    if let title = config.title {
+                        Text(title)
+                            .font(config.titleFont)
+                            .foregroundColor(config.titleColor)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .position(
+                                x: geometry.size.width / 2,
+                                y: config.position == .top ? 8 : geometry.size.height - 8
+                            )
+                    }
                 }
             }
         }
@@ -63,10 +75,11 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
 
     @ViewBuilder
     private func labelView(for value: Double) -> some View {
-        if let custom = config.customLabelBuilder?(value) {
+        let displayValue = config.axisTransform(value)
+        if let custom = config.customLabelBuilder?(displayValue) {
             custom
         } else {
-            Text(config.labelFormatter(value))
+            Text(config.labelFormatter(displayValue))
                 .font(config.font)
                 .foregroundColor(config.textColor)
                 .lineLimit(1)
@@ -122,6 +135,19 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
                         }
                         .position(x: geometry.size.width / 2, y: geometry.size.height - tick.position)
                     }
+
+                    if let title = config.title {
+                        Text(title)
+                            .font(config.titleFont)
+                            .foregroundColor(config.titleColor)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .rotationEffect(.degrees(config.position == .leading ? -90 : 90))
+                            .position(
+                                x: config.position == .leading ? 9 : geometry.size.width - 9,
+                                y: geometry.size.height / 2
+                            )
+                    }
                 }
             }
         }
@@ -136,10 +162,11 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
 
     @ViewBuilder
     private func labelView(for value: Double) -> some View {
-        if let custom = config.customLabelBuilder?(value) {
+        let displayValue = config.axisTransform(value)
+        if let custom = config.customLabelBuilder?(displayValue) {
             custom
         } else {
-            Text(config.labelFormatter(value))
+            Text(config.labelFormatter(displayValue))
                 .font(config.font)
                 .foregroundColor(config.textColor)
                 .lineLimit(1)

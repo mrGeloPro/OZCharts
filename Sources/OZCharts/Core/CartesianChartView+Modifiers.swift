@@ -83,6 +83,14 @@ public extension CartesianChartView {
         return copy
     }
 
+    func chartElementSelection(
+        onChange: @escaping ([ChartSelectedElement]) -> Void
+    ) -> Self {
+        var copy = self
+        copy.onElementSelectionChanged = onChange
+        return copy
+    }
+
     func chartAnnotationTooltip<AnnotationTooltipContent: View>(
         @ViewBuilder content: @escaping ([ChartAnnotationContext]) -> AnnotationTooltipContent
     ) -> Self {
@@ -116,6 +124,12 @@ public extension CartesianChartView {
         if let padding {
             copy.tooltipPadding = padding
         }
+        return copy
+    }
+
+    func chartTooltipMaxWidth(_ maxWidth: CGFloat?) -> Self {
+        var copy = self
+        copy.tooltipMaxWidth = maxWidth
         return copy
     }
 
@@ -214,13 +228,21 @@ public extension CartesianChartView {
         selectedValueFormatter: @escaping ([ChartPointContext<Point>]) -> String? = { points in
             guard let point = points.first else { return nil }
             return "Selected x \(point.originalPoint.x), y \(point.originalPoint.y)"
+        },
+        selectedElementFormatter: @escaping ([ChartSelectedElement]) -> String? = { elements in
+            guard let element = elements.first else { return nil }
+            if let label = element.label {
+                return "Selected \(label)"
+            }
+            return element.value.map { "Selected value \($0)" }
         }
     ) -> Self {
         var copy = self
         copy.accessibilityDescriptor = ChartAccessibilityDescriptor(
             label: label,
             summary: summary,
-            selectedValueFormatter: selectedValueFormatter
+            selectedValueFormatter: selectedValueFormatter,
+            selectedElementFormatter: selectedElementFormatter
         )
         return copy
     }

@@ -32,10 +32,107 @@ public struct HorizontalAnnotation {
     }
 }
 
+// MARK: - RangeAnnotation
+
+public struct RangeAnnotation {
+    public let yRange: ClosedRange<Double>
+    public let label: String?
+    public let color: Color
+    public let opacity: Double
+    public let labelColor: Color
+    public let labelFont: Font
+    public let showsLabel: Bool
+    public let labelXPosition: CGFloat
+    public let labelAnchor: UnitPoint
+    public let labelYOffset: CGFloat
+
+    public init(
+        yRange: ClosedRange<Double>,
+        label: String? = nil,
+        color: Color = .green,
+        opacity: Double = 0.12,
+        labelColor: Color = .primary,
+        labelFont: Font = .caption2,
+        showsLabel: Bool = false,
+        labelXPosition: CGFloat = 0.5,
+        labelAnchor: UnitPoint = .center,
+        labelYOffset: CGFloat = 0
+    ) {
+        self.yRange = yRange
+        self.label = label
+        self.color = color
+        self.opacity = opacity
+        self.labelColor = labelColor
+        self.labelFont = labelFont
+        self.showsLabel = showsLabel
+        self.labelXPosition = labelXPosition
+        self.labelAnchor = labelAnchor
+        self.labelYOffset = labelYOffset
+    }
+}
+
+// MARK: - ChartEventMarker
+
+public struct ChartEventMarker: Identifiable {
+    public let id: UUID
+    public let x: Double
+    public let y: Double
+    public let label: String?
+    public let shape: ChartSymbolShape
+    public let color: Color
+    public let size: CGFloat
+    public let strokeColor: Color
+    public let strokeWidth: CGFloat
+    public let isSelectable: Bool
+    public let hitboxRadius: CGFloat?
+
+    public init(
+        id: UUID = UUID(),
+        x: Double,
+        y: Double,
+        label: String? = nil,
+        shape: ChartSymbolShape = .circle,
+        color: Color = .yellow,
+        size: CGFloat = 16,
+        strokeColor: Color = .black.opacity(0.3),
+        strokeWidth: CGFloat = 1,
+        isSelectable: Bool = true,
+        hitboxRadius: CGFloat? = nil
+    ) {
+        self.id = id
+        self.x = x
+        self.y = y
+        self.label = label
+        self.shape = shape
+        self.color = color
+        self.size = size
+        self.strokeColor = strokeColor
+        self.strokeWidth = strokeWidth
+        self.isSelectable = isSelectable
+        self.hitboxRadius = hitboxRadius
+    }
+
+    public var pointAnnotation: PointAnnotation<Double, Double> {
+        PointAnnotation(
+            id: id,
+            x: x,
+            y: y,
+            label: label,
+            shape: shape,
+            color: color,
+            size: size,
+            strokeColor: strokeColor,
+            strokeWidth: strokeWidth,
+            isSelectable: isSelectable,
+            hitboxRadius: hitboxRadius
+        )
+    }
+}
+
 // MARK: - PointAnnotation
 
 public struct PointAnnotation<X: Comparable, Y: Comparable>: Identifiable {
-    public let id = UUID()
+    public let id: UUID
     public let x: X
     public let y: Y
     public let label: String?
@@ -48,6 +145,7 @@ public struct PointAnnotation<X: Comparable, Y: Comparable>: Identifiable {
     public let hitboxRadius: CGFloat?
 
     public init(
+        id: UUID = UUID(),
         x: X,
         y: Y,
         label: String?       = nil,
@@ -59,6 +157,7 @@ public struct PointAnnotation<X: Comparable, Y: Comparable>: Identifiable {
         isSelectable: Bool  = false,
         hitboxRadius: CGFloat? = nil
     ) {
+        self.id          = id
         self.x           = x
         self.y           = y
         self.label       = label
@@ -75,7 +174,7 @@ public struct PointAnnotation<X: Comparable, Y: Comparable>: Identifiable {
 // MARK: - CustomViewAnnotation
 
 public struct CustomViewAnnotation<X: Comparable, Y: Comparable>: Identifiable {
-    public let id = UUID()
+    public let id: UUID
     public let x: X
     public let y: Y
     public let label: String?
@@ -84,6 +183,7 @@ public struct CustomViewAnnotation<X: Comparable, Y: Comparable>: Identifiable {
     public let content: AnyView
 
     public init<V: View>(
+        id: UUID = UUID(),
         x: X,
         y: Y,
         label: String? = nil,
@@ -91,6 +191,7 @@ public struct CustomViewAnnotation<X: Comparable, Y: Comparable>: Identifiable {
         hitboxRadius: CGFloat? = nil,
         @ViewBuilder content: () -> V
     ) {
+        self.id = id
         self.x = x
         self.y = y
         self.label = label

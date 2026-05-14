@@ -62,6 +62,30 @@ final class StackedBarSeriesTests: XCTestCase {
         XCTAssertEqual(layouts[0].group, .second)
     }
 
+    func testSegmentLayoutsAggregateDuplicateGroupsInSameRow() {
+        let series = StackedBarSeries<GroupedPoint2D<Group>>(
+            data: [],
+            stackOrder: [.first, .second],
+            colorMapper: { _ in .blue },
+            barHeight: 10,
+            cornerRadius: 0,
+            segmentGap: 0
+        )
+        let contexts = [
+            context(x: 2, y: 0, group: .first, screenY: 30),
+            context(x: 4, y: 0, group: .first, screenY: 30),
+            context(x: 3, y: 0, group: .second, screenY: 30)
+        ]
+
+        let layouts = series.segmentLayouts(contexts: contexts)
+
+        XCTAssertEqual(layouts.count, 2)
+        XCTAssertEqual(layouts[0].group, .first)
+        XCTAssertEqual(layouts[0].rect.width, 60, accuracy: 0.0001)
+        XCTAssertEqual(layouts[1].rect.origin.x, 60, accuracy: 0.0001)
+        XCTAssertEqual(layouts[1].rect.width, 30, accuracy: 0.0001)
+    }
+
     private func context(
         x: Double,
         y: Double,

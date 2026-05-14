@@ -46,4 +46,19 @@ final class BarSeriesTests: XCTestCase {
         XCTAssertEqual(series.legendItem?.title, "Volume")
         XCTAssertEqual(series.legendItem?.symbol, .square)
     }
+
+    func testBarSeriesStoresProductStylingOptions() {
+        let labelStyle = ChartValueLabelStyle(position: .outside, color: .white)
+        let series = BarSeries(
+            data: [Point2D(x: 1, y: 2)],
+            color: .green,
+            fillStyle: .stripes(foreground: .white.opacity(0.2), background: .gray.opacity(0.2)),
+            shadow: ChartShadowStyle(color: .green.opacity(0.2), radius: 6),
+            valueLabelStyle: labelStyle
+        )
+
+        XCTAssertNotNil(series.fillStyle)
+        XCTAssertNotNil(series.shadow)
+        XCTAssertEqual(series.valueLabelStyle?.position, .outside)
+    }
 }

@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "glucose-care-day",
+      "domain": "medical",
+      "title": "Glucose Care Day",
+      "subtitle": "CGM readings with insulin, meal and manual check events",
+      "icon": "cross.case.fill",
+      "tint": "green",
+      "xAxis": {
+        "start": "2026-04-24T06:00:00Z",
+        "end": "2026-04-24T22:00:00Z",
+        "labelFormat": "hour"
+      },
+      "yAxis": {
+        "label": "Glucose",
+        "unit": "mg/dL",
+        "min": 50,
+        "max": 240,
+        "targetMin": 70,
+        "targetMax": 180
+      },
+      "series": [
+        {
+          "id": "glucose",
+          "name": "Glucose",
+          "kind": "line",
+          "unit": "mg/dL",
+          "color": "green",
+          "interpolation": "monotone"
+        }
+      ],
+      "events": [
+        { "timestamp": "2026-04-24T06:00:00Z", "kind": "measurement", "series": "glucose", "value": 112, "label": "Wake reading", "source": "CGM" },
+        { "timestamp": "2026-04-24T07:00:00Z", "kind": "measurement", "series": "glucose", "value": 128, "label": "Pre-breakfast", "source": "CGM" },
+        { "timestamp": "2026-04-24T07:10:00Z", "kind": "insulin", "value": 4.5, "unit": "U", "label": "Breakfast bolus" },
+        { "timestamp": "2026-04-24T07:20:00Z", "kind": "meal", "value": 54, "unit": "g carbs", "label": "Breakfast" },
+        { "timestamp": "2026-04-24T08:00:00Z", "kind": "measurement", "series": "glucose", "value": 166, "label": "Post meal rise", "source": "CGM" },
+        { "timestamp": "2026-04-24T09:00:00Z", "kind": "measurement", "series": "glucose", "value": 151, "label": "Morning trend", "source": "CGM" },
+        { "timestamp": "2026-04-24T10:30:00Z", "kind": "manualCheck", "series": "glucose", "value": 139, "label": "Fingerstick check", "source": "manual" },
+        { "timestamp": "2026-04-24T12:00:00Z", "kind": "measurement", "series": "glucose", "value": 122, "label": "Pre-lunch", "source": "CGM" },
+        { "timestamp": "2026-04-24T12:15:00Z", "kind": "insulin", "value": 5.0, "unit": "U", "label": "Lunch bolus" },
+        { "timestamp": "2026-04-24T12:25:00Z", "kind": "meal", "value": 68, "unit": "g carbs", "label": "Lunch" },
+        { "timestamp": "2026-04-24T13:30:00Z", "kind": "measurement", "series": "glucose", "value": 184, "label": "High threshold", "source": "CGM", "severity": "warning" },
+        { "timestamp": "2026-04-24T15:00:00Z", "kind": "measurement", "series": "glucose", "value": 157, "label": "Afternoon", "source": "CGM" },
+        { "timestamp": "2026-04-24T16:30:00Z", "kind": "exercise", "value": 35, "unit": "min", "label": "Walk" },
+        { "timestamp": "2026-04-24T17:00:00Z", "kind": "measurement", "series": "glucose", "value": 96, "label": "Post-walk drop", "source": "CGM" },
+        { "timestamp": "2026-04-24T18:30:00Z", "kind": "measurement", "series": "glucose", "value": 104, "label": "Pre-dinner", "source": "CGM" },
+        { "timestamp": "2026-04-24T18:45:00Z", "kind": "insulin", "value": 3.5, "unit": "U", "label": "Dinner bolus" },
+        { "timestamp": "2026-04-24T19:00:00Z", "kind": "meal", "value": 42, "unit": "g carbs", "label": "Dinner" },
+        { "timestamp": "2026-04-24T20:00:00Z", "kind": "measurement", "series": "glucose", "value": 142, "label": "Evening", "source": "CGM" },
+        { "timestamp": "2026-04-24T22:00:00Z", "kind": "measurement", "series": "glucose", "value": 118, "label": "Bedtime", "source": "CGM" }
+      ]
+    },
+    {
+      "id": "training-session",
+      "domain": "sport",
+      "title": "Interval Training",
+      "subtitle": "Heart-rate response with interval and recovery markers",
+      "icon": "figure.run",
+      "tint": "orange",
+      "xAxis": {
+        "start": "2026-04-24T16:00:00Z",
+        "end": "2026-04-24T17:05:00Z",
+        "labelFormat": "minute"
+      },
+      "yAxis": {
+        "label": "Heart rate",
+        "unit": "bpm",
+        "min": 85,
+        "max": 190,
+        "targetMin": 135,
+        "targetMax": 172
+      },
+      "series": [
+        {
+          "id": "heartRate",
+          "name": "Heart rate",
+          "kind": "area",
+          "unit": "bpm",
+          "color": "orange",
+          "interpolation": "monotone"
+        }
+      ],
+      "events": [
+        { "timestamp": "2026-04-24T16:00:00Z", "kind": "measurement", "series": "heartRate", "value": 92, "label": "Warmup start" },
+        { "timestamp": "2026-04-24T16:08:00Z", "kind": "measurement", "series": "heartRate", "value": 126, "label": "Warmup build" },
+        { "timestamp": "2026-04-24T16:12:00Z", "kind": "intervalStart", "label": "Interval 1" },
+        { "timestamp": "2026-04-24T16:15:00Z", "kind": "measurement", "series": "heartRate", "value": 164, "label": "Work block" },
+        { "timestamp": "2026-04-24T16:20:00Z", "kind": "recovery", "label": "Recovery" },
+        { "timestamp": "2026-04-24T16:22:00Z", "kind": "measurement", "series": "heartRate", "value": 138, "label": "Recovered" },
+        { "timestamp": "2026-04-24T16:26:00Z", "kind": "intervalStart", "label": "Interval 2" },
+        { "timestamp": "2026-04-24T16:30:00Z", "kind": "measurement", "series": "heartRate", "value": 176, "label": "Peak effort", "severity": "hot" },
+        { "timestamp": "2026-04-24T16:36:00Z", "kind": "measurement", "series": "heartRate", "value": 145, "label": "Recovery response" },
+        { "timestamp": "2026-04-24T16:42:00Z", "kind": "intervalStart", "label": "Interval 3" },
+        { "timestamp": "2026-04-24T16:47:00Z", "kind": "measurement", "series": "heartRate", "value": 181, "label": "Final push", "severity": "hot" },
+        { "timestamp": "2026-04-24T16:55:00Z", "kind": "measurement", "series": "heartRate", "value": 133, "label": "Cooldown" },
+        { "timestamp": "2026-04-24T17:05:00Z", "kind": "measurement", "series": "heartRate", "value": 108, "label": "Session end" }
+      ]
+    },
+    {
+      "id": "portfolio-day",
+      "domain": "finance",
+      "title": "Portfolio Day",
+      "subtitle": "Intraday value with news and rebalance events",
+      "icon": "chart.line.uptrend.xyaxis",
+      "tint": "cyan",
+      "xAxis": {
+        "start": "2026-04-24T13:30:00Z",
+        "end": "2026-04-24T20:00:00Z",
+        "labelFormat": "hour"
+      },
+      "yAxis": {
+        "label": "Portfolio value",
+        "unit": "$k",
+        "min": 118,
+        "max": 132,
+        "targetMin": 122,
+        "targetMax": 128
+      },
+      "series": [
+        {
+          "id": "portfolioValue",
+          "name": "Value",
+          "kind": "line",
+          "unit": "$k",
+          "color": "cyan",
+          "interpolation": "monotone"
+        }
+      ],
+      "events": [
+        { "timestamp": "2026-04-24T13:30:00Z", "kind": "measurement", "series": "portfolioValue", "value": 123.4, "label": "Market open" },
+        { "timestamp": "2026-04-24T14:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 124.1, "label": "Open trend" },
+        { "timestamp": "2026-04-24T14:20:00Z", "kind": "news", "label": "Guidance raised" },
+        { "timestamp": "2026-04-24T15:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 126.8, "label": "Momentum" },
+        { "timestamp": "2026-04-24T16:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 125.9, "label": "Midday" },
+        { "timestamp": "2026-04-24T16:35:00Z", "kind": "rebalance", "value": 18, "unit": "%", "label": "Rebalance tech weight" },
+        { "timestamp": "2026-04-24T17:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 127.6, "label": "Post rebalance" },
+        { "timestamp": "2026-04-24T18:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 129.2, "label": "Session high", "severity": "hot" },
+        { "timestamp": "2026-04-24T19:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 128.4, "label": "Late session" },
+        { "timestamp": "2026-04-24T20:00:00Z", "kind": "measurement", "series": "portfolioValue", "value": 127.8, "label": "Close" }
+      ]
+    },
+    {
+      "id": "ops-latency",
+      "domain": "operations",
+      "title": "API Latency",
+      "subtitle": "P95 latency with deploy, incident and mitigation events",
+      "icon": "server.rack",
+      "tint": "purple",
+      "xAxis": {
+        "start": "2026-04-24T09:00:00Z",
+        "end": "2026-04-24T17:00:00Z",
+        "labelFormat": "hour"
+      },
+      "yAxis": {
+        "label": "P95 latency",
+        "unit": "ms",
+        "min": 80,
+        "max": 420,
+        "targetMax": 250
+      },
+      "series": [
+        {
+          "id": "latency",
+          "name": "P95 latency",
+          "kind": "area",
+          "unit": "ms",
+          "color": "purple",
+          "interpolation": "monotone"
+        }
+      ],
+      "events": [
+        { "timestamp": "2026-04-24T09:00:00Z", "kind": "measurement", "series": "latency", "value": 128, "label": "Baseline" },
+        { "timestamp": "2026-04-24T10:00:00Z", "kind": "measurement", "series": "latency", "value": 136, "label": "Morning traffic" },
+        { "timestamp": "2026-04-24T10:35:00Z", "kind": "deploy", "label": "Search deploy" },
+        { "timestamp": "2026-04-24T11:00:00Z", "kind": "measurement", "series": "latency", "value": 192, "label": "Deploy impact" },
+        { "timestamp": "2026-04-24T12:00:00Z", "kind": "measurement", "series": "latency", "value": 226, "label": "Noon load" },
+        { "timestamp": "2026-04-24T13:15:00Z", "kind": "incident", "label": "Cache miss spike", "severity": "warning" },
+        { "timestamp": "2026-04-24T13:30:00Z", "kind": "measurement", "series": "latency", "value": 342, "label": "Incident peak", "severity": "hot" },
+        { "timestamp": "2026-04-24T14:05:00Z", "kind": "mitigation", "label": "Cache warmup" },
+        { "timestamp": "2026-04-24T14:30:00Z", "kind": "measurement", "series": "latency", "value": 238, "label": "Recovered" },
+        { "timestamp": "2026-04-24T16:00:00Z", "kind": "measurement", "series": "latency", "value": 168, "label": "Stable" },
+        { "timestamp": "2026-04-24T17:00:00Z", "kind": "measurement", "series": "latency", "value": 141, "label": "End of day" }
+      ]
+    }
+  ]
+}

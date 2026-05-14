@@ -16,8 +16,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         theme: ChartTheme = .default,
         xAxes: [XAxisConfig]? = nil,
         yAxes: [YAxisConfig]? = nil,
+        rangeAnnotations: [RangeAnnotation] = [],
         horizontalAnnotations: [HorizontalAnnotation] = [],
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
+        eventMarkers: [ChartEventMarker] = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
         isHorizontalScrollEnabled: Bool = true,
         isHorizontalZoomEnabled: Bool = true,
@@ -34,7 +36,8 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         crosshairStyle: ChartCrosshairStyle = .hidden,
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
-        canvasRenderOrder: [CanvasLayer] = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) {
@@ -42,8 +45,9 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             series: series,
             xDomain: xDomain,
             yDomain: yDomain,
+            rangeAnnotations: rangeAnnotations,
             horizontalAnnotations: horizontalAnnotations,
-            pointAnnotations: pointAnnotations,
+            pointAnnotations: pointAnnotations + eventMarkers.map(\.pointAnnotation),
             customViewAnnotations: customViewAnnotations
         )
 
@@ -53,8 +57,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             yScale: LinearScale(domain: resolvedDomains.y),
             xAxes: xAxes ?? [theme.xAxis()],
             yAxes: yAxes ?? [theme.yAxis()],
+            rangeAnnotations: rangeAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
+            eventMarkers: eventMarkers,
             customViewAnnotations: customViewAnnotations,
             isHorizontalScrollEnabled: isHorizontalScrollEnabled,
             isHorizontalZoomEnabled: isHorizontalZoomEnabled,
@@ -71,6 +77,7 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             crosshairStyle: crosshairStyle,
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
+            onElementSelectionChanged: onElementSelectionChanged,
             canvasRenderOrder: canvasRenderOrder,
             emptyState: emptyState,
             tooltipContent: tooltipContent
@@ -84,8 +91,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         theme: ChartTheme = .default,
         xAxes: [XAxisConfig]? = nil,
         yAxes: [YAxisConfig]? = nil,
+        rangeAnnotations: [RangeAnnotation] = [],
         horizontalAnnotations: [HorizontalAnnotation] = [],
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
+        eventMarkers: [ChartEventMarker] = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
         isHorizontalScrollEnabled: Bool = true,
         isHorizontalZoomEnabled: Bool = true,
@@ -102,7 +111,8 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         crosshairStyle: ChartCrosshairStyle = .hidden,
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
-        canvasRenderOrder: [CanvasLayer] = [.grid, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) where S.Point == Point {
@@ -113,8 +123,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             theme: theme,
             xAxes: xAxes,
             yAxes: yAxes,
+            rangeAnnotations: rangeAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
+            eventMarkers: eventMarkers,
             customViewAnnotations: customViewAnnotations,
             isHorizontalScrollEnabled: isHorizontalScrollEnabled,
             isHorizontalZoomEnabled: isHorizontalZoomEnabled,
@@ -131,6 +143,7 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             crosshairStyle: crosshairStyle,
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
+            onElementSelectionChanged: onElementSelectionChanged,
             canvasRenderOrder: canvasRenderOrder,
             emptyState: emptyState,
             tooltipContent: tooltipContent
@@ -142,6 +155,7 @@ private func resolveChartDomains<Point: ChartDataPoint>(
     series: [AnyChartSeries<Point>],
     xDomain: ChartDomain,
     yDomain: ChartDomain,
+    rangeAnnotations: [RangeAnnotation],
     horizontalAnnotations: [HorizontalAnnotation],
     pointAnnotations: [PointAnnotation<Double, Double>],
     customViewAnnotations: [CustomViewAnnotation<Double, Double>]
@@ -154,6 +168,7 @@ where Point.XValue == Double, Point.YValue == Double {
         customViewAnnotations.map(\.x)
 
     let yValues = data.map(\.y) +
+        rangeAnnotations.flatMap { [$0.yRange.lowerBound, $0.yRange.upperBound] } +
         horizontalAnnotations.map(\.yValue) +
         pointAnnotations.map(\.y) +
         customViewAnnotations.map(\.y)

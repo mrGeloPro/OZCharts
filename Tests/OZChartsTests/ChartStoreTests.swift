@@ -12,6 +12,11 @@ import XCTest
 @testable import OZCharts
 
 final class ChartStoreTests: XCTestCase {
+    private enum StackGroup: Hashable {
+        case star1
+        case star2
+    }
+
     @MainActor
     func testQueueUpdateCoalescesUntilIntervalElapses() async {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
@@ -334,6 +339,214 @@ final class ChartStoreTests: XCTestCase {
 
         XCTAssertTrue(store.highlightedPoints.isEmpty)
         XCTAssertNil(store.selectionState.selectedX)
+    }
+
+    @MainActor
+    func testSelectionStateIncludesSelectedPointPayloads() {
+        let firstPointID = UUID()
+        let secondPointID = UUID()
+        let firstSeries = LineSeries(
+            data: [
+                Point2D(id: firstPointID, x: 5, y: 5)
+            ],
+            color: .blue,
+            zIndex: 0
+        ).eraseToAnyChartSeries()
+        let secondSeries = LineSeries(
+            data: [
+                Point2D(id: secondPointID, x: 5, y: 7)
+            ],
+            color: .green,
+            zIndex: 1
+        ).eraseToAnyChartSeries()
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        )
+        store.queueUpdate(
+            series: [firstSeries, secondSeries],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+
+        store.applySelectionState(ChartSelectionState(selectedX: 5))
+
+        let state = store.selectionState
+        XCTAssertEqual(state.selectedX, 5)
+        XCTAssertEqual(state.selectedPoints.count, 2)
+        XCTAssertEqual(state.selectedPoints.map(\.pointID), [firstPointID, secondPointID])
+        XCTAssertEqual(state.selectedPoints.map(\.seriesID), [firstSeries.id, secondSeries.id])
+        XCTAssertEqual(state.selectedPoints.map(\.seriesIndex), [0, 1])
+    }
+
+    @MainActor
+    func testSelectionStateRestoresSelectionByPointIDs() {
+        let pointID = UUID()
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        )
+        let series = LineSeries(
+            data: [
+                Point2D(id: pointID, x: 4, y: 6),
+                Point2D(x: 7, y: 2)
+            ],
+            color: .blue
+        ).eraseToAnyChartSeries()
+        store.queueUpdate(
+            series: [series],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+
+        store.applySelectionState(
+            ChartSelectionState(
+                selectedPoints: [
+                    ChartSelectedPoint(pointID: pointID, seriesID: series.id, seriesIndex: 0, x: 4, y: 6)
+                ]
+            )
+        )
+
+        XCTAssertEqual(store.highlightedPoints.count, 1)
+        XCTAssertEqual(store.highlightedPoints.first?.originalPoint.id, pointID)
+        XCTAssertEqual(store.selectionState.selectedPoints.first?.y, 6)
+    }
+
+    @MainActor
+    func testBarSelectionUsesElementPayloadBeforePointSelection() {
+        let pointID = UUID()
+        let series = BarSeries(
+            data: [Point2D(id: pointID, x: 5, y: 6)],
+            color: .blue,
+            label: "Height",
+            barWidth: 20
+        ).eraseToAnyChartSeries()
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        )
+        store.queueUpdate(
+            series: [series],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+
+        store.handleGestureEvent(
+            .highlight(location: CGPoint(x: 50, y: 70)),
+            isHorizontalScrollEnabled: true,
+            isVerticalScrollEnabled: true,
+            isHorizontalZoomEnabled: true,
+            isVerticalZoomEnabled: true,
+            minZoomScale: 0.1,
+            hitboxRadius: 1,
+            selectionMode: .none,
+            series: [series]
+        )
+
+        XCTAssertTrue(store.highlightedPoints.isEmpty)
+        XCTAssertEqual(store.selectedElements.count, 1)
+        XCTAssertEqual(store.selectedElements.first?.kind, .bar)
+        XCTAssertEqual(store.selectedElements.first?.pointID, pointID)
+        XCTAssertEqual(store.selectedElements.first?.value, 6)
+        XCTAssertEqual(store.selectionState.selectedElements.first?.label, "Height")
+    }
+
+    @MainActor
+    func testDonutSelectionUsesSegmentHitShape() {
+        let firstID = UUID()
+        let secondID = UUID()
+        let series = DonutSeries(
+            data: [
+                Point2D(id: firstID, x: 0, y: 50),
+                Point2D(id: secondID, x: 1, y: 50)
+            ],
+            colors: [.blue, .green],
+            segmentLabelMapper: { point in point.id == firstID ? "Basic" : "Bonus" },
+            thickness: 20,
+            gapAngle: .degrees(0),
+            startAngle: .degrees(0)
+        ).eraseToAnyChartSeries()
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0...1),
+            yScale: LinearScale(domain: 0...100)
+        )
+        store.queueUpdate(
+            series: [series],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+
+        let selected = store.selectElements(near: CGPoint(x: 50, y: 88))
+
+        XCTAssertEqual(selected.count, 1)
+        XCTAssertEqual(selected.first?.kind, .donutSegment)
+        XCTAssertEqual(selected.first?.pointID, firstID)
+        XCTAssertEqual(selected.first?.label, "Basic")
+        XCTAssertEqual(selected.first?.value, 50)
+    }
+
+    @MainActor
+    func testStackedBarSelectionCanRestoreByElementID() {
+        let firstID = UUID()
+        let secondID = UUID()
+        let series = StackedBarSeries(
+            data: [
+                GroupedPoint2D(id: firstID, x: 20, y: 1, group: StackGroup.star1),
+                GroupedPoint2D(id: secondID, x: 30, y: 1, group: StackGroup.star2)
+            ],
+            stackOrder: [.star1, .star2],
+            colorMapper: { _ in .blue },
+            groupLabel: { group in group == .star1 ? "Star 1" : "Star 2" },
+            barHeight: 20,
+            segmentGap: 0
+        ).eraseToAnyChartSeries()
+        let store = ChartStore<GroupedPoint2D<StackGroup>, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0...100),
+            yScale: LinearScale(domain: 0...2)
+        )
+        store.queueUpdate(
+            series: [series],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+
+        let selected = store.selectElements(near: CGPoint(x: 30, y: 50))
+
+        XCTAssertEqual(selected.count, 1)
+        XCTAssertEqual(selected.first?.kind, .stackedBarSegment)
+        XCTAssertEqual(selected.first?.pointID, secondID)
+        XCTAssertEqual(selected.first?.label, "Star 2")
+
+        store.applySelectionState(ChartSelectionState(selectedElements: selected))
+
+        XCTAssertEqual(store.selectedElements.first?.pointID, secondID)
+        XCTAssertTrue(store.highlightedPoints.isEmpty)
+    }
+
+    @MainActor
+    func testEmptyDataClearsStaleInteractiveState() {
+        let store = selectionStore()
+        store.applySelectionState(ChartSelectionState(selectedX: 5))
+        XCTAssertFalse(store.seriesContexts.isEmpty)
+        XCTAssertFalse(store.highlightedPoints.isEmpty)
+
+        store.handleDataChange(
+            series: [],
+            isLiveTrackingEnabled: false
+        )
+
+        XCTAssertTrue(store.seriesContexts.isEmpty)
+        XCTAssertTrue(store.oldSeriesContexts.isEmpty)
+        XCTAssertTrue(store.highlightedPoints.isEmpty)
+        XCTAssertTrue(store.violinBackgrounds.isEmpty)
+        XCTAssertEqual(store.animationProgress, 1)
+        XCTAssertFalse(store.isAnimationActive)
+        XCTAssertEqual(store.selectionState, .none)
     }
 
     @MainActor
