@@ -16,7 +16,7 @@ Use `ChartSelectionState` to link charts or drive an external detail panel.
 
 ## Element Selection
 
-Bars, stacked bar segments, and donut segments expose `ChartSelectedElement` payloads. The payload includes stable ids, values, labels, series metadata, bounds, and display position.
+Bars, stacked bar segments, and donut segments expose `ChartSelectedElement` payloads. The payload includes stable ids, values, labels, series metadata, bounds, element-center `position`, and gesture `interactionPosition` when selection comes from direct interaction.
 
 ```swift
 .chartElementSelection { elements in

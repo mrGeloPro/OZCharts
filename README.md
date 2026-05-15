@@ -356,9 +356,10 @@ Non-point charts can publish selected visual elements:
 ```
 
 `ChartSelectedElement` is used by bars, stacked bar segments, and donut
-segments. It includes stable ids, series metadata, `bounds`, `position`,
-domain values, labels, and the element kind, which makes product callouts and
-external detail panels much easier to implement.
+segments. It includes stable ids, series metadata, `bounds`, element-center
+`position`, gesture `interactionPosition`, domain values, labels, and the
+element kind, which makes product callouts and external detail panels much
+easier to implement.
 
 When a series is created inside a SwiftUI `body`, pass a stable `id:` if
 selection, animation continuity, or linked chart state matters:

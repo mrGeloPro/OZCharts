@@ -110,8 +110,8 @@ CustomViewAnnotation(
 
 Use element selection for row/segment callouts. `StackedBarSeries` now exposes
 the tapped segment as `ChartSelectedElement`, so apps can position their detail
-panel from `element.position` and read stable `pointID`, `segmentIndex`,
-`groupLabel`, `value`, and `bounds`.
+panel from `element.interactionPosition ?? element.position` and read stable
+`pointID`, `segmentIndex`, `groupLabel`, `value`, and `bounds`.
 
 ```swift
 chart

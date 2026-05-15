@@ -159,6 +159,7 @@ chart
 * `groupLabel`
 * `value`
 * `position`
+* `interactionPosition`
 * `bounds`
 
 Use this for product callouts, selected segment highlighting, or external detail panels.

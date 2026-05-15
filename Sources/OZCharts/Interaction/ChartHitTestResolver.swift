@@ -30,7 +30,11 @@ enum ChartHitTestResolver {
                 return $0.zIndex > $1.zIndex
             }
             .first
-            .map { [$0] } ?? []
+            .map { context in
+                var context = context
+                context.payload.interactionPosition = location
+                return [context]
+            } ?? []
     }
 
     static func points<Point: ChartDataPoint>(

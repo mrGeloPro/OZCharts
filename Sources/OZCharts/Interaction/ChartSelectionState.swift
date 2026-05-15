@@ -55,6 +55,7 @@ public struct ChartSelectedElement: Equatable, Identifiable {
     public var y: Double?
     public var value: Double?
     public var position: CGPoint
+    public var interactionPosition: CGPoint?
     public var bounds: CGRect
 
     public init(
@@ -70,6 +71,7 @@ public struct ChartSelectedElement: Equatable, Identifiable {
         y: Double? = nil,
         value: Double? = nil,
         position: CGPoint,
+        interactionPosition: CGPoint? = nil,
         bounds: CGRect
     ) {
         self.elementID = elementID
@@ -84,6 +86,7 @@ public struct ChartSelectedElement: Equatable, Identifiable {
         self.y = y
         self.value = value
         self.position = position
+        self.interactionPosition = interactionPosition
         self.bounds = bounds
     }
 }

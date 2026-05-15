@@ -796,6 +796,7 @@ struct StarAchievementDemoView: View {
     private let tooltipHorizontalPadding: CGFloat = 10
     private let tooltipCanvasPadding: CGFloat = 6
     private let tooltipArrowInset: CGFloat = 16
+    private let tooltipPreferredSideShiftRatio: CGFloat = 0.45
 
     /// y=0 Current, y=1 Last, y=2 Average, y=3 High score.
     let mockData: [GroupedPoint2D<StarType>] = [
@@ -1018,12 +1019,16 @@ struct StarAchievementDemoView: View {
 
         let pointsPerDomainUnit = element.bounds.width / CGFloat(value)
         let canvasWidth = max(pointsPerDomainUnit * 100, 1)
-        let targetPixelX = element.position.x
         let halfTooltipWidth = (tooltipContentWidth + tooltipHorizontalPadding * 2) / 2
         let minCenterX = tooltipCanvasPadding + halfTooltipWidth
         let maxCenterX = max(minCenterX, canvasWidth - tooltipCanvasPadding - halfTooltipWidth)
-        let centerPixelX = min(max(targetPixelX, minCenterX), maxCenterX)
         let maxArrowOffset = max(0, halfTooltipWidth - tooltipArrowInset)
+        let targetPixelX = element.interactionPosition?.x ?? element.position.x
+        let sideShift = maxArrowOffset * tooltipPreferredSideShiftRatio
+        let preferredCenterX = targetPixelX < canvasWidth / 2
+            ? targetPixelX + sideShift
+            : targetPixelX - sideShift
+        let centerPixelX = min(max(preferredCenterX, minCenterX), maxCenterX)
         let arrowXOffset = min(max(targetPixelX - centerPixelX, -maxArrowOffset), maxArrowOffset)
         let centerX = Double(centerPixelX / canvasWidth * 100)
         return StarTooltipGeometry(centerX: centerX, arrowXOffset: arrowXOffset)

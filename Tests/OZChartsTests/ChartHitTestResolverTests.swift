@@ -34,6 +34,7 @@ final class ChartHitTestResolverTests: XCTestCase {
         )
 
         XCTAssertEqual(selected.map(\.elementID), [high.elementID])
+        XCTAssertEqual(selected.first?.interactionPosition, CGPoint(x: 20, y: 20))
     }
 
     func testPointHitTestingCanSelectNearestX() {
