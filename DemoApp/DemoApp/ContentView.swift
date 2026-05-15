@@ -792,6 +792,11 @@ enum StarType: Hashable { case s1, s2, s3, remainder }
 struct StarAchievementDemoView: View {
     @State private var selectedElement: ChartSelectedElement?
 
+    private let tooltipContentWidth: CGFloat = 156
+    private let tooltipHorizontalPadding: CGFloat = 10
+    private let tooltipCanvasPadding: CGFloat = 6
+    private let tooltipArrowInset: CGFloat = 16
+
     /// y=0 Current, y=1 Last, y=2 Average, y=3 High score.
     let mockData: [GroupedPoint2D<StarType>] = [
         // Current
@@ -948,9 +953,13 @@ struct StarAchievementDemoView: View {
 
         let row = Int(rowValue.rounded())
         let placement = tooltipPlacement(for: row)
+        let geometry = tooltipGeometry(
+            for: selectedElement,
+            targetX: segmentCenterX(row: row, group: selectedPoint.group)
+        )
         return CustomViewAnnotation(
             id: DemoAnnotationID.starTooltip,
-            x: segmentCenterX(row: row, group: selectedPoint.group),
+            x: geometry.centerX,
             y: Double(row),
             placement: placement.chartPlacement,
             collisionPriority: 100,
@@ -960,7 +969,8 @@ struct StarAchievementDemoView: View {
             StarAchievementTooltip(
                 rowTitle: yLabels[row] ?? "Result",
                 lines: selectedStarLines(for: row),
-                arrowEdge: placement.arrowEdge
+                arrowEdge: placement.arrowEdge,
+                arrowXOffset: geometry.arrowXOffset
             )
         }
     }
@@ -997,6 +1007,28 @@ struct StarAchievementDemoView: View {
         return 50
     }
 
+    private func tooltipGeometry(for element: ChartSelectedElement, targetX: Double) -> StarTooltipGeometry {
+        guard
+            let value = element.value,
+            value > 0,
+            element.bounds.width > 0
+        else {
+            return StarTooltipGeometry(centerX: targetX, arrowXOffset: 0)
+        }
+
+        let pointsPerDomainUnit = element.bounds.width / CGFloat(value)
+        let canvasWidth = max(pointsPerDomainUnit * 100, 1)
+        let targetPixelX = element.position.x
+        let halfTooltipWidth = (tooltipContentWidth + tooltipHorizontalPadding * 2) / 2
+        let minCenterX = tooltipCanvasPadding + halfTooltipWidth
+        let maxCenterX = max(minCenterX, canvasWidth - tooltipCanvasPadding - halfTooltipWidth)
+        let centerPixelX = min(max(targetPixelX, minCenterX), maxCenterX)
+        let maxArrowOffset = max(0, halfTooltipWidth - tooltipArrowInset)
+        let arrowXOffset = min(max(targetPixelX - centerPixelX, -maxArrowOffset), maxArrowOffset)
+        let centerX = Double(centerPixelX / canvasWidth * 100)
+        return StarTooltipGeometry(centerX: centerX, arrowXOffset: arrowXOffset)
+    }
+
     private func visibleSegments(for row: Int, includingRemainder: Bool) -> [(group: StarType, value: Double)] {
         mockData
             .filter { Int($0.y.rounded()) == row && (includingRemainder || $0.group != .remainder) }
@@ -1023,6 +1055,11 @@ struct StarAchievementDemoView: View {
         case .remainder: return 3
         }
     }
+}
+
+private struct StarTooltipGeometry {
+    let centerX: Double
+    let arrowXOffset: CGFloat
 }
 
 private enum StarTooltipPlacement {
@@ -1053,6 +1090,7 @@ private struct StarAchievementTooltip: View {
     let rowTitle: String
     let lines: [String]
     let arrowEdge: StarTooltipArrowEdge
+    let arrowXOffset: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -1069,7 +1107,7 @@ private struct StarAchievementTooltip: View {
             TooltipTriangle(pointsTo: arrowEdge)
                 .fill(Color.white)
                 .frame(width: 14, height: 8)
-                .offset(y: arrowEdge == .top ? -7 : 7)
+                .offset(x: arrowXOffset, y: arrowEdge == .top ? -7 : 7)
         }
     }
 }
