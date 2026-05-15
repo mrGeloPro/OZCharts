@@ -9,6 +9,7 @@ import SwiftUI
 import OZCharts
 
 struct LatencyChart: View {
+    private static let latencySeriesID = UUID()
     let samples: [Point2D]
 
     var body: some View {
@@ -16,7 +17,7 @@ struct LatencyChart: View {
             series: [
                 LineSeries(
                     data: samples,
-                    id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+                    id: Self.latencySeriesID,
                     color: .cyan,
                     lineWidth: 3,
                     interpolation: .monotone

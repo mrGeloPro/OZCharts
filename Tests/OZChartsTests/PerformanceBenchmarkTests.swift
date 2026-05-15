@@ -17,119 +17,119 @@ final class PerformanceBenchmarkTests: XCTestCase {
     func testLargeLineLayoutPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let points = (0..<20_000).map { index in
+        let lineSamples = (0..<20_000).map { index in
             Point2D(
                 x: Double(index),
                 y: 50 + sin(Double(index) / 18) * 20 + cos(Double(index) / 71) * 8
             )
         }
-        let series = LineSeries(
-            data: points,
+        let lineSeries = LineSeries(
+            data: lineSamples,
             color: .cyan,
             downsampling: .automatic(maxPointsPerPixel: 1)
         ).eraseToAnyChartSeries()
-        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+        let chartStore = ChartStore<Point2D, LinearScale, LinearScale>(
             xScale: LinearScale(domain: 0...20_000),
             yScale: LinearScale(domain: 0...100)
         )
 
         measure {
-            store.queueUpdate(
-                series: [series],
+            chartStore.queueUpdate(
+                series: [lineSeries],
                 in: CGSize(width: 390, height: 260),
                 animate: false,
                 coalesce: false
             )
         }
 
-        XCTAssertEqual(store.seriesContexts.count, 1)
-        XCTAssertEqual(store.seriesContexts[0].count, points.count)
+        XCTAssertEqual(chartStore.seriesContexts.count, 1)
+        XCTAssertEqual(chartStore.seriesContexts[0].count, lineSamples.count)
     }
 
     @MainActor
     func testStackedAreaLayoutPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let groups = PerformanceGroup.allCases
-        let points = (0..<2_500).flatMap { index in
-            groups.map { group in
+        let benchmarkGroups = BenchmarkGroup.allCases
+        let areaSamples = (0..<2_500).flatMap { index in
+            benchmarkGroups.map { group in
                 GroupedPoint2D(
                     x: Double(index),
-                    y: 5 + Double(group.weight) * 2 + sin(Double(index) / Double(group.weight * 19)) * 4,
+                    y: 5 + Double(group.signalWeight) * 2 + sin(Double(index) / Double(group.signalWeight * 19)) * 4,
                     group: group
                 )
             }
         }
-        let series = StackedAreaSeries(
-            data: points,
-            stackOrder: groups,
+        let areaSeries = StackedAreaSeries(
+            data: areaSamples,
+            stackOrder: benchmarkGroups,
             colorMapper: { $0.color },
             interpolation: .step
         ).eraseToAnyChartSeries()
-        let store = ChartStore<GroupedPoint2D<PerformanceGroup>, LinearScale, LinearScale>(
+        let chartStore = ChartStore<GroupedPoint2D<BenchmarkGroup>, LinearScale, LinearScale>(
             xScale: LinearScale(domain: 0...2_500),
             yScale: LinearScale(domain: 0...80)
         )
 
         measure {
-            store.queueUpdate(
-                series: [series],
+            chartStore.queueUpdate(
+                series: [areaSeries],
                 in: CGSize(width: 390, height: 260),
                 animate: false,
                 coalesce: false
             )
         }
 
-        XCTAssertEqual(store.seriesContexts.count, 1)
-        XCTAssertEqual(store.seriesContexts[0].count, points.count)
+        XCTAssertEqual(chartStore.seriesContexts.count, 1)
+        XCTAssertEqual(chartStore.seriesContexts[0].count, areaSamples.count)
     }
 
     @MainActor
     func testStackedBarSelectionElementPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let groups = PerformanceGroup.allCases
-        let points = (0..<250).flatMap { row in
-            groups.map { group in
+        let benchmarkGroups = BenchmarkGroup.allCases
+        let barSegments = (0..<250).flatMap { row in
+            benchmarkGroups.map { group in
                 GroupedPoint2D(
-                    x: Double((row % 7) + group.weight * 4),
+                    x: Double((row % 7) + group.signalWeight * 4),
                     y: Double(row),
                     group: group
                 )
             }
         }
-        let series = StackedBarSeries(
-            data: points,
-            stackOrder: groups,
+        let barSeries = StackedBarSeries(
+            data: barSegments,
+            stackOrder: benchmarkGroups,
             colorMapper: { $0.color },
             groupLabel: { $0.rawValue },
             valueLabelStyle: ChartValueLabelStyle(position: .outside),
             barHeight: 12,
             segmentGap: 1
         ).eraseToAnyChartSeries()
-        let store = ChartStore<GroupedPoint2D<PerformanceGroup>, LinearScale, LinearScale>(
+        let chartStore = ChartStore<GroupedPoint2D<BenchmarkGroup>, LinearScale, LinearScale>(
             xScale: LinearScale(domain: 0...120),
             yScale: LinearScale(domain: 0...250)
         )
 
         measure {
-            store.queueUpdate(
-                series: [series],
+            chartStore.queueUpdate(
+                series: [barSeries],
                 in: CGSize(width: 430, height: 700),
                 animate: false,
                 coalesce: false
             )
         }
 
-        XCTAssertEqual(store.selectableElements.count, points.count)
+        XCTAssertEqual(chartStore.selectableElements.count, barSegments.count)
     }
 
     @MainActor
     func testDenseHitTestingPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        var contexts: [ChartPointContext<Point2D>] = []
-        contexts.reserveCapacity(60_000)
+        var pointContexts: [ChartPointContext<Point2D>] = []
+        pointContexts.reserveCapacity(60_000)
         for index in 0..<60_000 {
             let point = Point2D(
                 x: Double(index),
@@ -139,26 +139,26 @@ final class PerformanceBenchmarkTests: XCTestCase {
                 x: Double(index % 390),
                 y: 130 + sin(Double(index) / 17) * 90
             )
-            contexts.append(
+            pointContexts.append(
                 ChartPointContext(
                     originalPoint: point,
                     position: position
                 )
             )
         }
-        let locations = stride(from: 0, to: 390, by: 13).map {
+        let probeLocations = stride(from: 0, to: 390, by: 13).map {
             CGPoint(x: CGFloat($0), y: 130)
         }
-        var selectedCount = 0
+        var selectedPointCount = 0
 
         measure {
             var cycleIDs: [UUID] = []
             var cycleIndex = 0
-            var localCount = 0
-            for location in locations {
-                localCount += ChartHitTestResolver.points(
+            var selectedInRun = 0
+            for location in probeLocations {
+                selectedInRun += ChartHitTestResolver.points(
                     near: location,
-                    contexts: contexts,
+                    contexts: pointContexts,
                     radius: 16,
                     mode: .nearestX,
                     overlappingSelectionMode: .all,
@@ -166,98 +166,98 @@ final class PerformanceBenchmarkTests: XCTestCase {
                     cycleIndex: &cycleIndex
                 ).count
             }
-            selectedCount = localCount
+            selectedPointCount = selectedInRun
         }
 
-        XCTAssertGreaterThan(selectedCount, 0)
+        XCTAssertGreaterThan(selectedPointCount, 0)
     }
 
     @MainActor
     func testLiveAppendAndTrimLayoutPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+        let chartStore = ChartStore<Point2D, LinearScale, LinearScale>(
             xScale: LinearScale(domain: 0...900),
             yScale: LinearScale(domain: 0...120)
         )
-        store.canvasSize = CGSize(width: 390, height: 260)
-        store.layoutCoalescingIntervalNanoseconds = 0
+        chartStore.canvasSize = CGSize(width: 390, height: 260)
+        chartStore.layoutCoalescingIntervalNanoseconds = 0
 
         measure {
-            var points: [Point2D] = []
+            var liveSamples: [Point2D] = []
             for batch in 0..<60 {
-                let start = batch * 20
-                points.append(contentsOf: (0..<20).map { offset in
-                    let x = Double(start + offset)
+                let batchStartIndex = batch * 20
+                liveSamples.append(contentsOf: (0..<20).map { offset in
+                    let x = Double(batchStartIndex + offset)
                     return Point2D(x: x, y: 50 + sin(x / 12) * 18 + cos(x / 43) * 9)
                 })
-                points = Array(points.suffix(900))
-                let latest = points.last?.x ?? 0
-                let historyStart = max(0, latest - 900)
-                let series = LineSeries(
-                    data: points,
+                liveSamples = Array(liveSamples.suffix(900))
+                let latestXValue = liveSamples.last?.x ?? 0
+                let historyStart = max(0, latestXValue - 900)
+                let liveSeries = LineSeries(
+                    data: liveSamples,
                     color: .cyan,
                     downsampling: .automatic(maxPointsPerPixel: 1)
                 ).eraseToAnyChartSeries()
 
-                store.updateBaseScales(
-                    xScale: LinearScale(domain: historyStart...max(900, latest)),
+                chartStore.updateBaseScales(
+                    xScale: LinearScale(domain: historyStart...max(900, latestXValue)),
                     yScale: LinearScale(domain: 0...120)
                 )
-                store.handleDataChange(
-                    series: [series],
+                chartStore.handleDataChange(
+                    series: [liveSeries],
                     isLiveTrackingEnabled: true,
                     liveTrackingMode: .followLatest(pausedBehavior: .preserveTrailingOffset),
                     initialViewport: .xWindow(length: 120, anchor: .trailing)
                 )
-                store.queueUpdate(
-                    series: [series],
-                    in: store.canvasSize,
+                chartStore.queueUpdate(
+                    series: [liveSeries],
+                    in: chartStore.canvasSize,
                     animate: false,
                     coalesce: false
                 )
             }
         }
 
-        XCTAssertEqual(store.viewport.liveTrackingStatus, .followingLatest)
-        XCTAssertFalse(store.seriesContexts.isEmpty)
+        XCTAssertEqual(chartStore.viewport.liveTrackingStatus, .followingLatest)
+        XCTAssertFalse(chartStore.seriesContexts.isEmpty)
     }
 
     @MainActor
     func testDonutElementHitTestingPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let points = (0..<120).map { index in
+        let donutSegments = (0..<120).map { index in
             Point2D(x: Double(index), y: Double((index % 9) + 1))
         }
-        let series = DonutSeries(
-            data: points,
+        let donutSeries = DonutSeries(
+            data: donutSegments,
             colors: [.cyan, .purple, .yellow, .orange],
             thickness: 32,
             gapAngle: .degrees(1)
         ).eraseToAnyChartSeries()
-        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+        let chartStore = ChartStore<Point2D, LinearScale, LinearScale>(
             xScale: LinearScale(domain: 0...120),
             yScale: LinearScale(domain: 0...10)
         )
-        store.queueUpdate(
-            series: [series],
+        chartStore.queueUpdate(
+            series: [donutSeries],
             in: CGSize(width: 300, height: 300),
             animate: false,
             coalesce: false
         )
-        let locations = store.selectableElements.map(\.payload.position)
-        var hitCount = 0
+        let segmentCenters = chartStore.selectableElements.map(\.payload.position)
+        var selectedSegmentCount = 0
 
         measure {
-            var localHits = 0
-            for location in locations {
-                localHits += store.selectElements(near: location).count
+            var selectedInRun = 0
+            for location in segmentCenters {
+                selectedInRun += chartStore.selectElements(near: location).count
             }
-            hitCount = localHits
+            selectedSegmentCount = selectedInRun
         }
 
-        XCTAssertGreaterThan(hitCount, 0)
+        XCTAssertGreaterThan(selectedSegmentCount, 0)
     }
 
     private func requirePerformanceBenchmarks() throws {
@@ -267,13 +267,13 @@ final class PerformanceBenchmarkTests: XCTestCase {
     }
 }
 
-private enum PerformanceGroup: String, CaseIterable, Hashable {
+private enum BenchmarkGroup: String, CaseIterable, Hashable {
     case basic
     case bonus
     case streak
     case recovery
 
-    var weight: Int {
+    var signalWeight: Int {
         switch self {
         case .basic: return 1
         case .bonus: return 2

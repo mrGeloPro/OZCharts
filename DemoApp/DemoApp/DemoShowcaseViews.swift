@@ -25,10 +25,34 @@ struct OZDemoHomeView: View {
             tint: DemoColors.purple,
             destination: AnyView(RealWorldScenariosView())
         ),
-        DemoRoute(title: "Violin Accuracy", subtitle: "Distribution density, target annotation and dual axes", icon: "chart.dots.scatter", tint: DemoColors.cyan, destination: AnyView(AccuracyDemoView())),
-        DemoRoute(title: "Stacked Bar", subtitle: "Star achievement times with segment details", icon: "chart.bar.fill", tint: DemoColors.orange, destination: AnyView(StarAchievementDemoView())),
-        DemoRoute(title: "Donut Score", subtitle: "Polar score composition and custom legend", icon: "circle.dotted", tint: DemoColors.purple, destination: AnyView(DonutScoreDemoView())),
-        DemoRoute(title: "Stacked Area", subtitle: "Layered step interpolation for point distribution", icon: "chart.line.uptrend.xyaxis", tint: DemoColors.green, destination: AnyView(PointsDistributionDemoView()))
+        DemoRoute(
+            title: "Violin Accuracy",
+            subtitle: "Distribution density, target annotation and dual axes",
+            icon: "chart.dots.scatter",
+            tint: DemoColors.cyan,
+            destination: AnyView(AccuracyDemoView())
+        ),
+        DemoRoute(
+            title: "Stacked Bar",
+            subtitle: "Star achievement times with segment details",
+            icon: "chart.bar.fill",
+            tint: DemoColors.orange,
+            destination: AnyView(StarAchievementDemoView())
+        ),
+        DemoRoute(
+            title: "Donut Score",
+            subtitle: "Polar score composition and custom legend",
+            icon: "circle.dotted",
+            tint: DemoColors.purple,
+            destination: AnyView(DonutScoreDemoView())
+        ),
+        DemoRoute(
+            title: "Stacked Area",
+            subtitle: "Layered step interpolation for point distribution",
+            icon: "chart.line.uptrend.xyaxis",
+            tint: DemoColors.green,
+            destination: AnyView(PointsDistributionDemoView())
+        )
     ]
 
     private let catalogRoutes: [DemoRoute] = [
@@ -53,12 +77,48 @@ struct OZDemoHomeView: View {
             tint: DemoColors.pink,
             destination: AnyView(SelectableAnnotationsDemoView())
         ),
-        DemoRoute(title: "Line and Empty State", subtitle: "Axes, tooltip and no-data UI", icon: "chart.xyaxis.line", tint: DemoColors.purple, destination: AnyView(HeightDemoView())),
-        DemoRoute(title: "Area + Bar", subtitle: "Mixed cartesian composition", icon: "chart.bar.xaxis", tint: DemoColors.cyan, destination: AnyView(AreaAndBarDemoView())),
-        DemoRoute(title: "Viewport Controls", subtitle: "Initial zoom, scroll and programmatic zoom", icon: "plus.magnifyingglass", tint: DemoColors.green, destination: AnyView(ViewportControlsDemoView())),
-        DemoRoute(title: "Animation", subtitle: "Draw, morph and fade transitions", icon: "play.circle.fill", tint: DemoColors.orange, destination: AnyView(AnimationShowcaseView())),
-        DemoRoute(title: "Hybrid Layers", subtitle: "Lines, symbols and custom views", icon: "square.3.layers.3d", tint: DemoColors.pink, destination: AnyView(HybridChartDemoView())),
-        DemoRoute(title: "Event Stack", subtitle: "Multi-layer event markers", icon: "square.stack.3d.up.fill", tint: DemoColors.pink, destination: AnyView(EventStackDemoView()))
+        DemoRoute(
+            title: "Line and Empty State",
+            subtitle: "Axes, tooltip and no-data UI",
+            icon: "chart.xyaxis.line",
+            tint: DemoColors.purple,
+            destination: AnyView(HeightDemoView())
+        ),
+        DemoRoute(
+            title: "Area + Bar",
+            subtitle: "Mixed cartesian composition",
+            icon: "chart.bar.xaxis",
+            tint: DemoColors.cyan,
+            destination: AnyView(AreaAndBarDemoView())
+        ),
+        DemoRoute(
+            title: "Viewport Controls",
+            subtitle: "Initial zoom, scroll and programmatic zoom",
+            icon: "plus.magnifyingglass",
+            tint: DemoColors.green,
+            destination: AnyView(ViewportControlsDemoView())
+        ),
+        DemoRoute(
+            title: "Animation",
+            subtitle: "Draw, morph and fade transitions",
+            icon: "play.circle.fill",
+            tint: DemoColors.orange,
+            destination: AnyView(AnimationShowcaseView())
+        ),
+        DemoRoute(
+            title: "Hybrid Layers",
+            subtitle: "Lines, symbols and custom views",
+            icon: "square.3.layers.3d",
+            tint: DemoColors.pink,
+            destination: AnyView(HybridChartDemoView())
+        ),
+        DemoRoute(
+            title: "Event Stack",
+            subtitle: "Multi-layer event markers",
+            icon: "square.stack.3d.up.fill",
+            tint: DemoColors.pink,
+            destination: AnyView(EventStackDemoView())
+        )
     ]
 
     var body: some View {
