@@ -32,6 +32,20 @@ StackedBarSeries(
 )
 ```
 
+For selected-row callouts, use `ChartAnchoredCalloutLayout.vertical` to keep the
+pointer attached to the tap while the callout card clamps into readable space.
+This is useful when the user taps near the chart edge or near the first/last
+row.
+
+```swift
+let layout = ChartAnchoredCalloutLayout.vertical(
+    anchor: element.interactionPosition ?? element.position,
+    calloutSize: CGSize(width: 220, height: 118),
+    containerSize: canvasSize,
+    preferredSide: .below
+)
+```
+
 ## Donut Score
 
 Use `DonutSeries` with `gapAngle`, `lineCap`, `thickness`, and per-segment `DonutSegmentStyle` values to match product art direction.

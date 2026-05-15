@@ -81,6 +81,16 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
     @State private var customAnnotationSizes: [UUID: CGSize] = [:]
 
+    var seriesChangeSignature: [ChartSeriesChangeSignature] {
+        series.map { series in
+            ChartSeriesChangeSignature(
+                seriesID: series.id,
+                zIndex: series.zIndex,
+                points: series.data.map { ChartPointValueSignature(x: $0.x, y: $0.y) }
+            )
+        }
+    }
+
     // MARK: - Init
 
     public init(
@@ -229,7 +239,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                 chartWithLegend(topH: insets.top, bottomH: insets.bottom)
             }
         }
-        .onChange(of: series.map { $0.id }) { _ in
+        .onChange(of: seriesChangeSignature) { _ in
             syncBaseScales()
             store.handleDataChange(
                 series: series,
@@ -750,6 +760,17 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         position.y >= 0 &&
         position.y <= store.canvasSize.height
     }
+}
+
+struct ChartSeriesChangeSignature: Equatable {
+    let seriesID: UUID
+    let zIndex: Int
+    let points: [ChartPointValueSignature]
+}
+
+struct ChartPointValueSignature: Equatable {
+    let x: Double
+    let y: Double
 }
 
 private struct ChartAnnotationTooltipOverlay: View {

@@ -12,6 +12,9 @@ Use this checklist before sending the framework to an external company or using 
 * `Docs/IntegrationGuide.md` explains adoption patterns for app teams.
 * `Docs/HandoffGuide.md` explains the external-team integration path.
 * `Docs/Release-2.1.md` explains prerelease scope and verification.
+* `Docs/Migration-2.1.md` explains the 2.0 to 2.1 adoption path.
+* `Docs/PerformanceBenchmarks.md` records opt-in performance expectations.
+* `Docs/DemoAppQA.md` documents the manual demo validation pass.
 * `Sources/OZCharts/OZCharts.docc` provides Xcode DocC documentation.
 * `.swiftformat` and `.swiftlint.yml` define the shared code style.
 
@@ -27,6 +30,7 @@ Use this checklist before sending the framework to an external company or using 
   * stacked area point distribution
 * real-world medical, sport, financial, and operational scenarios
 * handoff scenarios are separated from the component catalog on the demo home screen
+* demo examples are split by responsibility under `Home`, `Showcase`, `Shared`, `Scenarios`, and `Demos`
 
 ## API Readiness
 
@@ -44,6 +48,7 @@ Use this checklist before sending the framework to an external company or using 
 * Selected non-point elements have a visible `ChartSelectedElementStyle` overlay.
 * Tooltip placement clamps content inside the plot bounds.
 * Tooltip width can be capped with `.chartTooltipMaxWidth`.
+* Product callouts can use `ChartAnchoredCalloutLayout` for tap-aligned arrows.
 
 ## Tests
 
@@ -74,6 +79,7 @@ Expected coverage:
 * rendering smoke tests
 * product snapshot signature tests
 * JSON scenario decoding tests
+* demo app source-structure tests
 
 Optional:
 
@@ -116,3 +122,4 @@ Send:
 * DemoApp instructions
 * latest screenshots
 * known limitations and critical follow-up list
+* latest performance benchmark output when performance matters to the client

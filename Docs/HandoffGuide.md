@@ -8,6 +8,7 @@ This guide is the shortest path for an external team to evaluate and integrate O
 2. Open `Docs/ProductCharts.md` to recreate the supplied product-style charts.
 3. Run `DemoApp/DemoApp.xcodeproj` and start with the Handoff Scenarios section.
 4. Check `Docs/DeliveryChecklist.md` before using the package in a client project.
+5. Use `Docs/Migration-2.1.md` when upgrading existing 2.0 integration code.
 
 ## Integration Path
 
@@ -64,6 +65,8 @@ The performance benchmarks are opt-in so normal CI stays fast.
 * Delivery checklist.
 * Framework review with priorities.
 * Optional performance benchmarks.
+* Performance benchmark baseline notes.
+* Demo app QA guide.
 * DocC catalog for Xcode documentation.
 
 ## Remaining Manual QA

@@ -16,6 +16,7 @@
 * `ChartSelectedElementStyle` and built-in selected element overlay rendering.
 * Range annotation label positioning for dense product charts.
 * Tooltip max-width support and safer automatic placement.
+* `ChartAnchoredCalloutLayout` for product callouts whose arrow must point to the tap location while the card stays readable.
 * `ChartSelectedElement` and element hit-testing for bars, stacked-bar segments, and donut segments.
 * `.chartElementSelection(...)` for non-point interaction callbacks.
 * `selectedElements` support in `ChartSelectionState`.
@@ -24,15 +25,21 @@
 * Stable `id:` parameters for chart series and custom view annotations.
 * Placement, collision priority, and padding controls for `CustomViewAnnotation`.
 * Product snapshot signature tests and optional performance benchmark tests.
+* Demo app source-structure regression tests.
 
 ### Changed
 
 * DemoApp now includes product-style graph recreations and event-driven scenarios.
+* DemoApp examples are split into `Home`, `Showcase`, `Shared`, `Scenarios`, and typed demo folders for easier external handoff.
 * Donut segments can expose product labels through `segmentLabelMapper`.
 * Custom SwiftUI annotations are clamped and resolved through the shared label collision engine.
 * Canvas-drawn range and value labels now use shared collision/clamping rules.
 * Live tracking now supports frozen history and delayed-live paused windows when users scroll away from latest.
 * Live viewports are clamped safely when older data is trimmed from the domain.
+
+### Fixed
+
+* Stable series ids now still trigger chart layout updates when point values change, fixing live chart redraws and animation demos without returning to unstable UUID-driven refreshes.
 
 ## 2.0.0
 

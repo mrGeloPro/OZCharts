@@ -10,8 +10,11 @@ This prerelease focuses on product-chart readiness, live viewport behavior, and 
 * Axis display transforms for secondary-axis use cases.
 * Live viewport tracking with follow-latest, paused history, delayed live window, and jump-to-latest behavior.
 * Tooltip and callout presets with clamped placement.
+* Anchored callout layout helper for tap-point aligned product tooltips.
 * Product snapshot signature tests and optional performance benchmarks.
+* Demo app source split into handoff, product, core, advanced, shared, and scenario folders.
 * DocC and handoff documentation for external integration.
+* Stable series ids now track point-value changes, so live updates and animated data transitions redraw correctly.
 
 ## Verification
 
@@ -35,6 +38,12 @@ xcodebuild -project DemoApp/DemoApp.xcodeproj -scheme DemoApp -configuration Deb
 
 ## Known Follow-Ups
 
-* Add automated rendered snapshot tests when a stable visual snapshot runner is chosen.
+* Add full rendered DemoApp screenshot tests when a stable simulator snapshot runner is chosen.
 * Decide final semantic version tag name before sharing the prerelease externally.
 * Capture fresh simulator screenshots for the handoff deck after final visual QA.
+
+## Handoff Links
+
+* `Docs/Migration-2.1.md`
+* `Docs/PerformanceBenchmarks.md`
+* `Docs/DemoAppQA.md`

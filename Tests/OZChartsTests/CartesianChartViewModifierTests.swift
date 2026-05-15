@@ -129,6 +129,64 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.liveTrackingMode.pausedBehavior, .preserveTrailingOffset)
     }
 
+    func testSeriesChangeSignatureTracksDataChangesForStableSeriesIDs() {
+        let seriesID = UUID(uuidString: "00000000-0000-0000-0000-000000000123")!
+        let first = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: [Point2D(x: 0, y: 1)],
+                    id: seriesID,
+                    color: .blue
+                )
+            ],
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        ) { _ in EmptyView() }
+
+        let updated = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: [Point2D(x: 0, y: 1), Point2D(x: 1, y: 2)],
+                    id: seriesID,
+                    color: .blue
+                )
+            ],
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        ) { _ in EmptyView() }
+
+        XCTAssertNotEqual(first.seriesChangeSignature, updated.seriesChangeSignature)
+    }
+
+    func testSeriesChangeSignatureIgnoresPointIDsWhenValuesAreUnchanged() {
+        let seriesID = UUID(uuidString: "00000000-0000-0000-0000-000000000124")!
+        let first = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: [Point2D(id: UUID(), x: 0, y: 1)],
+                    id: seriesID,
+                    color: .blue
+                )
+            ],
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        ) { _ in EmptyView() }
+
+        let rerendered = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: [Point2D(id: UUID(), x: 0, y: 1)],
+                    id: seriesID,
+                    color: .blue
+                )
+            ],
+            xScale: LinearScale(domain: 0...10),
+            yScale: LinearScale(domain: 0...10)
+        ) { _ in EmptyView() }
+
+        XCTAssertEqual(first.seriesChangeSignature, rerendered.seriesChangeSignature)
+    }
+
     func testAccessibilityModifierInstallsDescriptor() {
         let view = makeChart().chartAccessibility(label: "Sales", summary: "Monthly sales")
 

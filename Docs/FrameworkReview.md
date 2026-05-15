@@ -4,7 +4,7 @@ This review summarizes readiness from four perspectives: framework architect, in
 
 ## Executive Summary
 
-OZCharts is strong enough for a serious demo and controlled product integration. The framework now covers the product-style chart requirements: real domain events, polished series styling, violin distributions, donut charts, stacked bars, stacked area, smooth lines, annotations, tooltips, secondary-axis display transforms, linked selection, non-point element selection, selected-element overlays, shared plot-area layout, collision-aware annotations, collision-aware value labels, and centralized hit-testing.
+OZCharts is strong enough for a serious demo and controlled product integration. The framework now covers the product-style chart requirements: real domain events, polished series styling, violin distributions, donut charts, stacked bars, stacked area, smooth lines, annotations, tooltips, secondary-axis display transforms, linked selection, non-point element selection, selected-element overlays, shared plot-area layout, collision-aware annotations, collision-aware value labels, anchor-aware callout layout, live viewport behavior, and centralized hit-testing.
 
 The main remaining risks are not about whether the charts can be drawn. They are about production hardening: API stability, visual regression discipline, accessibility depth, performance budgets on device, and a few customization gaps that larger customers will expect.
 
@@ -19,7 +19,7 @@ Strengths:
 * Label placement and clamping now have a reusable `ChartLabelCollisionResolver`.
 * Element and point hit-testing share `ChartHitTestResolver`.
 * Scales, domains, axes, series, annotations, styling, and interaction are reasonably separated.
-* The framework has real tests, render smoke tests, product snapshot signatures, and optional benchmarks.
+* The framework has real tests, render smoke tests, product snapshot signatures, demo structure checks, and optional benchmarks.
 
 Risks:
 
@@ -43,7 +43,7 @@ Strengths:
 
 Risks:
 
-* There is no dedicated DocC catalog yet.
+* The DocC catalog exists, but the API-level coverage should be expanded before a public package launch.
 * Advanced chart recipes still require reading demo code.
 * Some style customization requires understanding lower-level types like `ChartFillStyle`, `AxisTransform`, and annotation positioning.
 * Error states are silent; invalid domains or impossible layout parameters usually render nothing rather than exposing diagnostics.
@@ -107,9 +107,9 @@ Run DemoApp on at least:
 
 Capture screenshots for the handoff. Automated render tests are not a replacement for checking real device layout, navigation, status-bar safe areas, and touch behavior.
 
-### P1: DocC Documentation
+### P1: Expand DocC Documentation
 
-Add a DocC catalog with API-level docs for:
+Expand the DocC catalog with API-level docs for:
 
 * `CartesianChartView`
 * series types
@@ -124,6 +124,12 @@ This matters if another company will integrate without constant support.
 ### P1: Visual Regression Baselines
 
 Current product snapshot tests verify render shape and non-empty output. Add pixel or perceptual baselines for the key product charts if the visual match is contractual.
+
+### P1: Screenshot Review Artifacts
+
+Capture and store the final DemoApp screens used for handoff. The framework has
+render smoke coverage, but external stakeholders need stable visual artifacts
+that show the approved presentation state.
 
 ### P1: Selected-State Customization Depth
 

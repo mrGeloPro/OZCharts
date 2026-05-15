@@ -125,6 +125,30 @@ For product-like tooltips, prefer a fixed content width plus automatic
 placement. This keeps the callout visually close to the tapped row while the
 layout engine avoids clipping at the left/right edges.
 
+When the callout is drawn by the app as a custom overlay, resolve the card
+center and pointer offset with `ChartAnchoredCalloutLayout`. This keeps the
+arrow locked to the exact tap while the card itself moves into safe space:
+
+```swift
+let layout = ChartAnchoredCalloutLayout.vertical(
+    anchor: element.interactionPosition ?? element.position,
+    calloutSize: CGSize(width: 220, height: 118),
+    containerSize: canvasSize,
+    preferredSide: .below,
+    padding: 8,
+    arrowInset: 18
+)
+
+CustomViewAnnotation(
+    id: selectedRowID,
+    x: layout.center.x,
+    y: layout.center.y,
+    placement: .fixed(x: layout.center.x, y: layout.center.y)
+) {
+    achievementCallout(arrowXOffset: layout.arrowXOffset, side: layout.side)
+}
+```
+
 ## Total Score
 
 Use `DonutSeries` for score composition. `gapAngle` controls arc spacing, `thickness` controls ring weight, `lineCap` controls rounded ends, and each `DonutSegmentStyle` can use `explodedOffset` for separated segments.

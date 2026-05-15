@@ -69,6 +69,9 @@ For recreating polished product charts, use [Product Chart Recipes](Docs/Product
 For external-team onboarding, use the [Handoff Guide](Docs/HandoffGuide.md).
 For handoff readiness, use the [Delivery Checklist](Docs/DeliveryChecklist.md).
 For prerelease scope, see [OZCharts 2.1 Prerelease Notes](Docs/Release-2.1.md).
+For migration details, see the [OZCharts 2.1 Migration Guide](Docs/Migration-2.1.md).
+For performance expectations, see [Performance Benchmarks](Docs/PerformanceBenchmarks.md).
+For manual demo validation, see [DemoApp QA Guide](Docs/DemoAppQA.md).
 For architectural risks and priorities, see the [Framework Review](Docs/FrameworkReview.md).
 
 ### Explicit Domains
@@ -360,6 +363,21 @@ segments. It includes stable ids, series metadata, `bounds`, element-center
 `position`, gesture `interactionPosition`, domain values, labels, and the
 element kind, which makes product callouts and external detail panels much
 easier to implement.
+
+Use `ChartAnchoredCalloutLayout` when the tooltip card should remain readable
+while its arrow points at the exact tap location:
+
+```swift
+let layout = ChartAnchoredCalloutLayout.vertical(
+    anchor: element.interactionPosition ?? element.position,
+    calloutSize: CGSize(width: 180, height: 92),
+    containerSize: plotSize,
+    preferredSide: .below
+)
+```
+
+Pass `layout.center` to a fixed custom annotation placement and use
+`layout.arrowXOffset` to offset the callout triangle.
 
 When a series is created inside a SwiftUI `body`, pass a stable `id:` if
 selection, animation continuity, or linked chart state matters:
