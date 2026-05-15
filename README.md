@@ -66,7 +66,9 @@ struct ContentView: View {
 
 For product integration, start with the [Integration Guide](Docs/IntegrationGuide.md).
 For recreating polished product charts, use [Product Chart Recipes](Docs/ProductCharts.md).
+For external-team onboarding, use the [Handoff Guide](Docs/HandoffGuide.md).
 For handoff readiness, use the [Delivery Checklist](Docs/DeliveryChecklist.md).
+For prerelease scope, see [OZCharts 2.1 Prerelease Notes](Docs/Release-2.1.md).
 For architectural risks and priorities, see the [Framework Review](Docs/FrameworkReview.md).
 
 ### Explicit Domains
@@ -557,9 +559,18 @@ let band = BandScale(categories: ["Low", "Medium", "High"])
 let dateAxis = XAxisConfig.date()
 ```
 
+## Documentation
+
+The package includes a DocC catalog in `Sources/OZCharts/OZCharts.docc`.
+Open the package in Xcode and build documentation to browse the public API,
+live chart guidance, selection and annotations, and product-chart recipes.
+
 ## Running the Demo App
 
-This repository includes a comprehensive `DemoApp` demonstrating advanced use cases like Hybrid Layering, Custom Axes, Live Animations, and real-world JSON event streams.
+This repository includes a comprehensive `DemoApp`. The first section is tuned
+for handoff review and shows product-like charts, live telemetry, and
+real-world JSON event streams. The second section is a focused component
+catalog for developers.
 
 1. Clone the repository.
 2. Open `DemoApp/DemoApp.xcodeproj` in Xcode.

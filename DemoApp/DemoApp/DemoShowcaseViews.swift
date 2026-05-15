@@ -10,20 +10,34 @@ import SwiftUI
 import OZCharts
 
 struct OZDemoHomeView: View {
-    private let showcaseRoutes: [DemoRoute] = [
+    private let handoffRoutes: [DemoRoute] = [
+        DemoRoute(
+            title: "Live Telemetry",
+            subtitle: "Streaming data, history scroll and live tracking",
+            icon: "waveform.path.ecg",
+            tint: DemoColors.green,
+            destination: AnyView(LiveTrackingDemoView())
+        ),
+        DemoRoute(
+            title: "Real-world Data",
+            subtitle: "JSON event streams adapted into scenarios",
+            icon: "list.bullet.rectangle.portrait",
+            tint: DemoColors.purple,
+            destination: AnyView(RealWorldScenariosView())
+        ),
+        DemoRoute(title: "Violin Accuracy", subtitle: "Distribution density, target annotation and dual axes", icon: "chart.dots.scatter", tint: DemoColors.cyan, destination: AnyView(AccuracyDemoView())),
+        DemoRoute(title: "Stacked Bar", subtitle: "Star achievement times with segment details", icon: "chart.bar.fill", tint: DemoColors.orange, destination: AnyView(StarAchievementDemoView())),
+        DemoRoute(title: "Donut Score", subtitle: "Polar score composition and custom legend", icon: "circle.dotted", tint: DemoColors.purple, destination: AnyView(DonutScoreDemoView())),
+        DemoRoute(title: "Stacked Area", subtitle: "Layered step interpolation for point distribution", icon: "chart.line.uptrend.xyaxis", tint: DemoColors.green, destination: AnyView(PointsDistributionDemoView()))
+    ]
+
+    private let catalogRoutes: [DemoRoute] = [
         DemoRoute(
             title: "All Features",
             subtitle: "Selection, crosshair, viewport, annotations, area and bars",
             icon: "sparkles",
             tint: DemoColors.cyan,
             destination: AnyView(AllFeaturesShowcaseView())
-        ),
-        DemoRoute(
-            title: "Live Telemetry",
-            subtitle: "Streaming data with live tracking",
-            icon: "waveform.path.ecg",
-            tint: DemoColors.green,
-            destination: AnyView(LiveTrackingDemoView())
         ),
         DemoRoute(
             title: "Linked Charts",
@@ -39,25 +53,11 @@ struct OZDemoHomeView: View {
             tint: DemoColors.pink,
             destination: AnyView(SelectableAnnotationsDemoView())
         ),
-        DemoRoute(
-            title: "Real-world Data",
-            subtitle: "JSON event streams adapted into scenarios",
-            icon: "list.bullet.rectangle.portrait",
-            tint: DemoColors.purple,
-            destination: AnyView(RealWorldScenariosView())
-        )
-    ]
-
-    private let catalogRoutes: [DemoRoute] = [
         DemoRoute(title: "Line and Empty State", subtitle: "Axes, tooltip and no-data UI", icon: "chart.xyaxis.line", tint: DemoColors.purple, destination: AnyView(HeightDemoView())),
         DemoRoute(title: "Area + Bar", subtitle: "Mixed cartesian composition", icon: "chart.bar.xaxis", tint: DemoColors.cyan, destination: AnyView(AreaAndBarDemoView())),
         DemoRoute(title: "Viewport Controls", subtitle: "Initial zoom, scroll and programmatic zoom", icon: "plus.magnifyingglass", tint: DemoColors.green, destination: AnyView(ViewportControlsDemoView())),
         DemoRoute(title: "Animation", subtitle: "Draw, morph and fade transitions", icon: "play.circle.fill", tint: DemoColors.orange, destination: AnyView(AnimationShowcaseView())),
         DemoRoute(title: "Hybrid Layers", subtitle: "Lines, symbols and custom views", icon: "square.3.layers.3d", tint: DemoColors.pink, destination: AnyView(HybridChartDemoView())),
-        DemoRoute(title: "Donut Score", subtitle: "Polar composition and custom legend", icon: "circle.dotted", tint: DemoColors.purple, destination: AnyView(DonutScoreDemoView())),
-        DemoRoute(title: "Violin Accuracy", subtitle: "Distribution density and dual axes", icon: "chart.dots.scatter", tint: DemoColors.cyan, destination: AnyView(AccuracyDemoView())),
-        DemoRoute(title: "Stacked Area", subtitle: "Layered step interpolation", icon: "chart.line.uptrend.xyaxis", tint: DemoColors.green, destination: AnyView(PointsDistributionDemoView())),
-        DemoRoute(title: "Stacked Bar", subtitle: "Grouped horizontal bars", icon: "chart.bar.fill", tint: DemoColors.orange, destination: AnyView(StarAchievementDemoView())),
         DemoRoute(title: "Event Stack", subtitle: "Multi-layer event markers", icon: "square.stack.3d.up.fill", tint: DemoColors.pink, destination: AnyView(EventStackDemoView()))
     ]
 
@@ -69,18 +69,18 @@ struct OZDemoHomeView: View {
                 MetricsStrip()
 
                 DemoSectionHeader(
-                    title: "Showcase",
-                    subtitle: "Start here to see the 2.0 surface working together."
+                    title: "Handoff Scenarios",
+                    subtitle: "Start here when evaluating OZCharts for a product integration."
                 )
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)], spacing: 12) {
-                    ForEach(showcaseRoutes) { route in
+                    ForEach(handoffRoutes) { route in
                         DemoRouteCard(route: route, style: .featured)
                     }
                 }
 
                 DemoSectionHeader(
-                    title: "Examples Catalog",
+                    title: "Developer Catalog",
                     subtitle: "Focused screens for each chart type and interaction."
                 )
 
@@ -102,7 +102,7 @@ struct OZDemoHomeView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("OZCharts 2.0")
+                        Text("OZCharts 2.1")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
                         Text("Production-style charting for live data, analytics, events and rich interactions.")
@@ -562,7 +562,7 @@ private struct MetricsStrip: View {
         HStack(spacing: 10) {
             ShowcaseMetricCard(title: "Series", value: "8", trend: "types", color: DemoColors.cyan)
             ShowcaseMetricCard(title: "Input", value: "Touch", trend: "zoom", color: DemoColors.green)
-            ShowcaseMetricCard(title: "Release", value: "2.0", trend: "ready", color: DemoColors.orange)
+            ShowcaseMetricCard(title: "Release", value: "2.1", trend: "pre", color: DemoColors.orange)
         }
     }
 }

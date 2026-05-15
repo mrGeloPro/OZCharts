@@ -10,6 +10,9 @@ Use this checklist before sending the framework to an external company or using 
 * `README.md` explains install, core API, selection, annotations, product styling, and demo app.
 * `Docs/ProductCharts.md` explains how to recreate the product-style demo charts.
 * `Docs/IntegrationGuide.md` explains adoption patterns for app teams.
+* `Docs/HandoffGuide.md` explains the external-team integration path.
+* `Docs/Release-2.1.md` explains prerelease scope and verification.
+* `Sources/OZCharts/OZCharts.docc` provides Xcode DocC documentation.
 
 ## Demo
 
@@ -21,7 +24,8 @@ Use this checklist before sending the framework to an external company or using 
   * stacked achievement bars
   * donut score composition
   * stacked area point distribution
-  * real-world medical, sport, financial, and operational scenarios
+* real-world medical, sport, financial, and operational scenarios
+* handoff scenarios are separated from the component catalog on the demo home screen
 
 ## API Readiness
 
@@ -69,6 +73,15 @@ Optional:
 RUN_OZCHARTS_PERFORMANCE_TESTS=1 swift test --filter PerformanceBenchmarkTests
 ```
 
+Expected optional benchmark coverage:
+
+* dense line layout with downsampling
+* stacked area layout
+* stacked bar selectable-element generation
+* dense point hit-testing
+* live append and trim updates
+* donut segment hit-testing
+
 ## Manual QA
 
 * Verify charts on a small iPhone simulator.
@@ -88,7 +101,9 @@ Send:
 * repository URL or source archive
 * README
 * Integration Guide
+* Handoff Guide
 * Product Chart Recipes
+* DocC catalog
 * Release notes or changelog
 * DemoApp instructions
 * latest screenshots
