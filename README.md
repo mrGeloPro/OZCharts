@@ -289,7 +289,12 @@ CartesianChartView(
     EmptyView()
 }
 .chartInitialViewport(xWindow: 60 * 60, anchor: .trailing)
-.chartLiveTracking(.followLatest(pauseOnUserInteraction: true))
+.chartLiveTracking(
+    .followLatest(
+        pauseOnUserInteraction: true,
+        pausedBehavior: .freezeVisibleWindow
+    )
+)
 .chartViewport($viewport)
 
 Button("Live") {
@@ -299,6 +304,10 @@ Button("Live") {
 
 `viewport.liveTrackingStatus` reports whether the chart is following latest
 data or paused because the user is viewing history.
+
+Use `.freezeVisibleWindow` when history should stay completely stable while the
+user inspects it. Use `.preserveTrailingOffset` when the user should keep the
+same delay from live data and continue seeing a moving delayed window.
 
 Share selection state when multiple charts should move together:
 

@@ -116,12 +116,17 @@ final class CartesianChartViewModifierTests: XCTestCase {
 
     func testLiveTrackingModifierAcceptsExplicitMode() {
         let view = makeChart().chartLiveTracking(
-            .followLatest(pauseOnUserInteraction: false, trailingToleranceRatio: 0.1)
+            .followLatest(
+                pauseOnUserInteraction: false,
+                trailingToleranceRatio: 0.1,
+                pausedBehavior: .preserveTrailingOffset
+            )
         )
 
         XCTAssertTrue(view.isLiveTrackingEnabled)
         XCTAssertEqual(view.liveTrackingMode.pauseOnUserInteraction, false)
         XCTAssertEqual(view.liveTrackingMode.trailingToleranceRatio, 0.1)
+        XCTAssertEqual(view.liveTrackingMode.pausedBehavior, .preserveTrailingOffset)
     }
 
     func testAccessibilityModifierInstallsDescriptor() {

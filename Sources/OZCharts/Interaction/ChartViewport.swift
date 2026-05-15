@@ -19,6 +19,7 @@ public struct ChartViewport {
     var isDragging: Bool = false
     var isZooming: Bool = false
     var liveTrackingStatus: ChartLiveTrackingStatus = .inactive
+    var pausedTrailingOffset: Double?
 
     var state: ChartViewportState {
         ChartViewportState(
@@ -200,6 +201,9 @@ public struct ChartViewport {
         isDragging = false
         isZooming = false
         liveTrackingStatus = state.liveTrackingStatus
+        if liveTrackingStatus != .pausedByUser {
+            pausedTrailingOffset = nil
+        }
     }
 
     // MARK: - Reset
@@ -214,6 +218,7 @@ public struct ChartViewport {
         isDragging       = false
         isZooming        = false
         liveTrackingStatus = .inactive
+        pausedTrailingOffset = nil
     }
 
     // MARK: - Live tracking
@@ -226,6 +231,7 @@ public struct ChartViewport {
     ) {
         guard mode.isEnabled else {
             liveTrackingStatus = .inactive
+            pausedTrailingOffset = nil
             clampVisibleDomains(globalXDomain: globalXDomain, globalYDomain: nil)
             return
         }
@@ -242,7 +248,11 @@ public struct ChartViewport {
             isAtTrailingEdge(globalXDomain: globalXDomain, toleranceRatio: mode.trailingToleranceRatio)
 
         guard canFollow else {
-            clampVisibleDomains(globalXDomain: globalXDomain, globalYDomain: nil)
+            applyPausedLiveTracking(
+                mode: mode,
+                currentWindowWidth: currentWindowWidth,
+                globalXDomain: globalXDomain
+            )
             liveTrackingStatus = .pausedByUser
             return
         }
@@ -250,6 +260,7 @@ public struct ChartViewport {
         let newDomain = (newGlobalMax - currentWindowWidth)...newGlobalMax
         visibleXDomain = clamp(newDomain, within: globalXDomain)
         liveTrackingStatus = .followingLatest
+        pausedTrailingOffset = nil
     }
 
     mutating func jumpToLatest(
@@ -263,6 +274,7 @@ public struct ChartViewport {
             isDragging = false
             isZooming = false
             liveTrackingStatus = .followingLatest
+            pausedTrailingOffset = nil
             return
         }
 
@@ -273,6 +285,7 @@ public struct ChartViewport {
         isDragging = false
         isZooming = false
         liveTrackingStatus = .followingLatest
+        pausedTrailingOffset = nil
     }
 
     mutating func clampVisibleDomains(
@@ -320,18 +333,42 @@ public struct ChartViewport {
     ) {
         guard mode.isEnabled else {
             liveTrackingStatus = .inactive
+            pausedTrailingOffset = nil
             return
         }
 
         guard mode.pauseOnUserInteraction, let globalXDomain else {
             liveTrackingStatus = .followingLatest
+            pausedTrailingOffset = nil
             return
         }
 
-        liveTrackingStatus = isAtTrailingEdge(
+        let isTrailing = isAtTrailingEdge(
             globalXDomain: globalXDomain,
             toleranceRatio: mode.trailingToleranceRatio
-        ) ? .followingLatest : .pausedByUser
+        )
+        liveTrackingStatus = isTrailing ? .followingLatest : .pausedByUser
+        pausedTrailingOffset = isTrailing ? nil : trailingOffset(from: globalXDomain)
+    }
+
+    private mutating func applyPausedLiveTracking(
+        mode: ChartLiveTrackingMode,
+        currentWindowWidth: Double,
+        globalXDomain: ClosedRange<Double>
+    ) {
+        guard mode.pausedBehavior == .preserveTrailingOffset,
+              currentWindowWidth.isFinite,
+              currentWindowWidth > 0 else {
+            clampVisibleDomains(globalXDomain: globalXDomain, globalYDomain: nil)
+            return
+        }
+
+        let offset = pausedTrailingOffset ?? trailingOffset(from: globalXDomain) ?? 0
+        pausedTrailingOffset = max(0, offset)
+
+        let upper = globalXDomain.upperBound - max(0, offset)
+        let lower = upper - currentWindowWidth
+        visibleXDomain = clamp(lower...upper, within: globalXDomain)
     }
 
     private func isAtTrailingEdge(
@@ -343,6 +380,11 @@ public struct ChartViewport {
         let windowWidth = max(visibleXDomain.upperBound - visibleXDomain.lowerBound, 0)
         let tolerance = max(windowWidth * max(0, toleranceRatio), .ulpOfOne)
         return abs(globalXDomain.upperBound - visibleXDomain.upperBound) <= tolerance
+    }
+
+    private func trailingOffset(from globalXDomain: ClosedRange<Double>) -> Double? {
+        guard let visibleXDomain else { return nil }
+        return max(0, globalXDomain.upperBound - visibleXDomain.upperBound)
     }
 
     private func zoomed(

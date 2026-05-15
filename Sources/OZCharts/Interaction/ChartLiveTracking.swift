@@ -24,31 +24,41 @@ public enum ChartViewportCommand: Equatable {
     case jumpToLatest
 }
 
+public enum ChartLiveTrackingPausedBehavior: Equatable {
+    case freezeVisibleWindow
+    case preserveTrailingOffset
+}
+
 public struct ChartLiveTrackingMode: Equatable {
     public var isEnabled: Bool
     public var pauseOnUserInteraction: Bool
     public var trailingToleranceRatio: Double
+    public var pausedBehavior: ChartLiveTrackingPausedBehavior
 
     public init(
         isEnabled: Bool = true,
         pauseOnUserInteraction: Bool = true,
-        trailingToleranceRatio: Double = 0.02
+        trailingToleranceRatio: Double = 0.02,
+        pausedBehavior: ChartLiveTrackingPausedBehavior = .freezeVisibleWindow
     ) {
         self.isEnabled = isEnabled
         self.pauseOnUserInteraction = pauseOnUserInteraction
         self.trailingToleranceRatio = trailingToleranceRatio
+        self.pausedBehavior = pausedBehavior
     }
 
     public static let disabled = ChartLiveTrackingMode(isEnabled: false)
 
     public static func followLatest(
         pauseOnUserInteraction: Bool = true,
-        trailingToleranceRatio: Double = 0.02
+        trailingToleranceRatio: Double = 0.02,
+        pausedBehavior: ChartLiveTrackingPausedBehavior = .freezeVisibleWindow
     ) -> ChartLiveTrackingMode {
         ChartLiveTrackingMode(
             isEnabled: true,
             pauseOnUserInteraction: pauseOnUserInteraction,
-            trailingToleranceRatio: trailingToleranceRatio
+            trailingToleranceRatio: trailingToleranceRatio,
+            pausedBehavior: pausedBehavior
         )
     }
 }

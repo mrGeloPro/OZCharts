@@ -375,6 +375,73 @@ final class ChartStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testPausedLiveTrackingCanPreserveTrailingOffsetOnNewData() {
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0...100),
+            yScale: LinearScale(domain: 0...100)
+        )
+        store.canvasSize = CGSize(width: 100, height: 100)
+
+        let initialSeries = LineSeries(
+            data: [Point2D(x: 80, y: 40), Point2D(x: 100, y: 70)],
+            color: .blue
+        ).eraseToAnyChartSeries()
+
+        let mode = ChartLiveTrackingMode.followLatest(pausedBehavior: .preserveTrailingOffset)
+
+        store.handleDataChange(
+            series: [initialSeries],
+            isLiveTrackingEnabled: true,
+            liveTrackingMode: mode,
+            initialViewport: .xWindow(length: 20, anchor: .trailing)
+        )
+
+        store.handleGestureEvent(
+            .panChanged(translation: CGSize(width: 50, height: 0)),
+            isHorizontalScrollEnabled: true,
+            isVerticalScrollEnabled: false,
+            isHorizontalZoomEnabled: true,
+            isVerticalZoomEnabled: false,
+            minZoomScale: 0.1,
+            hitboxRadius: 20,
+            liveTrackingMode: mode,
+            series: [initialSeries]
+        )
+        store.handleGestureEvent(
+            .panEnded,
+            isHorizontalScrollEnabled: true,
+            isVerticalScrollEnabled: false,
+            isHorizontalZoomEnabled: true,
+            isVerticalZoomEnabled: false,
+            minZoomScale: 0.1,
+            hitboxRadius: 20,
+            liveTrackingMode: mode,
+            series: [initialSeries]
+        )
+
+        store.updateBaseScales(
+            xScale: LinearScale(domain: 0...120),
+            yScale: LinearScale(domain: 0...100)
+        )
+
+        let nextSeries = LineSeries(
+            data: [Point2D(x: 80, y: 42), Point2D(x: 120, y: 74)],
+            color: .green
+        ).eraseToAnyChartSeries()
+
+        store.handleDataChange(
+            series: [nextSeries],
+            isLiveTrackingEnabled: true,
+            liveTrackingMode: mode,
+            initialViewport: .xWindow(length: 20, anchor: .trailing)
+        )
+
+        XCTAssertEqual(store.viewportState.visibleXDomain?.lowerBound ?? -1, 90, accuracy: 0.0001)
+        XCTAssertEqual(store.viewportState.visibleXDomain?.upperBound ?? -1, 110, accuracy: 0.0001)
+        XCTAssertEqual(store.viewportState.liveTrackingStatus, .pausedByUser)
+    }
+
+    @MainActor
     func testTrimmedLiveDataClampsPausedViewportWithoutJumpingToLatest() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
             xScale: LinearScale(domain: 0...100),

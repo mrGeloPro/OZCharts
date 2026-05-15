@@ -236,7 +236,12 @@ CartesianChartView(
     EmptyView()
 }
 .chartInitialViewport(xWindow: 60 * 60, anchor: .trailing)
-.chartLiveTracking(.followLatest(pauseOnUserInteraction: true))
+.chartLiveTracking(
+    .followLatest(
+        pauseOnUserInteraction: true,
+        pausedBehavior: .freezeVisibleWindow
+    )
+)
 .chartViewport($viewport)
 ```
 
@@ -253,6 +258,11 @@ Button("Live") {
 
 If old data is trimmed from the app-side buffer, OZCharts clamps the paused
 viewport into the remaining domain instead of jumping to the latest window.
+
+Paused live mode supports two product behaviors:
+
+* `.freezeVisibleWindow`: keep the inspected history window fixed while new data arrives.
+* `.preserveTrailingOffset`: keep the same delay from the latest data, so the visible window continues moving as a delayed live stream.
 
 ## Linked Charts
 

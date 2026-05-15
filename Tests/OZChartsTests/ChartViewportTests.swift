@@ -386,4 +386,38 @@ final class ChartViewportTests: XCTestCase {
         XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 120, accuracy: 0.0001)
         XCTAssertEqual(viewport.liveTrackingStatus, .followingLatest)
     }
+
+    func testPausedLiveTrackingCanPreserveTrailingOffset() {
+        var viewport = ChartViewport()
+        viewport.visibleXDomain = 80...100
+
+        viewport.applyPan(
+            translationWidth: 50,
+            translationHeight: 0,
+            canvasSize: CGSize(width: 100, height: 100),
+            globalXDomain: 0...100,
+            globalYDomain: 0...100,
+            scrollX: true,
+            scrollY: false
+        )
+        viewport.endPan(
+            liveTrackingMode: .followLatest(pausedBehavior: .preserveTrailingOffset),
+            globalXDomain: 0...100
+        )
+
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 70, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 90, accuracy: 0.0001)
+        XCTAssertEqual(viewport.liveTrackingStatus, .pausedByUser)
+
+        viewport.applyLiveTracking(
+            mode: .followLatest(pausedBehavior: .preserveTrailingOffset),
+            newGlobalMax: 120,
+            currentWindowWidth: 20,
+            globalXDomain: 0...120
+        )
+
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 90, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 110, accuracy: 0.0001)
+        XCTAssertEqual(viewport.liveTrackingStatus, .pausedByUser)
+    }
 }

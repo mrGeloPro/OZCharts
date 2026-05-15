@@ -1158,6 +1158,7 @@ struct LiveTrackingDemoView: View {
     @State private var timer: Timer?
     @State private var counter: Double = 0
     @State private var viewport = ChartViewportState.automatic
+    @State private var pausedBehavior = ChartLiveTrackingPausedBehavior.freezeVisibleWindow
 
     private let visibleWindow: Double = 20
     private let historyWindow: Double = 120
@@ -1173,7 +1174,10 @@ struct LiveTrackingDemoView: View {
                         xScale: LinearScale(domain: fullDomain),
                         yScale: LinearScale(domain: 0...100),
                         isLiveTrackingEnabled: true,
-                        liveTrackingMode: .followLatest(pauseOnUserInteraction: true),
+                        liveTrackingMode: .followLatest(
+                            pauseOnUserInteraction: true,
+                            pausedBehavior: pausedBehavior
+                        ),
                         initialViewport: .xWindow(length: visibleWindow, anchor: .trailing),
                         viewport: $viewport,
                         emptyState: {
@@ -1199,8 +1203,14 @@ struct LiveTrackingDemoView: View {
                     .frame(height: 330)
                 }
 
+                Picker("Paused Behavior", selection: $pausedBehavior) {
+                    Text("Freeze").tag(ChartLiveTrackingPausedBehavior.freezeVisibleWindow)
+                    Text("Delayed").tag(ChartLiveTrackingPausedBehavior.preserveTrailingOffset)
+                }
+                .pickerStyle(.segmented)
+
                 HStack(spacing: 12) {
-                    DemoHint(text: viewport.liveTrackingStatus == .pausedByUser ? "Viewing history" : "Live")
+                    DemoHint(text: statusText)
 
                     if viewport.liveTrackingStatus == .pausedByUser {
                         DemoActionButton(
@@ -1226,6 +1236,17 @@ struct LiveTrackingDemoView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
             stopTimer()
+        }
+    }
+
+    var statusText: String {
+        switch viewport.liveTrackingStatus {
+        case .inactive:
+            return "Live tracking inactive"
+        case .followingLatest:
+            return "Live"
+        case .pausedByUser:
+            return pausedBehavior == .freezeVisibleWindow ? "Viewing frozen history" : "Viewing delayed live"
         }
     }
 
