@@ -53,6 +53,9 @@ enum DemoColors {
     static let orange = Color(red: 1.00, green: 0.62, blue: 0.24)
     static let pink = Color(red: 1.00, green: 0.36, blue: 0.58)
     static let purple = Color(red: 0.62, green: 0.49, blue: 1.00)
+    static let red = Color(red: 1.00, green: 0.26, blue: 0.32)
+    static let slate = Color.white.opacity(0.34)
+    static let yellow = Color(red: 1.00, green: 0.82, blue: 0.22)
 }
 
 struct DemoChartPanel<Content: View>: View {

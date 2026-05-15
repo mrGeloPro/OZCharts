@@ -12,6 +12,49 @@ import XCTest
 @testable import OZCharts
 
 final class AnnotationModelTests: XCTestCase {
+    func testXRangeAnnotationStoresTimeBand() {
+        let annotation = XRangeAnnotation(
+            xRange: 10...20,
+            label: "Night window",
+            color: .gray,
+            opacity: 0.18
+        )
+
+        XCTAssertEqual(annotation.xRange, 10...20)
+        XCTAssertEqual(annotation.label, "Night window")
+        XCTAssertEqual(annotation.opacity, 0.18)
+    }
+
+    func testXYRangeAnnotationStoresPlotRegion() {
+        let annotation = XYRangeAnnotation(
+            xRange: 10...20,
+            yRange: 250...400,
+            label: "Risk window",
+            color: .yellow,
+            opacity: 0.08
+        )
+
+        XCTAssertEqual(annotation.xRange, 10...20)
+        XCTAssertEqual(annotation.yRange, 250...400)
+        XCTAssertEqual(annotation.label, "Risk window")
+        XCTAssertEqual(annotation.opacity, 0.08)
+    }
+
+    func testVerticalAnnotationStoresThresholdLine() {
+        let annotation = VerticalAnnotation(
+            xValue: 12,
+            label: "Deploy",
+            color: .purple,
+            lineWidth: 1.5,
+            dash: [3, 4]
+        )
+
+        XCTAssertEqual(annotation.xValue, 12)
+        XCTAssertEqual(annotation.label, "Deploy")
+        XCTAssertEqual(annotation.lineWidth, 1.5)
+        XCTAssertEqual(annotation.dash, [3, 4])
+    }
+
     func testRangeAnnotationStoresTargetBand() {
         let annotation = RangeAnnotation(
             yRange: 70...180,

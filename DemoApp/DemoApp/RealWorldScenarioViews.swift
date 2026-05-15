@@ -41,7 +41,7 @@ struct RealWorldScenariosView: View {
                     RealWorldScenarioPanel(
                         scenario: selectedScenario,
                         lineMode: lineMode,
-                        showsEvents: showsEvents,
+                        showsEvents: showsEvents && selectedScenario.allowsEventMarkers,
                         viewport: $viewport,
                         selection: $selection
                     )
@@ -90,11 +90,13 @@ struct RealWorldScenariosView: View {
 
             Toggle(isOn: $showsEvents) {
                 Image(systemName: "mappin.and.ellipse")
-                    .foregroundColor(showsEvents ? DemoColors.orange : DemoColors.secondaryText)
+                    .foregroundColor(eventsControlColor)
             }
             .labelsHidden()
             .toggleStyle(.switch)
             .frame(width: 56)
+            .disabled(!(selectedScenario?.allowsEventMarkers ?? true))
+            .opacity((selectedScenario?.allowsEventMarkers ?? true) ? 1 : 0.5)
         }
         .padding(10)
         .background(DemoColors.panel)
@@ -103,6 +105,11 @@ struct RealWorldScenariosView: View {
                 .stroke(DemoColors.border, lineWidth: 1)
         )
         .cornerRadius(14)
+    }
+
+    private var eventsControlColor: Color {
+        guard selectedScenario?.allowsEventMarkers ?? true else { return DemoColors.secondaryText }
+        return showsEvents ? DemoColors.orange : DemoColors.secondaryText
     }
 }
 
@@ -176,50 +183,59 @@ private struct RealWorldScenarioPanel: View {
     var body: some View {
         DemoChartPanel {
             header
-
-            CartesianChartView(
-                series: scenario.chartSeries(useSmoothLines: lineMode == .smooth),
-                xDomain: .fixed(scenario.xDomain),
-                yDomain: .fixed(scenario.yDomain),
-                xAxes: [
-                    XAxisConfig(
-                        tickStrategy: .nice,
-                        labelCollisionStrategy: .hideOverlapping(minSpacing: 42),
-                        tickCount: 6,
-                        labelFormatter: scenario.xAxisLabel
-                    )
-                ],
-                yAxes: [
-                    YAxisConfig(
-                        tickStrategy: .nice,
-                        gridColor: .white.opacity(0.10),
-                        tickCount: 5,
-                        labelFormatter: { "\(Int($0))" },
-                        textColor: DemoColors.secondaryText
-                    )
-                ],
-                rangeAnnotations: scenario.rangeAnnotations(),
-                horizontalAnnotations: scenario.horizontalAnnotations(),
-                eventMarkers: showsEvents ? scenario.eventMarkers() : []
-            ) { points in
-                RealWorldPointTooltip(scenario: scenario, points: points)
-            }
-            .chartInitialViewport(xWindow: viewportWindow, anchor: .leading)
-            .chartViewport($viewport)
-            .chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
-            .chartSelectionState($selection)
-            .chartAnnotationSelection(hitboxRadius: 32, overlapping: .cycle)
-            .chartAnnotationTooltip { annotations in
-                RealWorldAnnotationTooltip(scenario: scenario, annotations: annotations)
-            }
-            .chartTooltipPlacement(.automatic, padding: 12)
-            .chartCrosshair(.both(color: scenario.tint.color.opacity(0.72), lineWidth: 1, dash: [3, 5]))
-            .chartZoomControls(step: viewportWindow / 4)
-            .frame(height: 340)
+            chart
 
             TargetRangeSummary(scenario: scenario)
-            DemoLegend(items: scenario.legendItems())
+            DemoLegend(items: scenario.legendItems(includeEvents: showsEvents))
         }
+    }
+
+    private var chart: some View {
+        CartesianChartView(
+            series: scenario.chartSeries(useSmoothLines: lineMode == .smooth),
+            xDomain: .fixed(scenario.xDomain),
+            yDomain: .fixed(scenario.yDomain),
+            xAxes: [
+                XAxisConfig(
+                    position: scenario.xAxis.resolvedPosition,
+                    explicitValues: scenario.xAxis.explicitValues,
+                    tickStrategy: scenario.xAxis.explicitValues == nil ? .nice : .regular,
+                    labelCollisionStrategy: .hideOverlapping(minSpacing: 42),
+                    tickCount: scenario.xAxis.tickCount ?? 6,
+                    labelFormatter: scenario.xAxisLabel
+                )
+            ],
+            yAxes: [
+                YAxisConfig(
+                    position: scenario.yAxis.resolvedPosition,
+                    tickStrategy: .nice,
+                    gridColor: .white.opacity(0.10),
+                    tickCount: scenario.yAxis.tickCount ?? 5,
+                    labelFormatter: { "\(Int($0))" },
+                    textColor: DemoColors.secondaryText
+                )
+            ],
+            xRangeAnnotations: scenario.xRangeAnnotations(),
+            xyRangeAnnotations: scenario.xyRangeAnnotations(),
+            rangeAnnotations: scenario.rangeAnnotations(),
+            verticalAnnotations: scenario.verticalAnnotations(),
+            horizontalAnnotations: scenario.horizontalAnnotations(),
+            eventMarkers: showsEvents ? scenario.eventMarkers() : []
+        ) { points in
+            RealWorldPointTooltip(scenario: scenario, points: points)
+        }
+        .chartInitialViewport(xWindow: viewportWindow, anchor: .leading)
+        .chartViewport($viewport)
+        .chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
+        .chartSelectionState($selection)
+        .chartZoomControls(scenario.showsZoomControls, step: viewportWindow / 4)
+        .chartAnnotationSelection(hitboxRadius: 32, overlapping: .cycle)
+        .chartAnnotationTooltip { annotations in
+            RealWorldAnnotationTooltip(scenario: scenario, annotations: annotations)
+        }
+        .chartTooltipPlacement(.automatic, padding: 12)
+        .chartCrosshair(.both(color: scenario.tint.color.opacity(0.72), lineWidth: 1, dash: [3, 5]))
+        .frame(height: 340)
     }
 
     private var header: some View {
@@ -249,7 +265,21 @@ private struct RealWorldScenarioPanel: View {
 
     private var viewportWindow: Double {
         let domain = scenario.xDomain
-        return (domain.upperBound - domain.lowerBound) * 0.55
+        return (domain.upperBound - domain.lowerBound) * scenario.initialViewportFraction
+    }
+}
+
+private extension DemoScenario {
+    var allowsEventMarkers: Bool {
+        presentation?.resolvedShowsEventMarkers ?? true
+    }
+
+    var showsZoomControls: Bool {
+        presentation?.resolvedShowsZoomControls ?? true
+    }
+
+    var initialViewportFraction: Double {
+        presentation?.resolvedInitialViewportFraction ?? 0.55
     }
 }
 

@@ -10,15 +10,15 @@ RUN_OZCHARTS_PERFORMANCE_TESTS=1 swift test --filter PerformanceBenchmarkTests
 
 ## Current Local Baseline
 
-Measured on May 15, 2026 in the release 2.5 preparation pass after the render-context split, lazy cached x-index, adaptive 2D spatial-grid hit-testing, and LTTB downsampling optimization:
+Measured on May 16, 2026 during the 2.5.2 release verification pass after the render-context split, lazy cached x-index, adaptive 2D spatial-grid hit-testing, LTTB downsampling optimization, and expanded annotation coverage:
 
 | Benchmark | Average |
 | --- | ---: |
 | Dense radius hit testing | 0.032s |
 | Donut element hit-testing | 0.005s |
 | Large line layout | 0.014s |
-| Live append and trim layout | 0.041s |
-| Stacked area layout | 0.003s |
+| Live append and trim layout | 0.043s |
+| Stacked area layout | 0.004s |
 | Stacked bar selection element generation | 0.005s |
 
 ## How To Interpret

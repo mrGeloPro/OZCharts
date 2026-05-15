@@ -96,6 +96,54 @@ final class RenderingSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testAnnotationRegionsCanRenderToImage() throws {
+        guard #available(macOS 13.0, *) else {
+            throw XCTSkip("ImageRenderer requires macOS 13 or newer.")
+        }
+
+        let view = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: [
+                        Point2D(x: 0, y: 100),
+                        Point2D(x: 1, y: 140),
+                        Point2D(x: 2, y: 120)
+                    ],
+                    color: .white
+                )
+            ],
+            xDomain: .fixed(0...2),
+            yDomain: .fixed(50...250),
+            theme: .dark,
+            xRangeAnnotations: [
+                XRangeAnnotation(xRange: 0.25...0.75, color: .gray, opacity: 0.18)
+            ],
+            xyRangeAnnotations: [
+                XYRangeAnnotation(xRange: 1...1.75, yRange: 180...250, color: .yellow, opacity: 0.10)
+            ],
+            rangeAnnotations: [
+                RangeAnnotation(yRange: 70...180, color: .green, opacity: 0.12)
+            ],
+            verticalAnnotations: [
+                VerticalAnnotation(xValue: 1.5, label: "Now", color: .yellow, lineWidth: 1, dash: [3, 4])
+            ],
+            horizontalAnnotations: [
+                HorizontalAnnotation(yValue: 180, label: "High", color: .orange, lineWidth: 1, dash: [])
+            ],
+            isHorizontalScrollEnabled: false,
+            isHorizontalZoomEnabled: false,
+            isVerticalScrollEnabled: false,
+            isVerticalZoomEnabled: false
+        ) { _ in EmptyView() }
+        .frame(width: 320, height: 220)
+
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+
+        XCTAssertNotNil(renderer.cgImage)
+    }
+
+    @MainActor
     func testProductDonutChartCanRenderToImage() throws {
         guard #available(macOS 13.0, *) else {
             throw XCTSkip("ImageRenderer requires macOS 13 or newer.")

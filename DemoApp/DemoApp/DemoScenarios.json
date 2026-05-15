@@ -54,6 +54,131 @@
       ]
     },
     {
+      "id": "glucose-night-trend",
+      "domain": "medical",
+      "title": "CGM Night Trend",
+      "subtitle": "Glucose curve with target bands and pump activity pulses",
+      "icon": "waveform.path.ecg",
+      "tint": "green",
+      "xAxis": {
+        "start": "2026-04-24T07:00:00Z",
+        "end": "2026-04-24T10:00:00Z",
+        "position": "top",
+        "labelFormat": "hour",
+        "timeZone": "UTC",
+        "ticks": [
+          "2026-04-24T07:00:00Z",
+          "2026-04-24T07:30:00Z",
+          "2026-04-24T08:30:00Z",
+          "2026-04-24T09:30:00Z"
+        ],
+        "tickCount": 4
+      },
+      "yAxis": {
+        "label": "Glucose",
+        "unit": "mg/dL",
+        "min": 50,
+        "max": 400,
+        "position": "trailing",
+        "targetMin": 70,
+        "targetMax": 180,
+        "tickCount": 8,
+        "referenceLines": [
+          { "value": 250, "label": "High alert", "color": "yellow", "lineWidth": 1.2 },
+          { "value": 70, "label": "Low alert", "color": "red", "lineWidth": 1.2 }
+        ]
+      },
+      "presentation": {
+        "showsEventMarkers": false,
+        "showsZoomControls": false,
+        "initialViewportFraction": 0.8333333333
+      },
+      "xRanges": [
+        {
+          "start": "2026-04-24T07:30:00Z",
+          "end": "2026-04-24T08:15:00Z",
+          "label": "Sleep window",
+          "color": "slate",
+          "opacity": 0.22
+        }
+      ],
+      "xyRanges": [
+        {
+          "start": "2026-04-24T08:00:00Z",
+          "end": "2026-04-24T08:30:00Z",
+          "yMin": 250,
+          "yMax": 400,
+          "label": "High-risk window",
+          "color": "yellow",
+          "opacity": 0.08
+        }
+      ],
+      "verticalLines": [
+        {
+          "timestamp": "2026-04-24T09:30:00Z",
+          "label": "Now",
+          "color": "yellow",
+          "lineWidth": 1.2,
+          "dash": [3, 4]
+        }
+      ],
+      "series": [
+        {
+          "id": "microBolus",
+          "name": "Micro bolus",
+          "kind": "bar",
+          "unit": "U",
+          "color": "cyan",
+          "interpolation": "linear",
+          "baseline": 400,
+          "barWidth": 6
+        },
+        {
+          "id": "tempBasal",
+          "name": "Temp basal",
+          "kind": "bar",
+          "unit": "%",
+          "color": "purple",
+          "interpolation": "linear",
+          "baseline": 400,
+          "barWidth": 8
+        },
+        {
+          "id": "glucose",
+          "name": "Glucose",
+          "kind": "line",
+          "unit": "mg/dL",
+          "color": "white",
+          "interpolation": "monotone"
+        }
+      ],
+      "events": [
+        { "timestamp": "2026-04-24T07:00:00Z", "kind": "measurement", "series": "glucose", "value": 86, "label": "Start trend", "source": "CGM" },
+        { "timestamp": "2026-04-24T07:15:00Z", "kind": "measurement", "series": "glucose", "value": 91, "label": "Slow rise", "source": "CGM" },
+        { "timestamp": "2026-04-24T07:30:00Z", "kind": "measurement", "series": "glucose", "value": 112, "label": "Range entry", "source": "CGM" },
+        { "timestamp": "2026-04-24T07:45:00Z", "kind": "measurement", "series": "glucose", "value": 146, "label": "Rising", "source": "CGM" },
+        { "timestamp": "2026-04-24T08:00:00Z", "kind": "measurement", "series": "glucose", "value": 165, "label": "Plateau", "source": "CGM" },
+        { "timestamp": "2026-04-24T08:15:00Z", "kind": "measurement", "series": "glucose", "value": 162, "label": "Stable", "source": "CGM" },
+        { "timestamp": "2026-04-24T08:30:00Z", "kind": "measurement", "series": "glucose", "value": 150, "label": "Turning down", "source": "CGM" },
+        { "timestamp": "2026-04-24T08:45:00Z", "kind": "measurement", "series": "glucose", "value": 134, "label": "Falling", "source": "CGM" },
+        { "timestamp": "2026-04-24T09:00:00Z", "kind": "measurement", "series": "glucose", "value": 118, "label": "Back toward target", "source": "CGM" },
+        { "timestamp": "2026-04-24T09:15:00Z", "kind": "measurement", "series": "glucose", "value": 108, "label": "Soft landing", "source": "CGM" },
+        { "timestamp": "2026-04-24T09:30:00Z", "kind": "measurement", "series": "glucose", "value": 100, "label": "Now", "source": "CGM" },
+        { "timestamp": "2026-04-24T07:30:00Z", "kind": "measurement", "series": "microBolus", "value": 388, "label": "Micro bolus" },
+        { "timestamp": "2026-04-24T07:45:00Z", "kind": "measurement", "series": "microBolus", "value": 382, "label": "Micro bolus" },
+        { "timestamp": "2026-04-24T08:00:00Z", "kind": "measurement", "series": "microBolus", "value": 372, "label": "Micro bolus" },
+        { "timestamp": "2026-04-24T08:15:00Z", "kind": "measurement", "series": "microBolus", "value": 384, "label": "Micro bolus" },
+        { "timestamp": "2026-04-24T08:30:00Z", "kind": "measurement", "series": "microBolus", "value": 390, "label": "Micro bolus" },
+        { "timestamp": "2026-04-24T07:25:00Z", "kind": "measurement", "series": "tempBasal", "value": 383, "label": "Temp basal" },
+        { "timestamp": "2026-04-24T08:40:00Z", "kind": "measurement", "series": "tempBasal", "value": 376, "label": "Temp basal" },
+        { "timestamp": "2026-04-24T08:55:00Z", "kind": "measurement", "series": "tempBasal", "value": 376, "label": "Temp basal" },
+        { "timestamp": "2026-04-24T09:10:00Z", "kind": "measurement", "series": "tempBasal", "value": 374, "label": "Temp basal" },
+        { "timestamp": "2026-04-24T09:25:00Z", "kind": "measurement", "series": "tempBasal", "value": 374, "label": "Temp basal" },
+        { "timestamp": "2026-04-24T09:30:00Z", "kind": "manualCheck", "series": "glucose", "value": 100, "label": "Current reading", "source": "manual" },
+        { "timestamp": "2026-04-24T08:05:00Z", "kind": "insulin", "value": 0.8, "unit": "U", "label": "Auto correction" }
+      ]
+    },
+    {
       "id": "training-session",
       "domain": "sport",
       "title": "Interval Training",

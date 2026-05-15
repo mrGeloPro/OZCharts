@@ -99,6 +99,7 @@ For external-team onboarding, use the [Handoff Guide](Docs/HandoffGuide.md).
 For handoff readiness, use the [Delivery Checklist](Docs/DeliveryChecklist.md).
 For prerelease scope, see [OZCharts 2.1 Prerelease Notes](Docs/Release-2.1.md).
 For the 2.5 release, see [OZCharts 2.5 Release Notes](Docs/Release-2.5.md).
+For the 2.5.2 patch, see [OZCharts 2.5.2 Release Notes](Docs/Release-2.5.2.md).
 For API compatibility expectations, see [OZCharts 2.5 API Stability Policy](Docs/APIStability-2.5.md).
 For migration details, see the [OZCharts 2.1 Migration Guide](Docs/Migration-2.1.md).
 For performance expectations, see [Performance Benchmarks](Docs/PerformanceBenchmarks.md).
@@ -152,8 +153,17 @@ CartesianChartView(
     series: [LineSeries(data: data, color: .blue)],
     xDomain: .auto(),
     yDomain: .auto(),
+    xRangeAnnotations: [
+        XRangeAnnotation(xRange: 1.0...2.0, label: "Sleep", color: .gray)
+    ],
+    xyRangeAnnotations: [
+        XYRangeAnnotation(xRange: 2.0...3.0, yRange: 250...400, label: "Risk", color: .yellow)
+    ],
     rangeAnnotations: [
         RangeAnnotation(yRange: 70...180, label: "Target range", color: .green)
+    ],
+    verticalAnnotations: [
+        VerticalAnnotation(xValue: 3.2, label: "Now", color: .yellow)
     ],
     eventMarkers: [
         ChartEventMarker(
@@ -189,7 +199,7 @@ CartesianChartView(
 ) { _ in EmptyView() }
 ```
 
-Use `RangeAnnotation` for target bands such as glucose, heart-rate zones, latency SLOs, or portfolio guardrails. Use `ChartEventMarker` when the app has domain events and wants selectable chart markers without manually building `PointAnnotation` values.
+Use `RangeAnnotation` for Y target bands such as glucose, heart-rate zones, latency SLOs, or portfolio guardrails. Use `XRangeAnnotation` for time windows, `VerticalAnnotation` for event thresholds, and `XYRangeAnnotation` for bounded plot regions such as high-risk windows. Use `ChartEventMarker` when the app has domain events and wants selectable chart markers without manually building `PointAnnotation` values.
 
 Range labels can be nudged away from dense data with `labelXPosition`, `labelAnchor`, and `labelYOffset`.
 
@@ -577,7 +587,7 @@ For product-style recreations of the demo charts, see [Product Chart Recipes](Do
 }
 ```
 
-The demo adapter maps measured events into series points, maps domain events into `ChartEventMarker`, and maps target ranges into `RangeAnnotation`. The included scenarios cover glucose care, interval training, portfolio tracking, and API latency.
+The demo adapter maps measured events into series points, maps domain events into `ChartEventMarker`, and maps target ranges, time windows, plot regions, and reference lines into annotation models. The included scenarios cover glucose care, interval training, portfolio tracking, and API latency.
 
 ### Area And Bar Series
 

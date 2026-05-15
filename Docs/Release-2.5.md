@@ -7,6 +7,7 @@ diagnostics, and release discipline.
 ## Highlights
 
 * `OZChart` fluent API for common chart construction.
+* Expanded annotation coverage for Y bands, X windows, vertical markers, and bounded XY plot regions.
 * `OZChart` assigns deterministic default series ids across SwiftUI rebuilds.
 * `OZChart` exposes selection callbacks plus viewport and selection state bindings.
 * Option structs for stable, grouped configuration:

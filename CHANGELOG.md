@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 2.5.2
+
+### Added
+
+* `XRangeAnnotation`, `VerticalAnnotation`, and `XYRangeAnnotation` for time windows, vertical event thresholds, and bounded plot regions.
+* `CartesianChartView`, convenience initializers, and `OZChart.annotations(...)` support for the expanded annotation set.
+* DemoApp JSON scenario support for x-range bands, xy-range regions, vertical lines, top-baseline bars, reference lines, per-scenario tick counts, explicit x-axis ticks, axis placement, fixed time zones, and presentation flags.
+
+### Changed
+
+* The real-world CGM demo now includes a reference-style night trend with pump activity bars, target bands, threshold lines, time-window shading, deterministic time labels, right/top axes, and a current-time marker.
+
 ## 2.5.1
 
 ### Fixed

@@ -16,6 +16,70 @@ private struct PendingRangeAnnotationLabel {
 
 public struct AnnotationRenderer {
 
+    // MARK: - X range bands
+
+    public static func drawXRanges<XScale: Scale>(
+        into context: inout GraphicsContext,
+        size: CGSize,
+        annotations: [XRangeAnnotation],
+        activeXScale: XScale
+    ) where XScale.InputType == Double, XScale.OutputType == CGFloat {
+
+        for annotation in annotations {
+            let lowerX = activeXScale.scale(annotation.xRange.lowerBound)
+            let upperX = activeXScale.scale(annotation.xRange.upperBound)
+            guard lowerX.isFinite, upperX.isFinite else { continue }
+
+            let minX = min(lowerX, upperX)
+            let maxX = max(lowerX, upperX)
+            guard maxX >= 0, minX <= size.width else { continue }
+
+            let rect = CGRect(
+                x: max(minX, 0),
+                y: 0,
+                width: min(maxX, size.width) - max(minX, 0),
+                height: size.height
+            )
+            guard rect.width > 0 else { continue }
+            context.fill(Path(rect), with: .color(annotation.color.opacity(annotation.opacity)))
+        }
+    }
+
+    // MARK: - XY range regions
+
+    public static func drawXYRanges<XScale: Scale, YScale: Scale>(
+        into context: inout GraphicsContext,
+        size: CGSize,
+        annotations: [XYRangeAnnotation],
+        activeXScale: XScale,
+        activeYScale: YScale
+    ) where XScale.InputType == Double, XScale.OutputType == CGFloat,
+            YScale.InputType == Double, YScale.OutputType == CGFloat {
+
+        for annotation in annotations {
+            let lowerX = activeXScale.scale(annotation.xRange.lowerBound)
+            let upperX = activeXScale.scale(annotation.xRange.upperBound)
+            let lowerY = size.height - activeYScale.scale(annotation.yRange.lowerBound)
+            let upperY = size.height - activeYScale.scale(annotation.yRange.upperBound)
+            guard lowerX.isFinite, upperX.isFinite, lowerY.isFinite, upperY.isFinite else { continue }
+
+            let minX = min(lowerX, upperX)
+            let maxX = max(lowerX, upperX)
+            let minY = min(lowerY, upperY)
+            let maxY = max(lowerY, upperY)
+            guard maxX >= 0, minX <= size.width, maxY >= 0, minY <= size.height else { continue }
+
+            let rect = CGRect(
+                x: max(minX, 0),
+                y: max(minY, 0),
+                width: min(maxX, size.width) - max(minX, 0),
+                height: min(maxY, size.height) - max(minY, 0)
+            )
+            guard rect.width > 0, rect.height > 0 else { continue }
+            context.fill(Path(rect), with: .color(annotation.color.opacity(annotation.opacity)))
+        }
+    }
+
     // MARK: - Range bands
 
     public static func drawRanges<YScale: Scale>(
@@ -86,6 +150,30 @@ public struct AnnotationRenderer {
                 .font(pendingLabel.annotation.labelFont)
                 .foregroundColor(pendingLabel.annotation.labelColor)
             context.draw(text, at: resolved.position, anchor: .center)
+        }
+    }
+
+    // MARK: - Vertical lines
+
+    public static func drawVertical<XScale: Scale>(
+        into context: inout GraphicsContext,
+        size: CGSize,
+        annotations: [VerticalAnnotation],
+        activeXScale: XScale
+    ) where XScale.InputType == Double, XScale.OutputType == CGFloat {
+
+        for annotation in annotations {
+            let xPos = activeXScale.scale(annotation.xValue)
+            guard xPos.isFinite, xPos >= 0, xPos <= size.width else { continue }
+
+            var path = Path()
+            path.move(to: CGPoint(x: xPos, y: 0))
+            path.addLine(to: CGPoint(x: xPos, y: size.height))
+            context.stroke(
+                path,
+                with: .color(annotation.color),
+                style: StrokeStyle(lineWidth: annotation.lineWidth, dash: annotation.dash)
+            )
         }
     }
 

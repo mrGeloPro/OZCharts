@@ -41,8 +41,9 @@ extension DemoScenario {
                     data: data,
                     color: color.opacity(0.62),
                     label: definition.name,
-                    barWidth: 9,
+                    barWidth: definition.barWidth.map { CGFloat($0) } ?? 9,
                     cornerRadius: 2,
+                    baseline: definition.baseline ?? yAxis.min,
                     zIndex: index
                 ).eraseToAnyChartSeries()
             case .line:
@@ -79,6 +80,16 @@ extension DemoScenario {
 
     func horizontalAnnotations() -> [HorizontalAnnotation] {
         var annotations: [HorizontalAnnotation] = []
+        annotations += yAxis.referenceLines?.map { referenceLine in
+            HorizontalAnnotation(
+                yValue: referenceLine.value,
+                label: referenceLine.label ?? "",
+                color: referenceLine.color.color.opacity(0.82),
+                lineWidth: CGFloat(referenceLine.lineWidth ?? 1.4),
+                dash: referenceLine.dash?.map { CGFloat($0) } ?? []
+            )
+        } ?? []
+
         if yAxis.targetMin == nil, let targetMax = yAxis.targetMax {
             annotations.append(
                 HorizontalAnnotation(
@@ -91,6 +102,41 @@ extension DemoScenario {
             )
         }
         return annotations
+    }
+
+    func xRangeAnnotations() -> [XRangeAnnotation] {
+        xRanges?.map { xRange in
+            XRangeAnnotation(
+                xRange: xRange.range,
+                label: xRange.label,
+                color: xRange.color.color,
+                opacity: xRange.opacity ?? 0.14
+            )
+        } ?? []
+    }
+
+    func xyRangeAnnotations() -> [XYRangeAnnotation] {
+        xyRanges?.map { xyRange in
+            XYRangeAnnotation(
+                xRange: xyRange.xRange,
+                yRange: xyRange.yRange,
+                label: xyRange.label,
+                color: xyRange.color.color,
+                opacity: xyRange.opacity ?? 0.14
+            )
+        } ?? []
+    }
+
+    func verticalAnnotations() -> [VerticalAnnotation] {
+        verticalLines?.map { line in
+            VerticalAnnotation(
+                xValue: line.xValue,
+                label: line.label,
+                color: line.color.color.opacity(0.82),
+                lineWidth: CGFloat(line.lineWidth ?? 1.4),
+                dash: line.dash?.map { CGFloat($0) } ?? [4, 5]
+            )
+        } ?? []
     }
 
     func rangeAnnotations() -> [RangeAnnotation] {
@@ -108,7 +154,14 @@ extension DemoScenario {
     }
 
     func legendItems() -> [(String, Color)] {
-        series.map { ($0.name, $0.color.color) } +
+        legendItems(includeEvents: true)
+    }
+
+    func legendItems(includeEvents: Bool) -> [(String, Color)] {
+        let seriesItems = series.map { ($0.name, $0.color.color) }
+        guard includeEvents else { return seriesItems }
+
+        return seriesItems +
         Array(Set(notableEvents.map(\.kind))).sorted { $0.rawValue < $1.rawValue }.map {
             ($0.displayName, $0.colorToken.color)
         }
@@ -121,7 +174,7 @@ extension DemoScenario {
             let minutes = Int(date.timeIntervalSince(xAxis.startDate) / 60)
             return "\(minutes)m"
         case .hour:
-            return date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+            return hourFormatter.string(from: date).replacingOccurrences(of: ":00", with: "")
         }
     }
 
@@ -142,6 +195,14 @@ extension DemoScenario {
                 abs(lhs.x - date.timeIntervalSince1970) < abs(rhs.x - date.timeIntervalSince1970)
             }?
             .y
+    }
+
+    private var hourFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = xAxis.resolvedTimeZone
+        formatter.dateFormat = "H:mm"
+        return formatter
     }
 }
 
@@ -244,6 +305,14 @@ extension DemoColorToken {
             return DemoColors.pink
         case .purple:
             return DemoColors.purple
+        case .red:
+            return DemoColors.red
+        case .slate:
+            return DemoColors.slate
+        case .white:
+            return .white.opacity(0.92)
+        case .yellow:
+            return DemoColors.yellow
         }
     }
 }

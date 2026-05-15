@@ -17,7 +17,10 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var theme: ChartTheme
     private var xAxes: [XAxisConfig]?
     private var yAxes: [YAxisConfig]?
+    private var xRangeAnnotations: [XRangeAnnotation]
+    private var xyRangeAnnotations: [XYRangeAnnotation]
     private var rangeAnnotations: [RangeAnnotation]
+    private var verticalAnnotations: [VerticalAnnotation]
     private var horizontalAnnotations: [HorizontalAnnotation]
     private var pointAnnotations: [PointAnnotation<Double, Double>]
     private var eventMarkers: [ChartEventMarker]
@@ -53,7 +56,10 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.theme = theme
         self.xAxes = nil
         self.yAxes = nil
+        self.xRangeAnnotations = []
+        self.xyRangeAnnotations = []
         self.rangeAnnotations = []
+        self.verticalAnnotations = []
         self.horizontalAnnotations = []
         self.pointAnnotations = []
         self.eventMarkers = []
@@ -80,7 +86,10 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
             theme: theme,
             xAxes: xAxes,
             yAxes: yAxes,
+            xRangeAnnotations: xRangeAnnotations,
+            xyRangeAnnotations: xyRangeAnnotations,
             rangeAnnotations: rangeAnnotations,
+            verticalAnnotations: verticalAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
             eventMarkers: eventMarkers,
@@ -221,14 +230,20 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     }
 
     public func annotations(
+        xRanges: [XRangeAnnotation] = [],
+        xyRanges: [XYRangeAnnotation] = [],
         ranges: [RangeAnnotation] = [],
+        vertical: [VerticalAnnotation] = [],
         horizontal: [HorizontalAnnotation] = [],
         points: [PointAnnotation<Double, Double>] = [],
         events: [ChartEventMarker] = [],
         customViews: [CustomViewAnnotation<Double, Double>] = []
     ) -> Self {
         var copy = self
+        copy.xRangeAnnotations = xRanges
+        copy.xyRangeAnnotations = xyRanges
         copy.rangeAnnotations = ranges
+        copy.verticalAnnotations = vertical
         copy.horizontalAnnotations = horizontal
         copy.pointAnnotations = points
         copy.eventMarkers = events
@@ -323,7 +338,10 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.series = series
         copy.xAxes = xAxes
         copy.yAxes = yAxes
+        copy.xRangeAnnotations = xRangeAnnotations
+        copy.xyRangeAnnotations = xyRangeAnnotations
         copy.rangeAnnotations = rangeAnnotations
+        copy.verticalAnnotations = verticalAnnotations
         copy.horizontalAnnotations = horizontalAnnotations
         copy.pointAnnotations = pointAnnotations
         copy.eventMarkers = eventMarkers

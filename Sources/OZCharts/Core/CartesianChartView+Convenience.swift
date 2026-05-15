@@ -16,7 +16,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         theme: ChartTheme = .default,
         xAxes: [XAxisConfig]? = nil,
         yAxes: [YAxisConfig]? = nil,
+        xRangeAnnotations: [XRangeAnnotation] = [],
+        xyRangeAnnotations: [XYRangeAnnotation] = [],
         rangeAnnotations: [RangeAnnotation] = [],
+        verticalAnnotations: [VerticalAnnotation] = [],
         horizontalAnnotations: [HorizontalAnnotation] = [],
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
         eventMarkers: [ChartEventMarker] = [],
@@ -46,7 +49,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             series: series,
             xDomain: xDomain,
             yDomain: yDomain,
+            xRangeAnnotations: xRangeAnnotations,
+            xyRangeAnnotations: xyRangeAnnotations,
             rangeAnnotations: rangeAnnotations,
+            verticalAnnotations: verticalAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations + eventMarkers.map(\.pointAnnotation),
             customViewAnnotations: customViewAnnotations
@@ -58,7 +64,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             yScale: LinearScale(domain: resolvedDomains.y),
             xAxes: xAxes ?? [theme.xAxis()],
             yAxes: yAxes ?? [theme.yAxis()],
+            xRangeAnnotations: xRangeAnnotations,
+            xyRangeAnnotations: xyRangeAnnotations,
             rangeAnnotations: rangeAnnotations,
+            verticalAnnotations: verticalAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
             eventMarkers: eventMarkers,
@@ -93,7 +102,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         theme: ChartTheme = .default,
         xAxes: [XAxisConfig]? = nil,
         yAxes: [YAxisConfig]? = nil,
+        xRangeAnnotations: [XRangeAnnotation] = [],
+        xyRangeAnnotations: [XYRangeAnnotation] = [],
         rangeAnnotations: [RangeAnnotation] = [],
+        verticalAnnotations: [VerticalAnnotation] = [],
         horizontalAnnotations: [HorizontalAnnotation] = [],
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
         eventMarkers: [ChartEventMarker] = [],
@@ -126,7 +138,10 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             theme: theme,
             xAxes: xAxes,
             yAxes: yAxes,
+            xRangeAnnotations: xRangeAnnotations,
+            xyRangeAnnotations: xyRangeAnnotations,
             rangeAnnotations: rangeAnnotations,
+            verticalAnnotations: verticalAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
             eventMarkers: eventMarkers,
@@ -159,7 +174,10 @@ private func resolveChartDomains<Point: ChartDataPoint>(
     series: [AnyChartSeries<Point>],
     xDomain: ChartDomain,
     yDomain: ChartDomain,
+    xRangeAnnotations: [XRangeAnnotation],
+    xyRangeAnnotations: [XYRangeAnnotation],
     rangeAnnotations: [RangeAnnotation],
+    verticalAnnotations: [VerticalAnnotation],
     horizontalAnnotations: [HorizontalAnnotation],
     pointAnnotations: [PointAnnotation<Double, Double>],
     customViewAnnotations: [CustomViewAnnotation<Double, Double>]
@@ -168,10 +186,14 @@ where Point.XValue == Double, Point.YValue == Double {
     let data = series.flatMap(\.data)
 
     let xValues = data.map(\.x) +
+        xRangeAnnotations.flatMap { [$0.xRange.lowerBound, $0.xRange.upperBound] } +
+        xyRangeAnnotations.flatMap { [$0.xRange.lowerBound, $0.xRange.upperBound] } +
+        verticalAnnotations.map(\.xValue) +
         pointAnnotations.map(\.x) +
         customViewAnnotations.map(\.x)
 
     let yValues = data.map(\.y) +
+        xyRangeAnnotations.flatMap { [$0.yRange.lowerBound, $0.yRange.upperBound] } +
         rangeAnnotations.flatMap { [$0.yRange.lowerBound, $0.yRange.upperBound] } +
         horizontalAnnotations.map(\.yValue) +
         pointAnnotations.map(\.y) +

@@ -309,6 +309,13 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .line(color: .blue, downsampling: .automatic())
             .selection(.nearestX)
             .domain(y: .fixed(0 ... 5))
+            .annotations(
+                xRanges: [XRangeAnnotation(xRange: 0.2 ... 0.6)],
+                xyRanges: [XYRangeAnnotation(xRange: 0.6 ... 0.8, yRange: 3 ... 5)],
+                ranges: [RangeAnnotation(yRange: 1 ... 4)],
+                vertical: [VerticalAnnotation(xValue: 1, label: "Now")],
+                horizontal: [HorizontalAnnotation(yValue: 3, label: "Target")]
+            )
             .viewportState(.constant(ChartViewportState()))
             .selectionState(.constant(ChartSelectionState()))
             .onSelectionChanged { _ in }

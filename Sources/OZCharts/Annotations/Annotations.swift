@@ -8,6 +8,75 @@
 
 import SwiftUI
 
+// MARK: - XRangeAnnotation
+
+public struct XRangeAnnotation {
+    public let xRange: ClosedRange<Double>
+    public let label: String?
+    public let color: Color
+    public let opacity: Double
+
+    public init(
+        xRange: ClosedRange<Double>,
+        label: String? = nil,
+        color: Color = .gray,
+        opacity: Double = 0.12
+    ) {
+        self.xRange = xRange
+        self.label = label
+        self.color = color
+        self.opacity = opacity
+    }
+}
+
+// MARK: - XYRangeAnnotation
+
+public struct XYRangeAnnotation {
+    public let xRange: ClosedRange<Double>
+    public let yRange: ClosedRange<Double>
+    public let label: String?
+    public let color: Color
+    public let opacity: Double
+
+    public init(
+        xRange: ClosedRange<Double>,
+        yRange: ClosedRange<Double>,
+        label: String? = nil,
+        color: Color = .gray,
+        opacity: Double = 0.12
+    ) {
+        self.xRange = xRange
+        self.yRange = yRange
+        self.label = label
+        self.color = color
+        self.opacity = opacity
+    }
+}
+
+// MARK: - VerticalAnnotation
+
+public struct VerticalAnnotation {
+    public let xValue: Double
+    public let label: String
+    public let color: Color
+    public let lineWidth: CGFloat
+    public let dash: [CGFloat]
+
+    public init(
+        xValue: Double,
+        label: String,
+        color: Color = .yellow,
+        lineWidth: CGFloat = 2,
+        dash: [CGFloat] = [5, 5]
+    ) {
+        self.xValue = xValue
+        self.label = label
+        self.color = color
+        self.lineWidth = lineWidth
+        self.dash = dash
+    }
+}
+
 // MARK: - HorizontalAnnotation
 
 public struct HorizontalAnnotation {

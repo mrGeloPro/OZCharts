@@ -35,6 +35,26 @@ RangeAnnotation(
     labelXPosition: .trailing
 )
 
+XRangeAnnotation(
+    xRange: 7...9,
+    label: "Sleep window",
+    color: .gray
+)
+
+VerticalAnnotation(
+    xValue: 9.5,
+    label: "Now",
+    color: .yellow
+)
+
+XYRangeAnnotation(
+    xRange: 8...9,
+    yRange: 250...400,
+    label: "Risk window",
+    color: .yellow,
+    opacity: 0.08
+)
+
 ChartEventMarker(
     x: 12.5,
     y: 145,
@@ -44,7 +64,9 @@ ChartEventMarker(
 )
 ```
 
-Annotations use collision-aware placement and tooltip clamping so labels do not escape the plot area.
+Use range annotations for shaded context, x-range annotations for time windows, xy-range annotations for bounded plot regions, vertical annotations for full-height x markers, horizontal annotations for y thresholds, and event markers for selectable point-level domain events.
+
+Range labels and custom annotation callouts use collision-aware placement and tooltip clamping so text does not escape the plot area.
 
 ## Product Callouts
 

@@ -23,7 +23,10 @@ public struct CartesianChartView<
 
     let xAxes: [XAxisConfig]
     let yAxes: [YAxisConfig]
+    let xRangeAnnotations: [XRangeAnnotation]
+    let xyRangeAnnotations: [XYRangeAnnotation]
     let rangeAnnotations: [RangeAnnotation]
+    let verticalAnnotations: [VerticalAnnotation]
     let horizontalAnnotations: [HorizontalAnnotation]
     let pointAnnotations: [PointAnnotation<Double, Double>]
     let customViewAnnotations: [CustomViewAnnotation<Double, Double>]
@@ -102,7 +105,10 @@ public struct CartesianChartView<
         yScale: YScale,
         xAxes: [XAxisConfig] = [.init(position: .bottom)],
         yAxes: [YAxisConfig] = [.init(position: .leading)],
+        xRangeAnnotations: [XRangeAnnotation] = [],
+        xyRangeAnnotations: [XYRangeAnnotation] = [],
         rangeAnnotations: [RangeAnnotation] = [],
+        verticalAnnotations: [VerticalAnnotation] = [],
         horizontalAnnotations: [HorizontalAnnotation] = [],
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
         eventMarkers: [ChartEventMarker] = [],
@@ -134,7 +140,10 @@ public struct CartesianChartView<
         self._store = StateObject(wrappedValue: ChartStore(xScale: xScale, yScale: yScale))
         self.xAxes = xAxes
         self.yAxes = yAxes
+        self.xRangeAnnotations = xRangeAnnotations
+        self.xyRangeAnnotations = xyRangeAnnotations
         self.rangeAnnotations = rangeAnnotations
+        self.verticalAnnotations = verticalAnnotations
         self.horizontalAnnotations = horizontalAnnotations
         self.pointAnnotations = pointAnnotations + eventMarkers.map(\.pointAnnotation)
         self.customViewAnnotations = customViewAnnotations
@@ -168,7 +177,10 @@ public struct CartesianChartView<
         yScale: YScale,
         xAxes: [XAxisConfig] = [.init(position: .bottom)],
         yAxes: [YAxisConfig] = [.init(position: .leading)],
+        xRangeAnnotations: [XRangeAnnotation] = [],
+        xyRangeAnnotations: [XYRangeAnnotation] = [],
         rangeAnnotations: [RangeAnnotation] = [],
+        verticalAnnotations: [VerticalAnnotation] = [],
         horizontalAnnotations: [HorizontalAnnotation] = [],
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
         eventMarkers: [ChartEventMarker] = [],
@@ -200,7 +212,10 @@ public struct CartesianChartView<
             yScale: yScale,
             xAxes: xAxes,
             yAxes: yAxes,
+            xRangeAnnotations: xRangeAnnotations,
+            xyRangeAnnotations: xyRangeAnnotations,
             rangeAnnotations: rangeAnnotations,
+            verticalAnnotations: verticalAnnotations,
             horizontalAnnotations: horizontalAnnotations,
             pointAnnotations: pointAnnotations,
             eventMarkers: eventMarkers,
@@ -357,7 +372,10 @@ public struct CartesianChartView<
                             xAxes: xAxes,
                             yAxes: yAxes,
                             canvasRenderOrder: canvasRenderOrder,
+                            xRangeAnnotations: xRangeAnnotations,
+                            xyRangeAnnotations: xyRangeAnnotations,
                             rangeAnnotations: rangeAnnotations,
+                            verticalAnnotations: verticalAnnotations,
                             horizontalAnnotations: horizontalAnnotations,
                             visiblePointAnnotations: visiblePointAnnotations,
                             violinBackgrounds: store.violinBackgrounds,

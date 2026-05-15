@@ -34,7 +34,10 @@ struct ChartCanvasView<
     let yAxes: [YAxisConfig]
     let canvasRenderOrder: [CanvasLayer]
 
+    let xRangeAnnotations: [XRangeAnnotation]
+    let xyRangeAnnotations: [XYRangeAnnotation]
     let rangeAnnotations: [RangeAnnotation]
+    let verticalAnnotations: [VerticalAnnotation]
     let horizontalAnnotations: [HorizontalAnnotation]
     let visiblePointAnnotations: [PointAnnotation<Double, Double>]
 
@@ -67,6 +70,19 @@ struct ChartCanvasView<
                             )
 
                         case .rangeAnnotations:
+                            AnnotationRenderer.drawXRanges(
+                                into: &context, size: size,
+                                annotations: xRangeAnnotations,
+                                activeXScale: activeXScale
+                            )
+
+                            AnnotationRenderer.drawXYRanges(
+                                into: &context, size: size,
+                                annotations: xyRangeAnnotations,
+                                activeXScale: activeXScale,
+                                activeYScale: activeYScale
+                            )
+
                             AnnotationRenderer.drawRanges(
                                 into: &context, size: size,
                                 annotations: rangeAnnotations,
@@ -74,6 +90,12 @@ struct ChartCanvasView<
                             )
 
                         case .horizontalAnnotations:
+                            AnnotationRenderer.drawVertical(
+                                into: &context, size: size,
+                                annotations: verticalAnnotations,
+                                activeXScale: activeXScale
+                            )
+
                             AnnotationRenderer.drawHorizontal(
                                 into: &context, size: size,
                                 annotations: horizontalAnnotations,
