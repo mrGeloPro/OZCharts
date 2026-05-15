@@ -12,6 +12,8 @@ This prerelease focuses on product-chart readiness, live viewport behavior, and 
 * Tooltip and callout presets with clamped placement.
 * Anchored callout layout helper for tap-point aligned product tooltips.
 * Product snapshot signature tests and optional performance benchmarks.
+* GitHub Actions CI for package tests, linting, DemoApp builds, and manually triggered benchmarks.
+* Chart input diagnostics for common integration mistakes such as non-finite data, duplicate ids, and unusably small canvases.
 * Demo app source split into handoff, product, core, advanced, shared, and scenario folders.
 * DocC and handoff documentation for external integration.
 * Stable series ids now track point-value changes, so live updates and animated data transitions redraw correctly.
@@ -23,6 +25,16 @@ Run the standard suite:
 ```bash
 swift test
 ```
+
+Run lint locally before tagging:
+
+```bash
+swiftlint lint --no-cache
+```
+
+`swiftformat --lint .` is useful as a follow-up once the current prerelease
+branch is intentionally formatted. At the moment, broad formatting would touch
+many existing files and should be done as its own reviewable change.
 
 Run optional load benchmarks:
 

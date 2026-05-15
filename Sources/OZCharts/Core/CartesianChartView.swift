@@ -14,10 +14,9 @@ public struct CartesianChartView<
     YScale: Scale,
     TooltipContent: View
 >: View
-where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
-      YScale.InputType == Point.YValue, YScale.OutputType == CGFloat,
-      Point.XValue == Double, Point.YValue == Double {
-
+    where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
+    YScale.InputType == Point.YValue, YScale.OutputType == CGFloat,
+    Point.XValue == Double, Point.YValue == Double {
     // MARK: - Inputs
 
     let series: [AnyChartSeries<Point>]
@@ -35,33 +34,33 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     // MARK: - Options
 
     public var isHorizontalScrollEnabled: Bool = true
-    public var isVerticalScrollEnabled:   Bool = true
-    public var isHorizontalZoomEnabled:   Bool = true
-    public var isVerticalZoomEnabled:     Bool = true
-    public var isLiveTrackingEnabled:     Bool = false
+    public var isVerticalScrollEnabled: Bool = true
+    public var isHorizontalZoomEnabled: Bool = true
+    public var isVerticalZoomEnabled: Bool = true
+    public var isLiveTrackingEnabled: Bool = false
     public var liveTrackingMode: ChartLiveTrackingMode = .disabled
     public var initialViewport: ChartInitialViewport?
     var viewportBinding: Binding<ChartViewportState>?
     var selectionStateBinding: Binding<ChartSelectionState>?
 
-    public var hitboxRadius:    CGFloat    = 20
-    public var selectionMode:   ChartSelectionMode = .pointsInRadius
+    public var hitboxRadius: CGFloat = 20
+    public var selectionMode: ChartSelectionMode = .pointsInRadius
     public var selectionBehavior: ChartSelectionBehavior = .tap
     public var overlappingSelectionMode: ChartOverlappingSelectionMode = .all
     public var clearsSelectionOnGestureEnd: Bool = true
     public var isAnnotationSelectionEnabled: Bool = false
     public var annotationHitboxRadius: CGFloat = 24
     public var annotationOverlappingSelectionMode: ChartOverlappingSelectionMode = .cycle
-    public var crosshairStyle:  ChartCrosshairStyle = .hidden
+    public var crosshairStyle: ChartCrosshairStyle = .hidden
     public var tooltipPlacement: ChartTooltipPlacement = .automatic
-    public var tooltipOffset:   CGPoint    = CGPoint(x: 0, y: -20)
-    public var tooltipPadding:  CGFloat = 8
+    public var tooltipOffset: CGPoint = CGPoint(x: 0, y: -20)
+    public var tooltipPadding: CGFloat = 8
     public var tooltipMaxWidth: CGFloat?
-    public var minZoomScale:    Double     = 0.01
+    public var minZoomScale: Double = 0.01
     public var showsZoomControls: Bool = false
     public var zoomControlStep: Double = 2
-    public var legendPosition:  ChartLegendPosition = .hidden
-    public var legendSpacing:   CGFloat = 12
+    public var legendPosition: ChartLegendPosition = .hidden
+    public var legendSpacing: CGFloat = 12
     public var selectedElementStyle: ChartSelectedElementStyle = .product
     public var canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
     public var emptyState: (() -> AnyView)?
@@ -73,6 +72,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     var onElementSelectionChanged: ([ChartSelectedElement]) -> Void = { _ in }
     var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
     var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
+    var onDiagnosticsChanged: ([ChartDiagnostic]) -> Void = { _ in }
 
     // MARK: - State
 
@@ -80,6 +80,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     @State private var highlightedAnnotations: [ChartAnnotationContext] = []
     @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
     @State private var customAnnotationSizes: [UUID: CGSize] = [:]
+    @State private var lastReportedDiagnostics: [ChartDiagnostic] = []
 
     var seriesChangeSignature: [ChartSeriesChangeSignature] {
         series.map { series in
@@ -97,98 +98,98 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         series: [AnyChartSeries<Point>],
         xScale: XScale,
         yScale: YScale,
-        xAxes: [XAxisConfig]                                  = [.init(position: .bottom)],
-        yAxes: [YAxisConfig]                                  = [.init(position: .leading)],
-        rangeAnnotations: [RangeAnnotation]                   = [],
-        horizontalAnnotations: [HorizontalAnnotation]         = [],
-        pointAnnotations: [PointAnnotation<Double, Double>]   = [],
-        eventMarkers: [ChartEventMarker]                      = [],
+        xAxes: [XAxisConfig] = [.init(position: .bottom)],
+        yAxes: [YAxisConfig] = [.init(position: .leading)],
+        rangeAnnotations: [RangeAnnotation] = [],
+        horizontalAnnotations: [HorizontalAnnotation] = [],
+        pointAnnotations: [PointAnnotation<Double, Double>] = [],
+        eventMarkers: [ChartEventMarker] = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
-        isHorizontalScrollEnabled: Bool                       = true,
-        isHorizontalZoomEnabled: Bool                         = true,
-        isVerticalScrollEnabled: Bool                         = true,
-        isVerticalZoomEnabled: Bool                           = true,
-        isLiveTrackingEnabled: Bool                           = false,
-        liveTrackingMode: ChartLiveTrackingMode?              = nil,
-        initialViewport: ChartInitialViewport?                = nil,
-        viewport: Binding<ChartViewportState>?                = nil,
-        selectionState: Binding<ChartSelectionState>?         = nil,
-        selectionMode: ChartSelectionMode                     = .pointsInRadius,
-        selectionBehavior: ChartSelectionBehavior             = .tap,
+        isHorizontalScrollEnabled: Bool = true,
+        isHorizontalZoomEnabled: Bool = true,
+        isVerticalScrollEnabled: Bool = true,
+        isVerticalZoomEnabled: Bool = true,
+        isLiveTrackingEnabled: Bool = false,
+        liveTrackingMode: ChartLiveTrackingMode? = nil,
+        initialViewport: ChartInitialViewport? = nil,
+        viewport: Binding<ChartViewportState>? = nil,
+        selectionState: Binding<ChartSelectionState>? = nil,
+        selectionMode: ChartSelectionMode = .pointsInRadius,
+        selectionBehavior: ChartSelectionBehavior = .tap,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
-        clearsSelectionOnGestureEnd: Bool                     = true,
-        crosshairStyle: ChartCrosshairStyle                   = .hidden,
-        tooltipPlacement: ChartTooltipPlacement               = .automatic,
+        clearsSelectionOnGestureEnd: Bool = true,
+        crosshairStyle: ChartCrosshairStyle = .hidden,
+        tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
         onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
-        canvasRenderOrder: [CanvasLayer]                      = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
-        emptyState: (() -> AnyView)?                          = nil,
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) {
-        self.series                    = series
-        self.baseXScale                = xScale
-        self.baseYScale                = yScale
-        self._store                    = StateObject(wrappedValue: ChartStore(xScale: xScale, yScale: yScale))
-        self.xAxes                     = xAxes
-        self.yAxes                     = yAxes
-        self.rangeAnnotations          = rangeAnnotations
-        self.horizontalAnnotations     = horizontalAnnotations
-        self.pointAnnotations          = pointAnnotations + eventMarkers.map(\.pointAnnotation)
-        self.customViewAnnotations     = customViewAnnotations
+        self.series = series
+        self.baseXScale = xScale
+        self.baseYScale = yScale
+        self._store = StateObject(wrappedValue: ChartStore(xScale: xScale, yScale: yScale))
+        self.xAxes = xAxes
+        self.yAxes = yAxes
+        self.rangeAnnotations = rangeAnnotations
+        self.horizontalAnnotations = horizontalAnnotations
+        self.pointAnnotations = pointAnnotations + eventMarkers.map(\.pointAnnotation)
+        self.customViewAnnotations = customViewAnnotations
         self.isHorizontalScrollEnabled = isHorizontalScrollEnabled
-        self.isHorizontalZoomEnabled   = isHorizontalZoomEnabled
-        self.isVerticalScrollEnabled   = isVerticalScrollEnabled
-        self.isVerticalZoomEnabled     = isVerticalZoomEnabled
+        self.isHorizontalZoomEnabled = isHorizontalZoomEnabled
+        self.isVerticalScrollEnabled = isVerticalScrollEnabled
+        self.isVerticalZoomEnabled = isVerticalZoomEnabled
         let resolvedLiveTrackingMode = liveTrackingMode ??
             (isLiveTrackingEnabled ? .followLatest() : .disabled)
-        self.isLiveTrackingEnabled     = resolvedLiveTrackingMode.isEnabled
-        self.liveTrackingMode          = resolvedLiveTrackingMode
-        self.initialViewport           = initialViewport
-        self.viewportBinding           = viewport
-        self.selectionStateBinding     = selectionState
-        self.selectionMode             = selectionMode
-        self.selectionBehavior         = selectionBehavior
-        self.overlappingSelectionMode  = overlappingSelectionMode
+        self.isLiveTrackingEnabled = resolvedLiveTrackingMode.isEnabled
+        self.liveTrackingMode = resolvedLiveTrackingMode
+        self.initialViewport = initialViewport
+        self.viewportBinding = viewport
+        self.selectionStateBinding = selectionState
+        self.selectionMode = selectionMode
+        self.selectionBehavior = selectionBehavior
+        self.overlappingSelectionMode = overlappingSelectionMode
         self.clearsSelectionOnGestureEnd = clearsSelectionOnGestureEnd
-        self.crosshairStyle            = crosshairStyle
-        self.tooltipPlacement          = tooltipPlacement
-        self.onSelectionChanged        = onSelectionChanged
+        self.crosshairStyle = crosshairStyle
+        self.tooltipPlacement = tooltipPlacement
+        self.onSelectionChanged = onSelectionChanged
         self.onElementSelectionChanged = onElementSelectionChanged
-        self.canvasRenderOrder         = canvasRenderOrder
-        self.emptyState                = emptyState
-        self.tooltipContent            = tooltipContent
+        self.canvasRenderOrder = canvasRenderOrder
+        self.emptyState = emptyState
+        self.tooltipContent = tooltipContent
     }
 
     public init<S: ChartSeriesProtocol>(
         series: [S],
         xScale: XScale,
         yScale: YScale,
-        xAxes: [XAxisConfig]                                  = [.init(position: .bottom)],
-        yAxes: [YAxisConfig]                                  = [.init(position: .leading)],
-        rangeAnnotations: [RangeAnnotation]                   = [],
-        horizontalAnnotations: [HorizontalAnnotation]         = [],
-        pointAnnotations: [PointAnnotation<Double, Double>]   = [],
-        eventMarkers: [ChartEventMarker]                      = [],
+        xAxes: [XAxisConfig] = [.init(position: .bottom)],
+        yAxes: [YAxisConfig] = [.init(position: .leading)],
+        rangeAnnotations: [RangeAnnotation] = [],
+        horizontalAnnotations: [HorizontalAnnotation] = [],
+        pointAnnotations: [PointAnnotation<Double, Double>] = [],
+        eventMarkers: [ChartEventMarker] = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
-        isHorizontalScrollEnabled: Bool                       = true,
-        isHorizontalZoomEnabled: Bool                         = true,
-        isVerticalScrollEnabled: Bool                         = true,
-        isVerticalZoomEnabled: Bool                           = true,
-        isLiveTrackingEnabled: Bool                           = false,
-        liveTrackingMode: ChartLiveTrackingMode?              = nil,
-        initialViewport: ChartInitialViewport?                = nil,
-        viewport: Binding<ChartViewportState>?                = nil,
-        selectionState: Binding<ChartSelectionState>?         = nil,
-        selectionMode: ChartSelectionMode                     = .pointsInRadius,
-        selectionBehavior: ChartSelectionBehavior             = .tap,
+        isHorizontalScrollEnabled: Bool = true,
+        isHorizontalZoomEnabled: Bool = true,
+        isVerticalScrollEnabled: Bool = true,
+        isVerticalZoomEnabled: Bool = true,
+        isLiveTrackingEnabled: Bool = false,
+        liveTrackingMode: ChartLiveTrackingMode? = nil,
+        initialViewport: ChartInitialViewport? = nil,
+        viewport: Binding<ChartViewportState>? = nil,
+        selectionState: Binding<ChartSelectionState>? = nil,
+        selectionMode: ChartSelectionMode = .pointsInRadius,
+        selectionBehavior: ChartSelectionBehavior = .tap,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
-        clearsSelectionOnGestureEnd: Bool                     = true,
-        crosshairStyle: ChartCrosshairStyle                   = .hidden,
-        tooltipPlacement: ChartTooltipPlacement               = .automatic,
+        clearsSelectionOnGestureEnd: Bool = true,
+        crosshairStyle: ChartCrosshairStyle = .hidden,
+        tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
         onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
-        canvasRenderOrder: [CanvasLayer]                      = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
-        emptyState: (() -> AnyView)?                          = nil,
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
     ) where S.Point == Point {
         self.init(
@@ -228,7 +229,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     // MARK: - Body
 
     public var body: some View {
-        let allData = series.flatMap { $0.data }
+        let allData = series.flatMap(\.data)
 
         Group {
             if allData.isEmpty, let emptyView = emptyState?() {
@@ -241,6 +242,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         }
         .onChange(of: seriesChangeSignature) { _ in
             syncBaseScales()
+            publishDiagnostics(canvasSize: store.canvasSize)
             store.handleDataChange(
                 series: series,
                 isLiveTrackingEnabled: isLiveTrackingEnabled,
@@ -315,158 +317,161 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     }
 
     private func chartContent(topH: CGFloat, bottomH: CGFloat) -> some View {
-                HStack(spacing: 0) {
-                    // Leading Y axes
-                    HStack(spacing: 0) {
-                        ForEach(yAxes.indices, id: \.self) { i in
-                            if yAxes[i].position == .leading {
-                                YAxisView(scale: store.activeYScale, config: yAxes[i])
-                                    .frame(width: yAxes[i].width)
-                            }
-                        }
+        HStack(spacing: 0) {
+            // Leading Y axes
+            HStack(spacing: 0) {
+                ForEach(yAxes.indices, id: \.self) { i in
+                    if yAxes[i].position == .leading {
+                        YAxisView(scale: store.activeYScale, config: yAxes[i])
+                            .frame(width: yAxes[i].width)
                     }
-                    .padding(.top, topH).padding(.bottom, bottomH)
-
-                    VStack(spacing: 0) {
-                        // Top X axes
-                        ForEach(xAxes.indices, id: \.self) { i in
-                            if xAxes[i].position == .top {
-                                XAxisView(scale: store.activeXScale, config: xAxes[i])
-                                    .frame(height: xAxes[i].height)
-                            }
-                        }
-
-                        // Canvas + gestures
-                        GeometryReader { geometry in
-                            ZStack {
-                                ChartCanvasView(
-                                    series:                    series.sorted { $0.zIndex < $1.zIndex },
-                                    seriesContexts:            store.seriesContexts,
-                                    oldSeriesContexts:         store.oldSeriesContexts,
-                                    animationProgress:         store.animationProgress,
-                                    isAnimationActive:         store.isAnimationActive,
-                                    animationStyle:            series.first?.animation ?? .none,
-                                    activeXScale:              store.activeXScale,
-                                    activeYScale:              store.activeYScale,
-                                    xAxes:                     xAxes,
-                                    yAxes:                     yAxes,
-                                    canvasRenderOrder:         canvasRenderOrder,
-                                    rangeAnnotations:          rangeAnnotations,
-                                    horizontalAnnotations:     horizontalAnnotations,
-                                    visiblePointAnnotations:   visiblePointAnnotations,
-                                    violinBackgrounds:         store.violinBackgrounds,
-                                    violinColorMapper:         nil,
-                                    highlightedPoints:         store.highlightedPoints,
-                                    selectedElementContexts:   store.selectedElementContexts,
-                                    selectedElementStyle:      selectedElementStyle,
-                                    crosshairStyle:            crosshairStyle,
-                                    tooltipPlacement:          tooltipPlacement,
-                                    tooltipOffset:             tooltipOffset,
-                                    tooltipPadding:            tooltipPadding,
-                                    tooltipMaxWidth:           tooltipMaxWidth,
-                                    tooltipContent:            tooltipContent
-                                )
-
-                                ChartGestureHandler(
-                                    config: ChartGestureConfig(
-                                        isHorizontalScrollEnabled: isHorizontalScrollEnabled,
-                                        isVerticalScrollEnabled:   isVerticalScrollEnabled,
-                                        isHorizontalZoomEnabled:   isHorizontalZoomEnabled,
-                                        isVerticalZoomEnabled:     isVerticalZoomEnabled,
-                                        hitboxRadius:              hitboxRadius,
-                                        selectionBehavior:         selectionBehavior,
-                                        clearsSelectionOnGestureEnd: clearsSelectionOnGestureEnd
-                                    ),
-                                    onEvent: { handleGestureEvent($0) }
-                                )
-
-                                let resolvedAnnotations = resolvedCustomViewAnnotations(in: geometry.size)
-                                ForEach(visibleCustomViewAnnotations) { annotation in
-                                    if let resolved = resolvedAnnotations[annotation.id], resolved.isVisible {
-                                        annotation.content
-                                            .fixedSize()
-                                            .readSize { customAnnotationSizes[annotation.id] = $0 }
-                                            .position(resolved.position)
-                                    } else {
-                                        annotation.content
-                                            .fixedSize()
-                                            .hidden()
-                                            .readSize { customAnnotationSizes[annotation.id] = $0 }
-                                    }
-                                }
-
-                                if !highlightedAnnotations.isEmpty {
-                                    ChartAnnotationTooltipOverlay(
-                                        annotations: highlightedAnnotations,
-                                        canvasSize: geometry.size,
-                                        placement: tooltipPlacement,
-                                        offset: tooltipOffset,
-                                        padding: tooltipPadding,
-                                        maxWidth: tooltipMaxWidth,
-                                        content: annotationTooltipContent
-                                    )
-                                }
-
-                                if showsZoomControls {
-                                    ChartViewportControls(
-                                        onZoomIn: { applyProgrammaticZoom(magnification: zoomControlStep) },
-                                        onZoomOut: { applyProgrammaticZoom(magnification: 1 / zoomControlStep) },
-                                        onReset: { resetViewportFromControls() }
-                                    )
-                                    .padding(8)
-                                    .frame(
-                                        maxWidth: .infinity,
-                                        maxHeight: .infinity,
-                                        alignment: .topTrailing
-                                    )
-                                }
-
-                            }
-                            .onAppear {
-                                syncBaseScales()
-                                store.canvasSize = geometry.size
-                                restoreBoundViewportOrInitialize()
-                                publishViewportState()
-                                store.queueUpdate(
-                                    series: series,
-                                    in: geometry.size,
-                                    animate: false,
-                                    coalesce: false
-                                )
-                                applyBoundSelectionState(boundSelectionState)
-                            }
-                            .onChange(of: geometry.size) { newSize in
-                                store.canvasSize = newSize
-                                store.queueUpdate(
-                                    series: series,
-                                    in: newSize,
-                                    animate: false,
-                                    coalesce: false
-                                )
-                                applyBoundSelectionState(boundSelectionState)
-                            }
-                        }
-
-                        // Bottom X axes
-                        ForEach(xAxes.indices, id: \.self) { i in
-                            if xAxes[i].position == .bottom {
-                                XAxisView(scale: store.activeXScale, config: xAxes[i])
-                                    .frame(height: xAxes[i].height)
-                            }
-                        }
-                    }
-
-                    // Trailing Y axes
-                    HStack(spacing: 0) {
-                        ForEach(yAxes.indices, id: \.self) { i in
-                            if yAxes[i].position == .trailing {
-                                YAxisView(scale: store.activeYScale, config: yAxes[i])
-                                    .frame(width: yAxes[i].width)
-                            }
-                        }
-                    }
-                    .padding(.top, topH).padding(.bottom, bottomH)
                 }
+            }
+            .padding(.top, topH).padding(.bottom, bottomH)
+
+            VStack(spacing: 0) {
+                // Top X axes
+                ForEach(xAxes.indices, id: \.self) { i in
+                    if xAxes[i].position == .top {
+                        XAxisView(scale: store.activeXScale, config: xAxes[i])
+                            .frame(height: xAxes[i].height)
+                    }
+                }
+
+                // Canvas + gestures
+                GeometryReader { geometry in
+                    ZStack {
+                        ChartCanvasView(
+                            series: series.sorted { $0.zIndex < $1.zIndex },
+                            seriesContexts: store.seriesContexts,
+                            renderSeriesContexts: store.renderSeriesContexts,
+                            oldSeriesContexts: store.oldSeriesContexts,
+                            oldRenderSeriesContexts: store.oldRenderSeriesContexts,
+                            animationProgress: store.animationProgress,
+                            isAnimationActive: store.isAnimationActive,
+                            animationStyle: series.first?.animation ?? .none,
+                            activeXScale: store.activeXScale,
+                            activeYScale: store.activeYScale,
+                            xAxes: xAxes,
+                            yAxes: yAxes,
+                            canvasRenderOrder: canvasRenderOrder,
+                            rangeAnnotations: rangeAnnotations,
+                            horizontalAnnotations: horizontalAnnotations,
+                            visiblePointAnnotations: visiblePointAnnotations,
+                            violinBackgrounds: store.violinBackgrounds,
+                            violinColorMapper: nil,
+                            highlightedPoints: store.highlightedPoints,
+                            selectedElementContexts: store.selectedElementContexts,
+                            selectedElementStyle: selectedElementStyle,
+                            crosshairStyle: crosshairStyle,
+                            tooltipPlacement: tooltipPlacement,
+                            tooltipOffset: tooltipOffset,
+                            tooltipPadding: tooltipPadding,
+                            tooltipMaxWidth: tooltipMaxWidth,
+                            tooltipContent: tooltipContent
+                        )
+
+                        ChartGestureHandler(
+                            config: ChartGestureConfig(
+                                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                                isVerticalScrollEnabled: isVerticalScrollEnabled,
+                                isHorizontalZoomEnabled: isHorizontalZoomEnabled,
+                                isVerticalZoomEnabled: isVerticalZoomEnabled,
+                                hitboxRadius: hitboxRadius,
+                                selectionBehavior: selectionBehavior,
+                                clearsSelectionOnGestureEnd: clearsSelectionOnGestureEnd
+                            ),
+                            onEvent: { handleGestureEvent($0) }
+                        )
+
+                        let resolvedAnnotations = resolvedCustomViewAnnotations(in: geometry.size)
+                        ForEach(visibleCustomViewAnnotations) { annotation in
+                            if let resolved = resolvedAnnotations[annotation.id], resolved.isVisible {
+                                annotation.content
+                                    .fixedSize()
+                                    .readSize { customAnnotationSizes[annotation.id] = $0 }
+                                    .position(resolved.position)
+                            } else {
+                                annotation.content
+                                    .fixedSize()
+                                    .hidden()
+                                    .readSize { customAnnotationSizes[annotation.id] = $0 }
+                            }
+                        }
+
+                        if !highlightedAnnotations.isEmpty {
+                            ChartAnnotationTooltipOverlay(
+                                annotations: highlightedAnnotations,
+                                canvasSize: geometry.size,
+                                placement: tooltipPlacement,
+                                offset: tooltipOffset,
+                                padding: tooltipPadding,
+                                maxWidth: tooltipMaxWidth,
+                                content: annotationTooltipContent
+                            )
+                        }
+
+                        if showsZoomControls {
+                            ChartViewportControls(
+                                onZoomIn: { applyProgrammaticZoom(magnification: zoomControlStep) },
+                                onZoomOut: { applyProgrammaticZoom(magnification: 1 / zoomControlStep) },
+                                onReset: { resetViewportFromControls() }
+                            )
+                            .padding(8)
+                            .frame(
+                                maxWidth: .infinity,
+                                maxHeight: .infinity,
+                                alignment: .topTrailing
+                            )
+                        }
+                    }
+                    .onAppear {
+                        syncBaseScales()
+                        store.canvasSize = geometry.size
+                        publishDiagnostics(canvasSize: geometry.size)
+                        restoreBoundViewportOrInitialize()
+                        publishViewportState()
+                        store.queueUpdate(
+                            series: series,
+                            in: geometry.size,
+                            animate: false,
+                            coalesce: false
+                        )
+                        applyBoundSelectionState(boundSelectionState)
+                    }
+                    .onChange(of: geometry.size) { newSize in
+                        store.canvasSize = newSize
+                        publishDiagnostics(canvasSize: newSize)
+                        store.queueUpdate(
+                            series: series,
+                            in: newSize,
+                            animate: false,
+                            coalesce: false
+                        )
+                        applyBoundSelectionState(boundSelectionState)
+                    }
+                }
+
+                // Bottom X axes
+                ForEach(xAxes.indices, id: \.self) { i in
+                    if xAxes[i].position == .bottom {
+                        XAxisView(scale: store.activeXScale, config: xAxes[i])
+                            .frame(height: xAxes[i].height)
+                    }
+                }
+            }
+
+            // Trailing Y axes
+            HStack(spacing: 0) {
+                ForEach(yAxes.indices, id: \.self) { i in
+                    if yAxes[i].position == .trailing {
+                        YAxisView(scale: store.activeYScale, config: yAxes[i])
+                            .frame(width: yAxes[i].width)
+                    }
+                }
+            }
+            .padding(.top, topH).padding(.bottom, bottomH)
+        }
     }
 
     // MARK: - Gesture handling
@@ -507,9 +512,22 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         }
     }
 
+    private func publishDiagnostics(canvasSize: CGSize? = nil) {
+        let diagnostics = ChartDiagnostics.validate(
+            series: series,
+            canvasSize: canvasSize,
+            allowsEmptySeries: emptyState != nil
+        )
+        if diagnostics != lastReportedDiagnostics {
+            ChartDiagnostics.reportDebugDiagnostics(diagnostics)
+            lastReportedDiagnostics = diagnostics
+        }
+        onDiagnosticsChanged(diagnostics)
+    }
+
     private func handleAnnotationGestureEvent(_ event: ChartGestureEvent) -> Bool {
         switch event {
-        case .highlight(let location):
+        case let .highlight(location):
             guard isAnnotationSelectionEnabled else { return false }
 
             var cycle = annotationSelectionCycle
@@ -591,8 +609,8 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     private func restoreBoundViewportOrInitialize() {
         if let state = boundViewportState,
            state.visibleXDomain != nil ||
-            state.visibleYDomain != nil ||
-            state.command != nil {
+           state.visibleYDomain != nil ||
+           state.command != nil {
             store.applyViewportState(state, liveTrackingMode: liveTrackingMode)
         } else {
             initializeViewportIfNeeded()
@@ -661,8 +679,8 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     // MARK: - Off-screen culling
 
     private var visiblePointAnnotations: [PointAnnotation<Double, Double>] {
-        let domain  = store.activeXScale.domain
-        let buffer  = (domain.upperBound - domain.lowerBound) * 0.1
+        let domain = store.activeXScale.domain
+        let buffer = (domain.upperBound - domain.lowerBound) * 0.1
         return pointAnnotations.filter {
             $0.x >= (domain.lowerBound - buffer) && $0.x <= (domain.upperBound + buffer)
         }
@@ -673,9 +691,9 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         let yDomain = store.activeYScale.domain
         return customViewAnnotations.filter {
             $0.x >= xDomain.lowerBound &&
-            $0.x <= xDomain.upperBound &&
-            $0.y >= yDomain.lowerBound &&
-            $0.y <= yDomain.upperBound
+                $0.x <= xDomain.upperBound &&
+                $0.y >= yDomain.lowerBound &&
+                $0.y <= yDomain.upperBound
         }
     }
 
@@ -752,13 +770,13 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
     private func isValidCanvasPosition(_ position: CGPoint) -> Bool {
         store.canvasSize.width > 0 &&
-        store.canvasSize.height > 0 &&
-        position.x.isFinite &&
-        position.y.isFinite &&
-        position.x >= 0 &&
-        position.x <= store.canvasSize.width &&
-        position.y >= 0 &&
-        position.y <= store.canvasSize.height
+            store.canvasSize.height > 0 &&
+            position.x.isFinite &&
+            position.y.isFinite &&
+            position.x >= 0 &&
+            position.x <= store.canvasSize.width &&
+            position.y >= 0 &&
+            position.y <= store.canvasSize.height
     }
 }
 

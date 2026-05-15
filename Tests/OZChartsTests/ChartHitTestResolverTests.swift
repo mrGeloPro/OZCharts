@@ -7,8 +7,8 @@
 //
 
 import CoreGraphics
-import XCTest
 @testable import OZCharts
+import XCTest
 
 final class ChartHitTestResolverTests: XCTestCase {
     func testElementHitTestingPrefersHighestZIndex() {
@@ -60,5 +60,70 @@ final class ChartHitTestResolverTests: XCTestCase {
         )
 
         XCTAssertEqual(selected.map(\.originalPoint.x), [2])
+    }
+
+    func testPointInteractionIndexSelectsRadiusMatchesInOriginalOrder() {
+        let first = ChartPointContext(
+            originalPoint: Point2D(x: 1, y: 10),
+            position: CGPoint(x: 20, y: 20)
+        )
+        let second = ChartPointContext(
+            originalPoint: Point2D(x: 2, y: 20),
+            position: CGPoint(x: 10, y: 20)
+        )
+        let third = ChartPointContext(
+            originalPoint: Point2D(x: 3, y: 30),
+            position: CGPoint(x: 100, y: 20)
+        )
+        let index = ChartPointInteractionIndex(contexts: [first, second, third])
+
+        let selected = index.pointsInRadius(
+            near: CGPoint(x: 15, y: 20),
+            radius: 8
+        )
+
+        XCTAssertEqual(selected.map(\.originalPoint.x), [1, 2])
+    }
+
+    func testPointInteractionIndexFindsExactNearestPoint() {
+        let farXButNearY = ChartPointContext(
+            originalPoint: Point2D(x: 1, y: 10),
+            position: CGPoint(x: 90, y: 50)
+        )
+        let nearXButFarY = ChartPointContext(
+            originalPoint: Point2D(x: 2, y: 20),
+            position: CGPoint(x: 51, y: 200)
+        )
+        let exactNearest = ChartPointContext(
+            originalPoint: Point2D(x: 3, y: 30),
+            position: CGPoint(x: 52, y: 52)
+        )
+        let index = ChartPointInteractionIndex(
+            contexts: [farXButNearY, nearXButFarY, exactNearest]
+        )
+
+        let selected = index.nearestPoint(near: CGPoint(x: 50, y: 50))
+
+        XCTAssertEqual(selected?.originalPoint.x, 3)
+    }
+
+    func testPointInteractionIndexSelectsNearestOriginalXValue() {
+        let first = ChartPointContext(
+            originalPoint: Point2D(x: 4, y: 10),
+            position: CGPoint(x: 40, y: 20)
+        )
+        let second = ChartPointContext(
+            originalPoint: Point2D(x: 6, y: 20),
+            position: CGPoint(x: 60, y: 20)
+        )
+        let paired = ChartPointContext(
+            originalPoint: Point2D(x: 6, y: 30),
+            position: CGPoint(x: 60, y: 80)
+        )
+        let index = ChartPointInteractionIndex(contexts: [first, second, paired])
+
+        let selected = index.nearestOriginalXValue(5.7)
+
+        XCTAssertEqual(selected.map(\.originalPoint.y), [20, 30])
     }
 }

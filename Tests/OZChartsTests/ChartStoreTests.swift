@@ -7,9 +7,9 @@
 //
 
 import CoreGraphics
+@testable import OZCharts
 import SwiftUI
 import XCTest
-@testable import OZCharts
 
 final class ChartStoreTests: XCTestCase {
     private enum StackGroup: Hashable {
@@ -20,8 +20,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testQueueUpdateCoalescesUntilIntervalElapses() async {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.layoutCoalescingIntervalNanoseconds = 80_000_000
         let series = LineSeries(data: [Point2D(x: 1, y: 1)], color: .blue)
@@ -44,8 +44,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testQueueUpdateKeepsOnlyLatestPendingLayout() async {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.layoutCoalescingIntervalNanoseconds = 80_000_000
 
@@ -76,10 +76,10 @@ final class ChartStoreTests: XCTestCase {
     }
 
     @MainActor
-    func testQueueUpdateCanBypassCoalescingForInitialLayout() async {
+    func testQueueUpdateCanBypassCoalescingForInitialLayout() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.layoutCoalescingIntervalNanoseconds = 1_000_000_000
         let series = LineSeries(data: [Point2D(x: 4, y: 4)], color: .blue)
@@ -97,13 +97,39 @@ final class ChartStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testRenderContextsCanBeDownsampledWhileInteractionContextsStayComplete() {
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0 ... 1000),
+            yScale: LinearScale(domain: 0 ... 100)
+        )
+        let data = (0 ..< 1000).map { index in
+            Point2D(x: Double(index), y: Double(index % 100))
+        }
+        let series = LineSeries(
+            data: data,
+            color: .blue,
+            downsampling: .automatic(maxPointsPerPixel: 1)
+        ).eraseToAnyChartSeries()
+
+        store.queueUpdate(
+            series: [series],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+
+        XCTAssertEqual(store.seriesContexts[0].count, data.count)
+        XCTAssertLessThan(store.renderSeriesContexts[0].count, store.seriesContexts[0].count)
+    }
+
+    @MainActor
     func testPanRecalculatesSeriesContextsSynchronously() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.canvasSize = CGSize(width: 100, height: 100)
-        store.viewport.visibleXDomain = 0...5
+        store.viewport.visibleXDomain = 0 ... 5
         store.applyViewportToScales()
 
         let series = LineSeries(data: [Point2D(x: 2.5, y: 5)], color: .blue)
@@ -135,8 +161,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testGestureUpdateDisablesAnimatableOverlay() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.canvasSize = CGSize(width: 100, height: 100)
         store.isAnimationActive = true
@@ -170,11 +196,11 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testViewportCanUpdateLogScaleDomains() {
         let store = ChartStore<Point2D, LogScale, LogScale>(
-            xScale: LogScale(domain: 1...100),
-            yScale: LogScale(domain: 1...100)
+            xScale: LogScale(domain: 1 ... 100),
+            yScale: LogScale(domain: 1 ... 100)
         )
-        store.activeXScale.range = 0...100
-        store.viewport.visibleXDomain = 10...100
+        store.activeXScale.range = 0 ... 100
+        store.viewport.visibleXDomain = 10 ... 100
 
         store.applyViewportToScales()
 
@@ -185,28 +211,28 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testStoreAppliesExternalViewportState() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...24),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 24),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         store.applyViewportState(
-            ChartViewportState(visibleXDomain: 4...12, visibleYDomain: 20...60)
+            ChartViewportState(visibleXDomain: 4 ... 12, visibleYDomain: 20 ... 60)
         )
 
         XCTAssertEqual(store.activeXScale.domain.lowerBound, 4, accuracy: 0.0001)
         XCTAssertEqual(store.activeXScale.domain.upperBound, 12, accuracy: 0.0001)
         XCTAssertEqual(store.activeYScale.domain.lowerBound, 20, accuracy: 0.0001)
         XCTAssertEqual(store.activeYScale.domain.upperBound, 60, accuracy: 0.0001)
-        XCTAssertEqual(store.viewportState.visibleXDomain, 4...12)
+        XCTAssertEqual(store.viewportState.visibleXDomain, 4 ... 12)
     }
 
     @MainActor
     func testStoreProgrammaticZoomUpdatesViewportState() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...24),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 24),
+            yScale: LinearScale(domain: 0 ... 100)
         )
-        store.applyViewportState(ChartViewportState(visibleXDomain: 0...24))
+        store.applyViewportState(ChartViewportState(visibleXDomain: 0 ... 24))
 
         store.applyProgrammaticZoom(
             magnification: 3,
@@ -224,8 +250,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testDataRefreshPreservesInteractiveViewportAfterInitialViewport() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...24),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 24),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         let initialSeries = LineSeries(
@@ -271,8 +297,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testLiveTrackingPausesAfterUserScrollsBackAndPreservesViewportOnNewData() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...100),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 100),
+            yScale: LinearScale(domain: 0 ... 100)
         )
         store.canvasSize = CGSize(width: 100, height: 100)
 
@@ -316,8 +342,8 @@ final class ChartStoreTests: XCTestCase {
         XCTAssertEqual(store.viewportState.liveTrackingStatus, .pausedByUser)
 
         store.updateBaseScales(
-            xScale: LinearScale(domain: 0...120),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 120),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         let nextSeries = LineSeries(
@@ -340,12 +366,12 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testJumpToLatestViewportCommandResumesLiveTracking() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...120),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 120),
+            yScale: LinearScale(domain: 0 ... 100)
         )
         store.applyViewportState(
             ChartViewportState(
-                visibleXDomain: 70...90,
+                visibleXDomain: 70 ... 90,
                 liveTrackingStatus: .pausedByUser
             )
         )
@@ -360,12 +386,12 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testExternalViewportStatePausesLiveTrackingWhenSetAwayFromLatest() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...120),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 120),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         store.applyViewportState(
-            ChartViewportState(visibleXDomain: 40...60),
+            ChartViewportState(visibleXDomain: 40 ... 60),
             liveTrackingMode: .followLatest()
         )
 
@@ -377,8 +403,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testPausedLiveTrackingCanPreserveTrailingOffsetOnNewData() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...100),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 100),
+            yScale: LinearScale(domain: 0 ... 100)
         )
         store.canvasSize = CGSize(width: 100, height: 100)
 
@@ -420,8 +446,8 @@ final class ChartStoreTests: XCTestCase {
         )
 
         store.updateBaseScales(
-            xScale: LinearScale(domain: 0...120),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 120),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         let nextSeries = LineSeries(
@@ -444,19 +470,19 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     func testTrimmedLiveDataClampsPausedViewportWithoutJumpingToLatest() {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...100),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 100),
+            yScale: LinearScale(domain: 0 ... 100)
         )
         store.applyViewportState(
             ChartViewportState(
-                visibleXDomain: 10...30,
+                visibleXDomain: 10 ... 30,
                 liveTrackingStatus: .pausedByUser
             )
         )
 
         store.updateBaseScales(
-            xScale: LinearScale(domain: 20...120),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 20 ... 120),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         let nextSeries = LineSeries(
@@ -568,8 +594,8 @@ final class ChartStoreTests: XCTestCase {
             zIndex: 1
         ).eraseToAnyChartSeries()
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.queueUpdate(
             series: [firstSeries, secondSeries],
@@ -592,8 +618,8 @@ final class ChartStoreTests: XCTestCase {
     func testSelectionStateRestoresSelectionByPointIDs() {
         let pointID = UUID()
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         let series = LineSeries(
             data: [
@@ -632,8 +658,8 @@ final class ChartStoreTests: XCTestCase {
             barWidth: 20
         ).eraseToAnyChartSeries()
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.queueUpdate(
             series: [series],
@@ -679,8 +705,8 @@ final class ChartStoreTests: XCTestCase {
             startAngle: .degrees(0)
         ).eraseToAnyChartSeries()
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...1),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 1),
+            yScale: LinearScale(domain: 0 ... 100)
         )
         store.queueUpdate(
             series: [series],
@@ -714,8 +740,8 @@ final class ChartStoreTests: XCTestCase {
             segmentGap: 0
         ).eraseToAnyChartSeries()
         let store = ChartStore<GroupedPoint2D<StackGroup>, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...100),
-            yScale: LinearScale(domain: 0...2)
+            xScale: LinearScale(domain: 0 ... 100),
+            yScale: LinearScale(domain: 0 ... 2)
         )
         store.queueUpdate(
             series: [series],
@@ -818,8 +844,8 @@ final class ChartStoreTests: XCTestCase {
     @MainActor
     private func selectionStore() -> ChartStore<Point2D, LinearScale, LinearScale> {
         let store = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         store.queueUpdate(
             series: [

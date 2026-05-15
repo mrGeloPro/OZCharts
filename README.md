@@ -4,17 +4,19 @@ A high-performance, fully customizable, and mathematically precise charting fram
 
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 [![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
+[![CI](https://github.com/mrGeloPro/OZCharts/actions/workflows/ci.yml/badge.svg)](https://github.com/mrGeloPro/OZCharts/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## Features
 
 * **Versatile chart types:** Line, area, vertical bar, scatter, stacked horizontal bar, donut, and mathematically accurate violin charts.
 * **Canvas-first rendering:** Smooth interaction with off-screen culling and synchronous gesture layouts.
+* **Two API levels:** Use `OZChart` for fluent common charts or `CartesianChartView` for advanced product composition.
 * **Advanced gestures:** Independent horizontal and vertical scrolling/zooming with conflict handling between pan and pinch.
 * **Hybrid layering:** Combine Canvas-rendered series with collision-aware SwiftUI custom annotations.
 * **Auto domains and presets:** Start quickly with `.auto(...)`, nice ticks, collision-aware labels, `ChartTheme`, and axis presets.
 * **Interaction toolkit:** Selection modes, centralized hit-testing, selected-element overlays, crosshair, selection behavior, and live tracking.
-* **Production helpers:** Legend, accessibility descriptors, range annotations, event markers, LTTB downsampling, log/time/category scales, and smoke-tested rendering contracts.
+* **Production helpers:** Legend, accessibility descriptors, range annotations, event markers, LTTB downsampling, log/time/category scales, input diagnostics, and smoke-tested rendering contracts.
 
 ## Installation (Swift Package Manager)
 
@@ -62,6 +64,33 @@ struct ContentView: View {
 }
 ```
 
+## Fluent API
+
+For common charts, start with `OZChart`:
+
+```swift
+OZChart(data)
+    .line(color: .blue, lineWidth: 3, downsampling: .automatic())
+    .selection(.nearestX)
+    .onSelectionChanged { points in
+        selectedValue = points.first?.originalPoint.y
+    }
+    .domain(y: .auto(padding: 0.12, includeZero: true))
+    .tooltip { points in
+        if let point = points.first {
+            Text("Value: \(Int(point.originalPoint.y))")
+                .padding(8)
+                .background(Color.black.opacity(0.8))
+                .foregroundColor(.white)
+                .cornerRadius(8)
+        }
+    }
+    .frame(height: 300)
+```
+
+Use `CartesianChartView` directly for advanced multi-series and product-specific
+composition.
+
 ## Common Patterns
 
 For product integration, start with the [Integration Guide](Docs/IntegrationGuide.md).
@@ -69,6 +98,8 @@ For recreating polished product charts, use [Product Chart Recipes](Docs/Product
 For external-team onboarding, use the [Handoff Guide](Docs/HandoffGuide.md).
 For handoff readiness, use the [Delivery Checklist](Docs/DeliveryChecklist.md).
 For prerelease scope, see [OZCharts 2.1 Prerelease Notes](Docs/Release-2.1.md).
+For the 2.5 release, see [OZCharts 2.5 Release Notes](Docs/Release-2.5.md).
+For API compatibility expectations, see [OZCharts 2.5 API Stability Policy](Docs/APIStability-2.5.md).
 For migration details, see the [OZCharts 2.1 Migration Guide](Docs/Migration-2.1.md).
 For performance expectations, see [Performance Benchmarks](Docs/PerformanceBenchmarks.md).
 For manual demo validation, see [DemoApp QA Guide](Docs/DemoAppQA.md).
@@ -590,13 +621,14 @@ The repository includes SwiftFormat and SwiftLint configs for consistent handoff
 style:
 
 ```bash
-swiftformat .
 swiftlint lint --no-cache
 ```
 
 The configs are intentionally conservative. They focus on readable diffs,
 reasonable function/file size limits, import hygiene, and common Swift clarity
-checks without forcing a broad rewrite of the public API.
+checks without forcing a broad rewrite of the public API. The SwiftFormat config
+is available for targeted files and for a dedicated mechanical formatting change
+when the team is ready for that diff.
 
 ## Running the Demo App
 

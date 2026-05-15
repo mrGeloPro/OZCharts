@@ -14,16 +14,18 @@ public final class ChartStore<
     XScale: Scale,
     YScale: Scale
 >: ObservableObject
-where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
-      YScale.InputType == Point.YValue, YScale.OutputType == CGFloat,
-      Point.XValue == Double, Point.YValue == Double {
-
+    where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
+    YScale.InputType == Point.YValue, YScale.OutputType == CGFloat,
+    Point.XValue == Double, Point.YValue == Double {
     // MARK: - Published State
+
     @Published public var activeXScale: XScale
     @Published public var activeYScale: YScale
 
     @Published public var seriesContexts: [[ChartPointContext<Point>]] = []
+    @Published public var renderSeriesContexts: [[ChartPointContext<Point>]] = []
     @Published public var oldSeriesContexts: [[ChartPointContext<Point>]] = []
+    @Published public var oldRenderSeriesContexts: [[ChartPointContext<Point>]] = []
     @Published public var animationProgress: CGFloat = 1.0
     @Published public var isAnimationActive = false
 
@@ -36,6 +38,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     @Published public var viewport = ChartViewport()
 
     // MARK: - Internal logic variables
+
     public var baseXScale: XScale
     public var baseYScale: YScale
     public var canvasSize: CGSize = .zero
@@ -45,6 +48,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     private var selectionCycleIDs: [UUID] = []
     private var selectionCycleIndex: Int = 0
     private var currentSeriesIDs: [UUID] = []
+    private var pointInteractionIndex: ChartPointInteractionIndex<Point>?
 
     public init(xScale: XScale, yScale: YScale) {
         self.baseXScale = xScale
@@ -90,7 +94,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         isHorizontalScrollEnabled: Bool = true,
         isVerticalScrollEnabled: Bool = true
     ) {
-        let allData = series.flatMap { $0.data }
+        let allData = series.flatMap(\.data)
         if allData.isEmpty {
             clearDataState()
             return
@@ -150,20 +154,20 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         series: [AnyChartSeries<Point>]
     ) {
         switch event {
-        case .panChanged(let translation):
+        case let .panChanged(translation):
             viewport.isDragging = true
             highlightedPoints = []
             selectedElements = []
             selectedElementContexts = []
             resetSelectionCycle()
             viewport.applyPan(
-                translationWidth:  translation.width,
+                translationWidth: translation.width,
                 translationHeight: translation.height,
-                canvasSize:        canvasSize,
-                globalXDomain:     baseXScale.domain,
-                globalYDomain:     baseYScale.domain,
-                scrollX:           isHorizontalScrollEnabled,
-                scrollY:           isVerticalScrollEnabled
+                canvasSize: canvasSize,
+                globalXDomain: baseXScale.domain,
+                globalYDomain: baseYScale.domain,
+                scrollX: isHorizontalScrollEnabled,
+                scrollY: isVerticalScrollEnabled
             )
             applyViewportToScales()
             queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
@@ -174,18 +178,18 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                 globalXDomain: baseXScale.domain
             )
 
-        case .zoomChanged(let magnification):
+        case let .zoomChanged(magnification):
             highlightedPoints = []
             selectedElements = []
             selectedElementContexts = []
             resetSelectionCycle()
             viewport.applyZoom(
-                magnification:  magnification,
-                globalXDomain:  baseXScale.domain,
-                globalYDomain:  baseYScale.domain,
-                minZoomScale:   minZoomScale,
-                zoomX:          isHorizontalZoomEnabled,
-                zoomY:          isVerticalZoomEnabled
+                magnification: magnification,
+                globalXDomain: baseXScale.domain,
+                globalYDomain: baseYScale.domain,
+                minZoomScale: minZoomScale,
+                zoomX: isHorizontalZoomEnabled,
+                zoomY: isVerticalZoomEnabled
             )
             applyViewportToScales()
             queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
@@ -196,7 +200,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                 globalXDomain: baseXScale.domain
             )
 
-        case .highlight(let location):
+        case let .highlight(location):
             let elementContexts = selectElementContexts(near: location)
             if !elementContexts.isEmpty {
                 selectedElementContexts = elementContexts
@@ -237,10 +241,9 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         mode: ChartSelectionMode,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all
     ) -> [ChartPointContext<Point>] {
-        let allContexts = seriesContexts.flatMap { $0 }
-        return ChartHitTestResolver.points(
+        ChartHitTestResolver.points(
             near: location,
-            contexts: allContexts,
+            index: currentPointInteractionIndex(),
             radius: radius,
             mode: mode,
             overlappingSelectionMode: overlappingSelectionMode,
@@ -251,24 +254,12 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
     func selectNearestXValue(_ xValue: Double) -> [ChartPointContext<Point>] {
         guard xValue.isFinite else { return [] }
-
-        let allContexts = seriesContexts.flatMap { $0 }
-        guard let nearest = allContexts.min(by: {
-            abs($0.originalPoint.x - xValue) < abs($1.originalPoint.x - xValue)
-        }) else {
-            return []
-        }
-
-        return allContexts.filter { $0.originalPoint.x == nearest.originalPoint.x }
+        return currentPointInteractionIndex().nearestOriginalXValue(xValue)
     }
 
     func selectPoints(byIDs pointIDs: [UUID]) -> [ChartPointContext<Point>] {
         guard !pointIDs.isEmpty else { return [] }
-
-        let selectedIDs = Set(pointIDs)
-        return seriesContexts
-            .flatMap { $0 }
-            .filter { selectedIDs.contains($0.originalPoint.id) }
+        return currentPointInteractionIndex().points(byIDs: pointIDs)
     }
 
     func selectElements(byIDs elementIDs: [UUID]) -> [ChartSelectedElement] {
@@ -338,7 +329,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         layoutTask = nil
         currentSeriesIDs = []
         oldSeriesContexts = []
+        oldRenderSeriesContexts = []
         seriesContexts = []
+        renderSeriesContexts = []
+        pointInteractionIndex = nil
         highlightedPoints = []
         selectedElements = []
         selectedElementContexts = []
@@ -459,8 +453,12 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
         if !coalesce && !animate {
             oldSeriesContexts = []
+            oldRenderSeriesContexts = []
             let contexts = calculateSeriesContexts(for: series, in: size)
+            let renderContexts = calculateRenderSeriesContexts(for: series, contexts: contexts, in: size)
             seriesContexts = contexts
+            renderSeriesContexts = renderContexts
+            pointInteractionIndex = nil
             selectableElements = calculateSelectionElementContexts(for: series, contexts: contexts, in: size)
             animationProgress = 1.0
             isAnimationActive = false
@@ -477,11 +475,13 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
             if animate {
                 oldSeriesContexts = seriesContexts
+                oldRenderSeriesContexts = renderSeriesContexts
                 animationProgress = 0.0
                 isAnimationActive = true
                 try? await Task.sleep(nanoseconds: 5_000_000)
             } else {
                 oldSeriesContexts = []
+                oldRenderSeriesContexts = []
                 animationProgress = 1.0
                 isAnimationActive = false
             }
@@ -489,10 +489,12 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             guard !Task.isCancelled, currentID == self.updateCounter else { return }
 
             let newContexts = calculateSeriesContexts(for: series, in: size)
+            let newRenderContexts = calculateRenderSeriesContexts(for: series, contexts: newContexts, in: size)
             let newElements = calculateSelectionElementContexts(for: series, contexts: newContexts, in: size)
-
             guard !Task.isCancelled, currentID == self.updateCounter else { return }
             seriesContexts = newContexts
+            renderSeriesContexts = newRenderContexts
+            pointInteractionIndex = nil
             selectableElements = newElements
 
             let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
@@ -531,6 +533,16 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         return newContexts
     }
 
+    private func currentPointInteractionIndex() -> ChartPointInteractionIndex<Point> {
+        if let pointInteractionIndex {
+            return pointInteractionIndex
+        }
+
+        let newIndex = ChartPointInteractionIndex(seriesContexts: seriesContexts)
+        pointInteractionIndex = newIndex
+        return newIndex
+    }
+
     private func calculateSelectionElementContexts(
         for series: [AnyChartSeries<Point>],
         contexts: [[ChartPointContext<Point>]],
@@ -549,6 +561,18 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                     zIndex: element.zIndex
                 )
             }
+        }
+    }
+
+    private func calculateRenderSeriesContexts(
+        for series: [AnyChartSeries<Point>],
+        contexts: [[ChartPointContext<Point>]],
+        in size: CGSize
+    ) -> [[ChartPointContext<Point>]] {
+        let sorted = series.sorted { $0.zIndex < $1.zIndex }
+        return sorted.enumerated().map { index, series in
+            let seriesContexts = contexts[safe: index] ?? []
+            return series.renderContexts(from: seriesContexts, in: size)
         }
     }
 

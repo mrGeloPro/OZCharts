@@ -14,14 +14,15 @@ struct ChartCanvasView<
     YScale: Scale,
     TooltipContent: View
 >: View
-where XScale.InputType == Double, XScale.OutputType == CGFloat,
-      YScale.InputType == Double, YScale.OutputType == CGFloat,
-      Point.XValue == Double, Point.YValue == Double {
-
+    where XScale.InputType == Double, XScale.OutputType == CGFloat,
+    YScale.InputType == Double, YScale.OutputType == CGFloat,
+    Point.XValue == Double, Point.YValue == Double {
     let series: [AnyChartSeries<Point>]
     let seriesContexts: [[ChartPointContext<Point>]]
+    let renderSeriesContexts: [[ChartPointContext<Point>]]
 
     let oldSeriesContexts: [[ChartPointContext<Point>]]
+    let oldRenderSeriesContexts: [[ChartPointContext<Point>]]
     let animationProgress: CGFloat
     let isAnimationActive: Bool
     let animationStyle: ChartAnimationStyle
@@ -93,9 +94,9 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
                                 context.stroke(path, with: .color(color), lineWidth: 1)
                             }
                             for (index, s) in series.enumerated() {
-                                guard index < seriesContexts.count else { continue }
+                                guard index < renderSeriesContexts.count else { continue }
                                 guard !s.shouldRenderThroughAnimatableOverlay(isAnimationActive: isAnimationActive) else { continue }
-                                s.render(into: &context, contexts: seriesContexts[index], size: size)
+                                s.render(into: &context, contexts: renderSeriesContexts[index], size: size)
                             }
                         }
                     }
@@ -115,9 +116,9 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
                 }
 
                 ForEach(Array(series.enumerated()), id: \.offset) { index, s in
-                    if index < seriesContexts.count, s.shouldRenderThroughAnimatableOverlay(isAnimationActive: isAnimationActive) {
-                        let oldCtx = index < oldSeriesContexts.count ? oldSeriesContexts[index] : []
-                        let newCtx = seriesContexts[index]
+                    if index < renderSeriesContexts.count, s.shouldRenderThroughAnimatableOverlay(isAnimationActive: isAnimationActive) {
+                        let oldCtx = index < oldRenderSeriesContexts.count ? oldRenderSeriesContexts[index] : []
+                        let newCtx = renderSeriesContexts[index]
 
                         s.animatableView(
                             oldContexts: oldCtx,
@@ -144,7 +145,7 @@ where XScale.InputType == Double, XScale.OutputType == CGFloat,
 }
 
 private struct ChartTooltipOverlay<Point: ChartDataPoint, Content: View>: View
-where Point.XValue == Double, Point.YValue == Double {
+    where Point.XValue == Double, Point.YValue == Double {
     let points: [ChartPointContext<Point>]
     let canvasSize: CGSize
     let placement: ChartTooltipPlacement

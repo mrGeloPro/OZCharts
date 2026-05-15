@@ -4,6 +4,9 @@
 
 ### Added
 
+* `OZChart` fluent API for common line, area, bar, and scatter charts.
+* `OZChart` selection callbacks plus viewport and selection state binding modifiers.
+* `ChartInteractionOptions`, `ChartSelectionOptions`, `ChartTooltipOptions`, `ChartViewportOptions`, and `ChartRenderOptions` for grouped, stable chart configuration.
 * Real-world JSON demo scenarios for medical, sport, financial, and operational chart examples.
 * Product chart recipes and integration handoff documentation.
 * `StackedAreaSeries` for cumulative grouped metrics.
@@ -26,6 +29,10 @@
 * Placement, collision priority, and padding controls for `CustomViewAnnotation`.
 * Product snapshot signature tests and optional performance benchmark tests.
 * Demo app source-structure regression tests.
+* GitHub Actions CI for SwiftPM tests, linting, DemoApp builds, and manually triggered performance benchmarks.
+* `ChartDiagnostics` for testable release checks around empty series, duplicate ids, non-finite points, and too-small canvases.
+* `.chartDiagnostics(...)` for consuming diagnostics from chart views.
+* OZCharts 2.5 release notes and API stability policy.
 
 ### Changed
 
@@ -36,6 +43,10 @@
 * Canvas-drawn range and value labels now use shared collision/clamping rules.
 * Live tracking now supports frozen history and delayed-live paused windows when users scroll away from latest.
 * Live viewports are clamped safely when older data is trimmed from the domain.
+* Dense hit-testing now avoids extra collection passes and sort work on the hot interaction path.
+* Point hit-testing now uses a lazy cached x-index owned by `ChartStore` for dense interactive datasets.
+* Render contexts are separated from full interaction contexts so dense series can draw downsampled data while selection remains precise.
+* `OZChart` default series ids are deterministic across SwiftUI rebuilds.
 
 ### Fixed
 

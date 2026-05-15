@@ -8,16 +8,16 @@
 
 import CoreGraphics
 import Foundation
+@testable import OZCharts
 import SwiftUI
 import XCTest
-@testable import OZCharts
 
 final class PerformanceBenchmarkTests: XCTestCase {
     @MainActor
     func testLargeLineLayoutPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let lineSamples = (0..<20_000).map { index in
+        let lineSamples = (0 ..< 20000).map { index in
             Point2D(
                 x: Double(index),
                 y: 50 + sin(Double(index) / 18) * 20 + cos(Double(index) / 71) * 8
@@ -29,8 +29,8 @@ final class PerformanceBenchmarkTests: XCTestCase {
             downsampling: .automatic(maxPointsPerPixel: 1)
         ).eraseToAnyChartSeries()
         let chartStore = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...20_000),
-            yScale: LinearScale(domain: 0...100)
+            xScale: LinearScale(domain: 0 ... 20000),
+            yScale: LinearScale(domain: 0 ... 100)
         )
 
         measure {
@@ -51,7 +51,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
         try requirePerformanceBenchmarks()
 
         let benchmarkGroups = BenchmarkGroup.allCases
-        let areaSamples = (0..<2_500).flatMap { index in
+        let areaSamples = (0 ..< 2500).flatMap { index in
             benchmarkGroups.map { group in
                 GroupedPoint2D(
                     x: Double(index),
@@ -67,8 +67,8 @@ final class PerformanceBenchmarkTests: XCTestCase {
             interpolation: .step
         ).eraseToAnyChartSeries()
         let chartStore = ChartStore<GroupedPoint2D<BenchmarkGroup>, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...2_500),
-            yScale: LinearScale(domain: 0...80)
+            xScale: LinearScale(domain: 0 ... 2500),
+            yScale: LinearScale(domain: 0 ... 80)
         )
 
         measure {
@@ -89,7 +89,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
         try requirePerformanceBenchmarks()
 
         let benchmarkGroups = BenchmarkGroup.allCases
-        let barSegments = (0..<250).flatMap { row in
+        let barSegments = (0 ..< 250).flatMap { row in
             benchmarkGroups.map { group in
                 GroupedPoint2D(
                     x: Double((row % 7) + group.signalWeight * 4),
@@ -108,8 +108,8 @@ final class PerformanceBenchmarkTests: XCTestCase {
             segmentGap: 1
         ).eraseToAnyChartSeries()
         let chartStore = ChartStore<GroupedPoint2D<BenchmarkGroup>, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...120),
-            yScale: LinearScale(domain: 0...250)
+            xScale: LinearScale(domain: 0 ... 120),
+            yScale: LinearScale(domain: 0 ... 250)
         )
 
         measure {
@@ -129,8 +129,8 @@ final class PerformanceBenchmarkTests: XCTestCase {
         try requirePerformanceBenchmarks()
 
         var pointContexts: [ChartPointContext<Point2D>] = []
-        pointContexts.reserveCapacity(60_000)
-        for index in 0..<60_000 {
+        pointContexts.reserveCapacity(60000)
+        for index in 0 ..< 60000 {
             let point = Point2D(
                 x: Double(index),
                 y: 50 + sin(Double(index) / 31) * 24
@@ -149,6 +149,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
         let probeLocations = stride(from: 0, to: 390, by: 13).map {
             CGPoint(x: CGFloat($0), y: 130)
         }
+        let pointIndex = ChartPointInteractionIndex(contexts: pointContexts)
         var selectedPointCount = 0
 
         measure {
@@ -158,7 +159,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
             for location in probeLocations {
                 selectedInRun += ChartHitTestResolver.points(
                     near: location,
-                    contexts: pointContexts,
+                    index: pointIndex,
                     radius: 16,
                     mode: .nearestX,
                     overlappingSelectionMode: .all,
@@ -177,17 +178,17 @@ final class PerformanceBenchmarkTests: XCTestCase {
         try requirePerformanceBenchmarks()
 
         let chartStore = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...900),
-            yScale: LinearScale(domain: 0...120)
+            xScale: LinearScale(domain: 0 ... 900),
+            yScale: LinearScale(domain: 0 ... 120)
         )
         chartStore.canvasSize = CGSize(width: 390, height: 260)
         chartStore.layoutCoalescingIntervalNanoseconds = 0
 
         measure {
             var liveSamples: [Point2D] = []
-            for batch in 0..<60 {
+            for batch in 0 ..< 60 {
                 let batchStartIndex = batch * 20
-                liveSamples.append(contentsOf: (0..<20).map { offset in
+                liveSamples.append(contentsOf: (0 ..< 20).map { offset in
                     let x = Double(batchStartIndex + offset)
                     return Point2D(x: x, y: 50 + sin(x / 12) * 18 + cos(x / 43) * 9)
                 })
@@ -201,8 +202,8 @@ final class PerformanceBenchmarkTests: XCTestCase {
                 ).eraseToAnyChartSeries()
 
                 chartStore.updateBaseScales(
-                    xScale: LinearScale(domain: historyStart...max(900, latestXValue)),
-                    yScale: LinearScale(domain: 0...120)
+                    xScale: LinearScale(domain: historyStart ... max(900, latestXValue)),
+                    yScale: LinearScale(domain: 0 ... 120)
                 )
                 chartStore.handleDataChange(
                     series: [liveSeries],
@@ -227,7 +228,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
     func testDonutElementHitTestingPerformanceWhenEnabled() throws {
         try requirePerformanceBenchmarks()
 
-        let donutSegments = (0..<120).map { index in
+        let donutSegments = (0 ..< 120).map { index in
             Point2D(x: Double(index), y: Double((index % 9) + 1))
         }
         let donutSeries = DonutSeries(
@@ -237,8 +238,8 @@ final class PerformanceBenchmarkTests: XCTestCase {
             gapAngle: .degrees(1)
         ).eraseToAnyChartSeries()
         let chartStore = ChartStore<Point2D, LinearScale, LinearScale>(
-            xScale: LinearScale(domain: 0...120),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 120),
+            yScale: LinearScale(domain: 0 ... 10)
         )
         chartStore.queueUpdate(
             series: [donutSeries],
@@ -275,19 +276,19 @@ private enum BenchmarkGroup: String, CaseIterable, Hashable {
 
     var signalWeight: Int {
         switch self {
-        case .basic: return 1
-        case .bonus: return 2
-        case .streak: return 3
-        case .recovery: return 4
+        case .basic: 1
+        case .bonus: 2
+        case .streak: 3
+        case .recovery: 4
         }
     }
 
     var color: Color {
         switch self {
-        case .basic: return .cyan
-        case .bonus: return .purple
-        case .streak: return .yellow
-        case .recovery: return .orange
+        case .basic: .cyan
+        case .bonus: .purple
+        case .streak: .yellow
+        case .recovery: .orange
         }
     }
 }

@@ -21,12 +21,16 @@ Use OZCharts when a product needs more control than a standard chart view can pr
 ### Getting Started
 
 - <doc:GettingStarted>
+- <doc:FluentAPI>
 - <doc:LiveCharts>
 - <doc:SelectionAndAnnotations>
 - <doc:ProductCharts>
+- <doc:Diagnostics>
+- <doc:APIStability>
 
 ### Core Views
 
+- ``OZChart``
 - ``CartesianChartView``
 
 ### Data Models
@@ -66,3 +70,14 @@ Use OZCharts when a product needs more control than a standard chart view can pr
 - ``RangeAnnotation``
 - ``PointAnnotation``
 - ``CustomViewAnnotation``
+
+### Release Readiness
+
+- ``ChartInteractionOptions``
+- ``ChartSelectionOptions``
+- ``ChartTooltipOptions``
+- ``ChartViewportOptions``
+- ``ChartRenderOptions``
+- ``ChartDiagnostics``
+- ``ChartDiagnostic``
+- ``ChartDiagnosticSeverity``

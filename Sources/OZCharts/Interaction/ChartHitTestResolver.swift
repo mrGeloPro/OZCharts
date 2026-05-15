@@ -21,20 +21,24 @@ enum ChartHitTestResolver {
         near location: CGPoint,
         contexts: [ChartElementContext]
     ) -> [ChartElementContext] {
-        contexts
-            .filter { $0.contains(location) }
-            .sorted {
-                if $0.zIndex == $1.zIndex {
-                    return ($0.payload.seriesIndex ?? 0) > ($1.payload.seriesIndex ?? 0)
-                }
-                return $0.zIndex > $1.zIndex
+        var bestContext: ChartElementContext?
+
+        for context in contexts where context.contains(location) {
+            guard let currentBest = bestContext else {
+                bestContext = context
+                continue
             }
-            .first
-            .map { context in
-                var context = context
-                context.payload.interactionPosition = location
-                return [context]
-            } ?? []
+
+            if context.zIndex > currentBest.zIndex ||
+                (context.zIndex == currentBest.zIndex &&
+                    (context.payload.seriesIndex ?? 0) > (currentBest.payload.seriesIndex ?? 0)) {
+                bestContext = context
+            }
+        }
+
+        guard var context = bestContext else { return [] }
+        context.payload.interactionPosition = location
+        return [context]
     }
 
     static func points<Point: ChartDataPoint>(
@@ -46,32 +50,43 @@ enum ChartHitTestResolver {
         cycleIDs: inout [UUID],
         cycleIndex: inout Int
     ) -> [ChartPointContext<Point>] where Point.XValue == Double, Point.YValue == Double {
-        guard !contexts.isEmpty else { return [] }
+        points(
+            near: location,
+            index: ChartPointInteractionIndex(contexts: contexts),
+            radius: radius,
+            mode: mode,
+            overlappingSelectionMode: overlappingSelectionMode,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+    }
 
-        let selected: [ChartPointContext<Point>]
-        switch mode {
+    static func points<Point: ChartDataPoint>(
+        near location: CGPoint,
+        index: ChartPointInteractionIndex<Point>,
+        radius: CGFloat,
+        mode: ChartSelectionMode,
+        overlappingSelectionMode: ChartOverlappingSelectionMode,
+        cycleIDs: inout [UUID],
+        cycleIndex: inout Int
+    ) -> [ChartPointContext<Point>] where Point.XValue == Double, Point.YValue == Double {
+        guard !index.isEmpty else { return [] }
+
+        let selected: [ChartPointContext<Point>] = switch mode {
         case .none:
-            selected = []
+            []
 
         case .pointsInRadius:
-            let radiusSq = radius * radius
-            selected = contexts.filter {
-                distanceSquared(from: $0.position, to: location) <= radiusSq
-            }
+            index.pointsInRadius(
+                near: location,
+                radius: radius
+            )
 
         case .nearestPoint:
-            selected = contexts.min {
-                distanceSquared(from: $0.position, to: location) <
-                distanceSquared(from: $1.position, to: location)
-            }.map { [$0] } ?? []
+            index.nearestPoint(near: location).map { [$0] } ?? []
 
         case .nearestX:
-            guard let nearest = contexts.min(by: {
-                abs($0.position.x - location.x) < abs($1.position.x - location.x)
-            }) else {
-                return []
-            }
-            selected = contexts.filter { $0.originalPoint.x == nearest.originalPoint.x }
+            index.nearestXPoints(near: location)
         }
 
         return resolveOverlappingSelection(
@@ -105,11 +120,5 @@ enum ChartHitTestResolver {
         }
 
         return [selected[cycleIndex]]
-    }
-
-    private static func distanceSquared(from lhs: CGPoint, to rhs: CGPoint) -> CGFloat {
-        let dx = lhs.x - rhs.x
-        let dy = lhs.y - rhs.y
-        return dx * dx + dy * dy
     }
 }

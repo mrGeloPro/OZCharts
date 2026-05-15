@@ -30,18 +30,17 @@ public struct AreaStyle {
         fillOpacity: Double = 0.2,
         baseline: Double? = nil
     ) {
-        self.fillColor   = fillColor
-        self.fillStyle   = fillStyle
+        self.fillColor = fillColor
+        self.fillStyle = fillStyle
         self.fillOpacity = fillOpacity
-        self.baseline    = baseline
+        self.baseline = baseline
     }
 }
 
 // MARK: - LineSeries
 
 public struct LineSeries<P: ChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
@@ -58,41 +57,44 @@ where P.XValue == Double, P.YValue == Double {
 
     public var area: AreaStyle?
     public var animation: ChartAnimationStyle
-    public var usesAnimatableOverlay: Bool { true }
+    public var usesAnimatableOverlay: Bool {
+        true
+    }
+
     public var downsampling: ChartDownsampling
 
     public init(
         data: [P],
         id: UUID = UUID(),
         color: Color,
-        label: String?                    = nil,
-        lineWidth: CGFloat               = 2,
-        dash: [CGFloat]                  = [],
-        dashPhase: CGFloat               = 0,
-        lineCap: CGLineCap               = .round,
+        label: String? = nil,
+        lineWidth: CGFloat = 2,
+        dash: [CGFloat] = [],
+        dashPhase: CGFloat = 0,
+        lineCap: CGLineCap = .round,
         interpolation: LineInterpolation = .linear,
-        strokeStyle: ChartFillStyle?     = nil,
-        shadow: ChartShadowStyle?        = nil,
-        area: AreaStyle?                 = nil,
-        downsampling: ChartDownsampling  = .none,
-        animation: ChartAnimationStyle   = .none,
-        zIndex: Int                      = 0
+        strokeStyle: ChartFillStyle? = nil,
+        shadow: ChartShadowStyle? = nil,
+        area: AreaStyle? = nil,
+        downsampling: ChartDownsampling = .none,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
     ) {
-        self.id            = id
-        self.data          = data
-        self.label         = label
-        self.color         = color
-        self.lineWidth     = lineWidth
-        self.dash          = dash
-        self.dashPhase     = dashPhase
-        self.lineCap       = lineCap
+        self.id = id
+        self.data = data
+        self.label = label
+        self.color = color
+        self.lineWidth = lineWidth
+        self.dash = dash
+        self.dashPhase = dashPhase
+        self.lineCap = lineCap
         self.interpolation = interpolation
-        self.strokeStyle   = strokeStyle
-        self.shadow        = shadow
-        self.area          = area
-        self.downsampling  = downsampling
-        self.animation     = animation
-        self.zIndex        = zIndex
+        self.strokeStyle = strokeStyle
+        self.shadow = shadow
+        self.area = area
+        self.downsampling = downsampling
+        self.animation = animation
+        self.zIndex = zIndex
     }
 
     public var legendItem: ChartLegendItem? {
@@ -109,7 +111,7 @@ where P.XValue == Double, P.YValue == Double {
         let contexts = renderContexts(from: contexts, in: size)
         guard contexts.count > 1 else { return }
         let sorted = contexts.sorted { $0.position.x < $1.position.x }
-        let pts    = sorted.map(\.position)
+        let pts = sorted.map(\.position)
 
         if let area {
             var areaPath = buildPath(from: pts)
@@ -134,7 +136,7 @@ where P.XValue == Double, P.YValue == Double {
             context.stroke(linePath, with: shading, style: style)
         }
     }
-    
+
     public func animatableView(oldContexts: [ChartPointContext<P>], newContexts: [ChartPointContext<P>], progress: CGFloat) -> AnyView {
         if animation.kind == .none { return AnyView(EmptyView()) }
         return AnyView(
@@ -151,7 +153,7 @@ where P.XValue == Double, P.YValue == Double {
         )
     }
 
-    func renderContexts(
+    public func renderContexts(
         from contexts: [ChartPointContext<P>],
         in size: CGSize
     ) -> [ChartPointContext<P>] {
@@ -164,7 +166,7 @@ where P.XValue == Double, P.YValue == Double {
     func pathPoints(from pts: [CGPoint]) -> [CGPoint] {
         guard let first = pts.first else { return [] }
         var result = [first]
-        for i in 1..<pts.count {
+        for i in 1 ..< pts.count {
             if interpolation == .step {
                 result.append(CGPoint(x: pts[i].x, y: pts[i - 1].y))
             }
@@ -202,7 +204,7 @@ where P.XValue == Double, P.YValue == Double {
 
         let count = pts.count
         var deltas = Array(repeating: CGFloat.zero, count: count - 1)
-        for index in 0..<(count - 1) {
+        for index in 0 ..< (count - 1) {
             let dx = pts[index + 1].x - pts[index].x
             guard dx != 0 else {
                 deltas[index] = 0
@@ -216,7 +218,7 @@ where P.XValue == Double, P.YValue == Double {
         tangents[count - 1] = deltas[count - 2]
 
         if count > 2 {
-            for index in 1..<(count - 1) {
+            for index in 1 ..< (count - 1) {
                 if deltas[index - 1] * deltas[index] <= 0 {
                     tangents[index] = 0
                 } else {
@@ -225,7 +227,7 @@ where P.XValue == Double, P.YValue == Double {
             }
         }
 
-        for index in 0..<(count - 1) {
+        for index in 0 ..< (count - 1) {
             guard deltas[index] != 0 else {
                 tangents[index] = 0
                 tangents[index + 1] = 0
@@ -242,7 +244,7 @@ where P.XValue == Double, P.YValue == Double {
             }
         }
 
-        return (0..<(count - 1)).map { index in
+        return (0 ..< (count - 1)).map { index in
             let dx = pts[index + 1].x - pts[index].x
             return CubicSegment(
                 control1: CGPoint(

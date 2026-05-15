@@ -1,0 +1,138 @@
+//
+//  ChartOptions.swift
+//  OZCharts
+//
+//  Created by Oleh Hulovatyi.
+//  Copyright (c) 2026 Oleh Hulovatyi. All rights reserved.
+//
+
+import CoreGraphics
+
+public struct ChartInteractionOptions: Equatable {
+    public var isHorizontalScrollEnabled: Bool
+    public var isVerticalScrollEnabled: Bool
+    public var isHorizontalZoomEnabled: Bool
+    public var isVerticalZoomEnabled: Bool
+    public var minZoomScale: Double
+
+    public init(
+        isHorizontalScrollEnabled: Bool = true,
+        isVerticalScrollEnabled: Bool = true,
+        isHorizontalZoomEnabled: Bool = true,
+        isVerticalZoomEnabled: Bool = true,
+        minZoomScale: Double = 0.01
+    ) {
+        self.isHorizontalScrollEnabled = isHorizontalScrollEnabled
+        self.isVerticalScrollEnabled = isVerticalScrollEnabled
+        self.isHorizontalZoomEnabled = isHorizontalZoomEnabled
+        self.isVerticalZoomEnabled = isVerticalZoomEnabled
+        self.minZoomScale = minZoomScale
+    }
+
+    public static let automatic = ChartInteractionOptions()
+    public static let disabled = ChartInteractionOptions(
+        isHorizontalScrollEnabled: false,
+        isVerticalScrollEnabled: false,
+        isHorizontalZoomEnabled: false,
+        isVerticalZoomEnabled: false
+    )
+}
+
+public struct ChartSelectionOptions: Equatable {
+    public var mode: ChartSelectionMode
+    public var behavior: ChartSelectionBehavior
+    public var overlappingSelectionMode: ChartOverlappingSelectionMode
+    public var hitboxRadius: CGFloat
+    public var clearsSelectionOnGestureEnd: Bool
+
+    public init(
+        mode: ChartSelectionMode = .pointsInRadius,
+        behavior: ChartSelectionBehavior = .tap,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
+        hitboxRadius: CGFloat = 20,
+        clearsSelectionOnGestureEnd: Bool = true
+    ) {
+        self.mode = mode
+        self.behavior = behavior
+        self.overlappingSelectionMode = overlappingSelectionMode
+        self.hitboxRadius = hitboxRadius
+        self.clearsSelectionOnGestureEnd = clearsSelectionOnGestureEnd
+    }
+
+    public static let disabled = ChartSelectionOptions(
+        mode: .none,
+        behavior: .disabled,
+        hitboxRadius: 0,
+        clearsSelectionOnGestureEnd: true
+    )
+
+    public static let nearestX = ChartSelectionOptions(
+        mode: .nearestX,
+        behavior: .tapAndDrag,
+        hitboxRadius: 24,
+        clearsSelectionOnGestureEnd: false
+    )
+}
+
+public struct ChartTooltipOptions: Equatable {
+    public var placement: ChartTooltipPlacement
+    public var offset: CGPoint
+    public var padding: CGFloat
+    public var maxWidth: CGFloat?
+
+    public init(
+        placement: ChartTooltipPlacement = .automatic,
+        offset: CGPoint = CGPoint(x: 0, y: -20),
+        padding: CGFloat = 8,
+        maxWidth: CGFloat? = nil
+    ) {
+        self.placement = placement
+        self.offset = offset
+        self.padding = padding
+        self.maxWidth = maxWidth
+    }
+
+    public static let automatic = ChartTooltipOptions()
+}
+
+public struct ChartViewportOptions: Equatable {
+    public var liveTrackingMode: ChartLiveTrackingMode
+    public var initialViewport: ChartInitialViewport?
+    public var showsZoomControls: Bool
+    public var zoomControlStep: Double
+
+    public init(
+        liveTrackingMode: ChartLiveTrackingMode = .disabled,
+        initialViewport: ChartInitialViewport? = nil,
+        showsZoomControls: Bool = false,
+        zoomControlStep: Double = 2
+    ) {
+        self.liveTrackingMode = liveTrackingMode
+        self.initialViewport = initialViewport
+        self.showsZoomControls = showsZoomControls
+        self.zoomControlStep = zoomControlStep
+    }
+
+    public static let automatic = ChartViewportOptions()
+}
+
+public struct ChartRenderOptions {
+    public var legendPosition: ChartLegendPosition
+    public var legendSpacing: CGFloat
+    public var selectedElementStyle: ChartSelectedElementStyle
+    public var canvasRenderOrder: [CanvasLayer]
+
+    public init(
+        legendPosition: ChartLegendPosition = .hidden,
+        legendSpacing: CGFloat = 12,
+        selectedElementStyle: ChartSelectedElementStyle = .product,
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
+    ) {
+        self.legendPosition = legendPosition
+        self.legendSpacing = legendSpacing
+        self.selectedElementStyle = selectedElementStyle
+        self.canvasRenderOrder = canvasRenderOrder
+    }
+
+    public static let automatic = ChartRenderOptions()
+}

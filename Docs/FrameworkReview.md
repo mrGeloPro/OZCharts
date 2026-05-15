@@ -19,7 +19,7 @@ Strengths:
 * Label placement and clamping now have a reusable `ChartLabelCollisionResolver`.
 * Element and point hit-testing share `ChartHitTestResolver`.
 * Scales, domains, axes, series, annotations, styling, and interaction are reasonably separated.
-* The framework has real tests, render smoke tests, product snapshot signatures, demo structure checks, and optional benchmarks.
+* The framework has real tests, render smoke tests, product snapshot signatures, demo structure checks, CI, diagnostics, and optional benchmarks.
 
 Risks:
 
@@ -46,7 +46,7 @@ Risks:
 * The DocC catalog exists, but the API-level coverage should be expanded before a public package launch.
 * Advanced chart recipes still require reading demo code.
 * Some style customization requires understanding lower-level types like `ChartFillStyle`, `AxisTransform`, and annotation positioning.
-* Error states are silent; invalid domains or impossible layout parameters usually render nothing rather than exposing diagnostics.
+* `ChartDiagnostics` now covers common integration mistakes, though richer per-series diagnostics should continue to grow.
 
 ## Customer Review
 
@@ -61,7 +61,7 @@ Strengths:
 Risks:
 
 * No published semantic version/tag has been created for the current handoff state.
-* No CI workflow is included in the repository.
+* CI workflow is included; the release tag should only be cut after it is enabled and green on the remote repository.
 * No visual screenshot artifact set is committed for sales/product review.
 * Accessibility and localization are present but not yet deep enough for strict enterprise procurement.
 
@@ -83,19 +83,23 @@ Risks:
 
 ## Critical Must-Fix Before Public Release
 
-### P0: Add CI
+### P0: Keep CI Green
 
-Add a GitHub Actions workflow or equivalent that runs:
+The repository includes a GitHub Actions workflow. Before tagging, verify the remote workflow runs:
 
 * `swift test`
+* `swiftlint lint --no-cache`
 * DemoApp simulator build
 * optional performance benchmark on demand
 
-Without CI, regressions are too easy to ship. Note: pushing workflow files requires a GitHub token with `workflow` scope.
+Without a green remote CI run, regressions are too easy to ship. Note: pushing workflow files requires a GitHub token with `workflow` scope.
+
+Run `swiftformat --lint .` as a separate formatting follow-up once the current
+2.5 branch is ready for broad mechanical changes.
 
 ### P0: Tag A Handoff Version
 
-Create a stable release tag such as `2.1.0-demo` or `0.3.0-product-demo` after final verification. External teams need a fixed reference.
+Create a stable release tag such as `2.5.0` after final verification. External teams need a fixed reference.
 
 ### P0: Manual Visual QA On Real Simulator Sizes
 
@@ -191,6 +195,6 @@ Ready for:
 
 Not yet ideal for:
 
-* public package launch without CI
+* public package launch without a green remote CI run
 * enterprise procurement without deeper accessibility docs
 * contractual pixel-perfect chart reproduction without baseline image testing

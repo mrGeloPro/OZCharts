@@ -9,6 +9,16 @@
 import SwiftUI
 
 public extension CartesianChartView {
+    func chartInteractionOptions(_ options: ChartInteractionOptions) -> Self {
+        var copy = self
+        copy.isHorizontalScrollEnabled = options.isHorizontalScrollEnabled
+        copy.isVerticalScrollEnabled = options.isVerticalScrollEnabled
+        copy.isHorizontalZoomEnabled = options.isHorizontalZoomEnabled
+        copy.isVerticalZoomEnabled = options.isVerticalZoomEnabled
+        copy.minZoomScale = options.minZoomScale
+        return copy
+    }
+
     func chartGestures(
         horizontalScroll: Bool? = nil,
         horizontalZoom: Bool? = nil,
@@ -32,6 +42,16 @@ public extension CartesianChartView {
         if let minZoomScale {
             copy.minZoomScale = minZoomScale
         }
+        return copy
+    }
+
+    func chartSelectionOptions(_ options: ChartSelectionOptions) -> Self {
+        var copy = self
+        copy.selectionMode = options.mode
+        copy.selectionBehavior = options.behavior
+        copy.overlappingSelectionMode = options.overlappingSelectionMode
+        copy.hitboxRadius = options.hitboxRadius
+        copy.clearsSelectionOnGestureEnd = options.clearsSelectionOnGestureEnd
         return copy
     }
 
@@ -97,11 +117,20 @@ public extension CartesianChartView {
         return copy
     }
 
-    func chartAnnotationTooltip<Content: View>(
-        @ViewBuilder content: @escaping ([ChartAnnotationContext]) -> Content
+    func chartAnnotationTooltip(
+        @ViewBuilder content: @escaping ([ChartAnnotationContext]) -> some View
     ) -> Self {
         var copy = self
         copy.annotationTooltipContent = { AnyView(content($0)) }
+        return copy
+    }
+
+    func chartTooltipOptions(_ options: ChartTooltipOptions) -> Self {
+        var copy = self
+        copy.tooltipPlacement = options.placement
+        copy.tooltipOffset = options.offset
+        copy.tooltipPadding = options.padding
+        copy.tooltipMaxWidth = options.maxWidth
         return copy
     }
 
@@ -136,6 +165,16 @@ public extension CartesianChartView {
     func chartTooltipMaxWidth(_ maxWidth: CGFloat?) -> Self {
         var copy = self
         copy.tooltipMaxWidth = maxWidth
+        return copy
+    }
+
+    func chartViewportOptions(_ options: ChartViewportOptions) -> Self {
+        var copy = self
+        copy.liveTrackingMode = options.liveTrackingMode
+        copy.isLiveTrackingEnabled = options.liveTrackingMode.isEnabled
+        copy.initialViewport = options.initialViewport
+        copy.showsZoomControls = options.showsZoomControls
+        copy.zoomControlStep = options.zoomControlStep
         return copy
     }
 
@@ -202,6 +241,15 @@ public extension CartesianChartView {
         return copy
     }
 
+    func chartRenderOptions(_ options: ChartRenderOptions) -> Self {
+        var copy = self
+        copy.legendPosition = options.legendPosition
+        copy.legendSpacing = options.legendSpacing
+        copy.selectedElementStyle = options.selectedElementStyle
+        copy.canvasRenderOrder = options.canvasRenderOrder
+        return copy
+    }
+
     func chartLegend(
         _ position: ChartLegendPosition = .bottom,
         spacing: CGFloat = 12
@@ -212,10 +260,10 @@ public extension CartesianChartView {
         return copy
     }
 
-    func chartLegend<LegendContent: View>(
+    func chartLegend(
         _ position: ChartLegendPosition = .bottom,
         spacing: CGFloat = 12,
-        @ViewBuilder content: @escaping ([ChartLegendItem]) -> LegendContent
+        @ViewBuilder content: @escaping ([ChartLegendItem]) -> some View
     ) -> Self {
         var copy = chartLegend(position, spacing: spacing)
         copy.customLegendContent = { AnyView(content($0)) }
@@ -228,8 +276,8 @@ public extension CartesianChartView {
         return copy
     }
 
-    func chartEmptyState<EmptyContent: View>(
-        @ViewBuilder _ content: @escaping () -> EmptyContent
+    func chartEmptyState(
+        @ViewBuilder _ content: @escaping () -> some View
     ) -> Self {
         var copy = self
         copy.emptyState = { AnyView(content()) }
@@ -258,6 +306,14 @@ public extension CartesianChartView {
             selectedValueFormatter: selectedValueFormatter,
             selectedElementFormatter: selectedElementFormatter
         )
+        return copy
+    }
+
+    func chartDiagnostics(
+        onChange: @escaping ([ChartDiagnostic]) -> Void
+    ) -> Self {
+        var copy = self
+        copy.onDiagnosticsChanged = onChange
         return copy
     }
 }

@@ -7,9 +7,9 @@
 //
 
 import CoreGraphics
+@testable import OZCharts
 import SwiftUI
 import XCTest
-@testable import OZCharts
 
 final class CartesianChartViewModifierTests: XCTestCase {
     func testGestureModifierUpdatesOnlyProvidedOptions() {
@@ -25,6 +25,60 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertTrue(view.isVerticalScrollEnabled)
         XCTAssertFalse(view.isVerticalZoomEnabled)
         XCTAssertEqual(view.minZoomScale, 0.25)
+    }
+
+    func testOptionStructModifiersUpdateChartOptions() {
+        let view = makeChart()
+            .chartInteractionOptions(
+                ChartInteractionOptions(
+                    isHorizontalScrollEnabled: false,
+                    isVerticalScrollEnabled: false,
+                    minZoomScale: 0.2
+                )
+            )
+            .chartSelectionOptions(.nearestX)
+            .chartTooltipOptions(
+                ChartTooltipOptions(
+                    placement: .leading,
+                    offset: CGPoint(x: 3, y: 4),
+                    padding: 10,
+                    maxWidth: 220
+                )
+            )
+            .chartViewportOptions(
+                ChartViewportOptions(
+                    liveTrackingMode: .followLatest(),
+                    initialViewport: .xWindow(length: 5, anchor: .trailing),
+                    showsZoomControls: true,
+                    zoomControlStep: 1.25
+                )
+            )
+            .chartRenderOptions(
+                ChartRenderOptions(
+                    legendPosition: .bottom,
+                    legendSpacing: 6,
+                    selectedElementStyle: ChartSelectedElementStyle(lineWidth: 3),
+                    canvasRenderOrder: [.coreChart]
+                )
+            )
+
+        XCTAssertFalse(view.isHorizontalScrollEnabled)
+        XCTAssertFalse(view.isVerticalScrollEnabled)
+        XCTAssertEqual(view.minZoomScale, 0.2)
+        XCTAssertEqual(view.selectionMode, .nearestX)
+        XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
+        XCTAssertEqual(view.tooltipPlacement, .leading)
+        XCTAssertEqual(view.tooltipOffset, CGPoint(x: 3, y: 4))
+        XCTAssertEqual(view.tooltipPadding, 10)
+        XCTAssertEqual(view.tooltipMaxWidth, 220)
+        XCTAssertTrue(view.isLiveTrackingEnabled)
+        XCTAssertEqual(view.initialViewport, .xWindow(length: 5, anchor: .trailing))
+        XCTAssertTrue(view.showsZoomControls)
+        XCTAssertEqual(view.zoomControlStep, 1.25)
+        XCTAssertEqual(view.legendPosition, .bottom)
+        XCTAssertEqual(view.legendSpacing, 6)
+        XCTAssertEqual(view.selectedElementStyle.lineWidth, 3)
+        XCTAssertEqual(view.canvasRenderOrder, [.coreChart])
     }
 
     func testSelectionModifierUpdatesModeHitboxAndCallback() {
@@ -80,7 +134,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartTooltipMaxWidth(180)
             .chartLiveTracking()
             .chartInitialViewport(xWindow: 8, anchor: .trailing)
-            .chartViewport(.constant(ChartViewportState(visibleXDomain: 0...8)))
+            .chartViewport(.constant(ChartViewportState(visibleXDomain: 0 ... 8)))
             .chartSelectionState(.constant(ChartSelectionState(selectedX: 4)))
             .chartZoomControls(step: 1.5)
             .chartLegend(.trailing, spacing: 8)
@@ -95,7 +149,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertTrue(view.isLiveTrackingEnabled)
         XCTAssertEqual(view.liveTrackingMode, .followLatest())
         XCTAssertEqual(view.initialViewport, .xWindow(length: 8, anchor: .trailing))
-        XCTAssertEqual(view.viewportBinding?.wrappedValue.visibleXDomain, 0...8)
+        XCTAssertEqual(view.viewportBinding?.wrappedValue.visibleXDomain, 0 ... 8)
         XCTAssertEqual(view.selectionStateBinding?.wrappedValue.selectedX, 4)
         XCTAssertTrue(view.showsZoomControls)
         XCTAssertEqual(view.zoomControlStep, 1.5)
@@ -129,8 +183,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.liveTrackingMode.pausedBehavior, .preserveTrailingOffset)
     }
 
-    func testSeriesChangeSignatureTracksDataChangesForStableSeriesIDs() {
-        let seriesID = UUID(uuidString: "00000000-0000-0000-0000-000000000123")!
+    func testSeriesChangeSignatureTracksDataChangesForStableSeriesIDs() throws {
+        let seriesID = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000123"))
         let first = CartesianChartView(
             series: [
                 LineSeries(
@@ -139,8 +193,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
                     color: .blue
                 )
             ],
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         ) { _ in EmptyView() }
 
         let updated = CartesianChartView(
@@ -151,15 +205,15 @@ final class CartesianChartViewModifierTests: XCTestCase {
                     color: .blue
                 )
             ],
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         ) { _ in EmptyView() }
 
         XCTAssertNotEqual(first.seriesChangeSignature, updated.seriesChangeSignature)
     }
 
-    func testSeriesChangeSignatureIgnoresPointIDsWhenValuesAreUnchanged() {
-        let seriesID = UUID(uuidString: "00000000-0000-0000-0000-000000000124")!
+    func testSeriesChangeSignatureIgnoresPointIDsWhenValuesAreUnchanged() throws {
+        let seriesID = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000124"))
         let first = CartesianChartView(
             series: [
                 LineSeries(
@@ -168,8 +222,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
                     color: .blue
                 )
             ],
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         ) { _ in EmptyView() }
 
         let rerendered = CartesianChartView(
@@ -180,8 +234,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
                     color: .blue
                 )
             ],
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         ) { _ in EmptyView() }
 
         XCTAssertEqual(first.seriesChangeSignature, rerendered.seriesChangeSignature)
@@ -202,13 +256,56 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertNotNil(view.emptyState?())
     }
 
+    func testDiagnosticsModifierInstallsCallback() {
+        var receivedDiagnostics: [ChartDiagnostic] = []
+        let view = makeChart().chartDiagnostics { diagnostics in
+            receivedDiagnostics = diagnostics
+        }
+
+        view.onDiagnosticsChanged([
+            ChartDiagnostic(code: "test", severity: .warning, message: "Test")
+        ])
+
+        XCTAssertEqual(receivedDiagnostics.map(\.code), ["test"])
+    }
+
+    func testOZChartBuilderCompilesCommonFluentAPI() {
+        let data = [Point2D(x: 0, y: 1), Point2D(x: 1, y: 3)]
+        let chart = OZChart(data)
+            .line(color: .blue, downsampling: .automatic())
+            .selection(.nearestX)
+            .domain(y: .fixed(0 ... 5))
+            .viewportState(.constant(ChartViewportState()))
+            .selectionState(.constant(ChartSelectionState()))
+            .onSelectionChanged { _ in }
+            .onElementSelectionChanged { _ in }
+            .tooltip { points in
+                Text("\(points.count)")
+            }
+
+        XCTAssertNotNil(chart.body)
+    }
+
+    func testOZChartDefaultSeriesIDsAreStableAcrossRebuilds() {
+        let data = [Point2D(x: 0, y: 1), Point2D(x: 1, y: 3)]
+        let first = OZChart(data)
+            .line(color: .blue)
+            .scatter(color: .green)
+        let rebuilt = OZChart(data)
+            .line(color: .blue)
+            .scatter(color: .green)
+
+        XCTAssertEqual(first.seriesIDs, rebuilt.seriesIDs)
+        XCTAssertEqual(Set(first.seriesIDs).count, 2)
+    }
+
     private func makeChart() -> CartesianChartView<Point2D, LinearScale, LinearScale, EmptyView> {
         CartesianChartView(
             series: [
                 LineSeries(data: [Point2D(x: 1, y: 2)], color: .blue)
             ],
-            xScale: LinearScale(domain: 0...10),
-            yScale: LinearScale(domain: 0...10)
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
         ) { _ in
             EmptyView()
         }

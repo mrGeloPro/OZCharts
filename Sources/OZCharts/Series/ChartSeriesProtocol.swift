@@ -27,11 +27,16 @@ public protocol ChartSeriesProtocol: Identifiable {
         size: CGSize
     )
 
+    func renderContexts(
+        from contexts: [ChartPointContext<Point>],
+        in size: CGSize
+    ) -> [ChartPointContext<Point>]
+
     func selectionElements(
         contexts: [ChartPointContext<Point>],
         size: CGSize
     ) -> [ChartElementContext]
-    
+
     @ViewBuilder
     func animatableView(
         oldContexts: [ChartPointContext<Point>],
@@ -41,7 +46,7 @@ public protocol ChartSeriesProtocol: Identifiable {
 }
 
 public struct AnyChartSeries<Point: ChartDataPoint>: Identifiable
-where Point.XValue == Double, Point.YValue == Double {
+    where Point.XValue == Double, Point.YValue == Double {
     public let id: UUID
     public let data: [Point]
     public let zIndex: Int
@@ -50,6 +55,7 @@ where Point.XValue == Double, Point.YValue == Double {
     public let legendItems: [ChartLegendItem]
 
     private let renderBody: (inout GraphicsContext, [ChartPointContext<Point>], CGSize) -> Void
+    private let renderContextsBody: ([ChartPointContext<Point>], CGSize) -> [ChartPointContext<Point>]
     private let selectionElementsBody: ([ChartPointContext<Point>], CGSize) -> [ChartElementContext]
     private let animatableBody: ([ChartPointContext<Point>], [ChartPointContext<Point>], CGFloat) -> AnyView
     public let usesAnimatableOverlay: Bool
@@ -64,6 +70,9 @@ where Point.XValue == Double, Point.YValue == Double {
         self.usesAnimatableOverlay = series.usesAnimatableOverlay
         self.renderBody = { context, contexts, size in
             series.render(into: &context, contexts: contexts, size: size)
+        }
+        self.renderContextsBody = { contexts, size in
+            series.renderContexts(from: contexts, in: size)
         }
         self.selectionElementsBody = { contexts, size in
             series.selectionElements(contexts: contexts, size: size)
@@ -93,6 +102,13 @@ where Point.XValue == Double, Point.YValue == Double {
         animatableBody(oldContexts, newContexts, progress)
     }
 
+    public func renderContexts(
+        from contexts: [ChartPointContext<Point>],
+        in size: CGSize
+    ) -> [ChartPointContext<Point>] {
+        renderContextsBody(contexts, size)
+    }
+
     public func selectionElements(
         contexts: [ChartPointContext<Point>],
         size: CGSize
@@ -102,21 +118,36 @@ where Point.XValue == Double, Point.YValue == Double {
 }
 
 public extension ChartSeriesProtocol {
-    var usesAnimatableOverlay: Bool { false }
-    var legendItem: ChartLegendItem? { nil }
-    var legendItems: [ChartLegendItem] { legendItem.map { [$0] } ?? [] }
+    var usesAnimatableOverlay: Bool {
+        false
+    }
+
+    var legendItem: ChartLegendItem? {
+        nil
+    }
+
+    var legendItems: [ChartLegendItem] {
+        legendItem.map { [$0] } ?? []
+    }
+
+    func renderContexts(
+        from contexts: [ChartPointContext<Point>],
+        in _: CGSize
+    ) -> [ChartPointContext<Point>] {
+        contexts
+    }
 
     func selectionElements(
-        contexts: [ChartPointContext<Point>],
-        size: CGSize
+        contexts _: [ChartPointContext<Point>],
+        size _: CGSize
     ) -> [ChartElementContext] {
         []
     }
 
     func animatableView(
-        oldContexts: [ChartPointContext<Point>],
-        newContexts: [ChartPointContext<Point>],
-        progress: CGFloat
+        oldContexts _: [ChartPointContext<Point>],
+        newContexts _: [ChartPointContext<Point>],
+        progress _: CGFloat
     ) -> AnyView {
         AnyView(EmptyView())
     }
