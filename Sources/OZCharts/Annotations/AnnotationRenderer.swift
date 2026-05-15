@@ -46,19 +46,25 @@ public struct AnnotationRenderer {
             context.fill(Path(rect), with: .color(annotation.color.opacity(annotation.opacity)))
 
             if annotation.showsLabel, let label = annotation.label {
-                let anchor = CGPoint(
+                let labelSize = ChartTextMetrics.estimatedSize(for: label)
+                let anchorPoint = CGPoint(
                     x: min(max(annotation.labelXPosition, 0), 1) * size.width,
                     y: rect.midY + annotation.labelYOffset
+                )
+                let center = AnnotationLabelLayout.center(
+                    forAnchorPoint: anchorPoint,
+                    size: labelSize,
+                    anchor: annotation.labelAnchor
                 )
                 pendingLabels.append(
                     PendingRangeAnnotationLabel(
                         annotation: annotation,
                         label: label,
                         candidate: ChartLabelCandidate(
-                            anchor: anchor,
-                            size: ChartTextMetrics.estimatedSize(for: label),
+                            anchor: center,
+                            size: labelSize,
                             priority: 0,
-                            preferredPlacements: [.fixed(anchor), .automatic],
+                            preferredPlacements: [.fixed(center), .automatic],
                             padding: 4,
                             spacing: 4,
                             canHide: false
@@ -180,5 +186,18 @@ public struct AnnotationRenderer {
         let x = points.map(\.position.x).reduce(0, +) / CGFloat(points.count)
         let y = points.map(\.position.y).reduce(0, +) / CGFloat(points.count)
         return CGPoint(x: x, y: y)
+    }
+}
+
+enum AnnotationLabelLayout {
+    static func center(
+        forAnchorPoint point: CGPoint,
+        size: CGSize,
+        anchor: UnitPoint
+    ) -> CGPoint {
+        CGPoint(
+            x: point.x + (0.5 - anchor.x) * size.width,
+            y: point.y + (0.5 - anchor.y) * size.height
+        )
     }
 }

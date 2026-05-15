@@ -9,6 +9,15 @@
 import SwiftUI
 import OZCharts
 
+private enum DemoShowcaseSeriesID {
+    static let timelineVolume = UUID(uuidString: "30000000-0000-0000-0000-000000000001")!
+    static let timelineBaseline = UUID(uuidString: "30000000-0000-0000-0000-000000000002")!
+    static let timelineSignal = UUID(uuidString: "30000000-0000-0000-0000-000000000003")!
+    static let heroVolume = UUID(uuidString: "30000000-0000-0000-0000-000000000004")!
+    static let heroArea = UUID(uuidString: "30000000-0000-0000-0000-000000000005")!
+    static let heroLine = UUID(uuidString: "30000000-0000-0000-0000-000000000006")!
+}
+
 struct OZDemoHomeView: View {
     private let handoffRoutes: [DemoRoute] = [
         DemoRoute(
@@ -369,6 +378,7 @@ private struct AllFeaturesTimelinePanel: View {
         [
             BarSeries(
                 data: volume,
+                id: DemoShowcaseSeriesID.timelineVolume,
                 color: DemoColors.orange.opacity(0.55),
                 label: "Volume",
                 barWidth: 9,
@@ -377,6 +387,7 @@ private struct AllFeaturesTimelinePanel: View {
             ).eraseToAnyChartSeries(),
             AreaSeries(
                 data: baseline,
+                id: DemoShowcaseSeriesID.timelineBaseline,
                 color: DemoColors.cyan,
                 fillColor: DemoColors.cyan,
                 fillOpacity: 0.14,
@@ -388,6 +399,7 @@ private struct AllFeaturesTimelinePanel: View {
             ).eraseToAnyChartSeries(),
             LineSeries(
                 data: signal,
+                id: DemoShowcaseSeriesID.timelineSignal,
                 color: DemoColors.green,
                 lineWidth: 3,
                 interpolation: .linear,
@@ -508,11 +520,13 @@ private struct ShowcaseHeroChart: View {
             series: [
                 BarSeries(
                     data: DemoShowcaseData.heroVolume,
+                    id: DemoShowcaseSeriesID.heroVolume,
                     color: DemoColors.orange.opacity(0.5),
                     barWidth: 7
                 ).eraseToAnyChartSeries(),
                 AreaSeries(
                     data: DemoShowcaseData.heroSignal,
+                    id: DemoShowcaseSeriesID.heroArea,
                     color: DemoColors.cyan,
                     fillOpacity: 0.18,
                     baseline: 0,
@@ -520,6 +534,7 @@ private struct ShowcaseHeroChart: View {
                 ).eraseToAnyChartSeries(),
                 LineSeries(
                     data: DemoShowcaseData.heroSignal,
+                    id: DemoShowcaseSeriesID.heroLine,
                     color: DemoColors.green,
                     lineWidth: 2
                 ).eraseToAnyChartSeries()

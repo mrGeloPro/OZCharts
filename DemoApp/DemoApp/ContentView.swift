@@ -9,6 +9,37 @@
 import SwiftUI
 import OZCharts
 
+private enum DemoSeriesID {
+    static let viewportSignal = UUID(uuidString: "10000000-0000-0000-0000-000000000001")!
+    static let linkedPrice = UUID(uuidString: "10000000-0000-0000-0000-000000000002")!
+    static let linkedVolume = UUID(uuidString: "10000000-0000-0000-0000-000000000003")!
+    static let selectableLine = UUID(uuidString: "10000000-0000-0000-0000-000000000004")!
+    static let mixedBars = UUID(uuidString: "10000000-0000-0000-0000-000000000005")!
+    static let mixedTrend = UUID(uuidString: "10000000-0000-0000-0000-000000000006")!
+    static let donutScore = UUID(uuidString: "10000000-0000-0000-0000-000000000007")!
+    static let productLine = UUID(uuidString: "10000000-0000-0000-0000-000000000008")!
+    static let violinAccuracy = UUID(uuidString: "10000000-0000-0000-0000-000000000009")!
+    static let pointsDistribution = UUID(uuidString: "10000000-0000-0000-0000-000000000010")!
+    static let starAchievement = UUID(uuidString: "10000000-0000-0000-0000-000000000011")!
+    static let animatedLine = UUID(uuidString: "10000000-0000-0000-0000-000000000012")!
+    static let hybridLine = UUID(uuidString: "10000000-0000-0000-0000-000000000013")!
+    static let liveTrackingLine = UUID(uuidString: "10000000-0000-0000-0000-000000000014")!
+    static let emptyStateLine = UUID(uuidString: "10000000-0000-0000-0000-000000000015")!
+}
+
+private enum DemoAnnotationID {
+    static let starTooltip = UUID(uuidString: "20000000-0000-0000-0000-000000000001")!
+
+    static func starScore(row: Int) -> UUID {
+        switch row {
+        case 0: return UUID(uuidString: "20000000-0000-0000-0000-000000000010")!
+        case 1: return UUID(uuidString: "20000000-0000-0000-0000-000000000011")!
+        case 2: return UUID(uuidString: "20000000-0000-0000-0000-000000000012")!
+        default: return UUID(uuidString: "20000000-0000-0000-0000-000000000013")!
+        }
+    }
+}
+
 struct ContentView: View {
     var body: some View {
         NavigationView {
@@ -37,6 +68,7 @@ struct ViewportControlsDemoView: View {
                         series: [
                             AreaSeries(
                                 data: data,
+                                id: DemoSeriesID.viewportSignal,
                                 color: DemoColors.cyan,
                                 fillOpacity: 0.18,
                                 baseline: 0,
@@ -112,6 +144,7 @@ struct LinkedChartsDemoView: View {
                     tint: DemoColors.green,
                     series: AreaSeries(
                         data: price,
+                        id: DemoSeriesID.linkedPrice,
                         color: DemoColors.green,
                         fillOpacity: 0.18,
                         baseline: 90,
@@ -126,6 +159,7 @@ struct LinkedChartsDemoView: View {
                     tint: DemoColors.orange,
                     series: BarSeries(
                         data: volume,
+                        id: DemoSeriesID.linkedVolume,
                         color: DemoColors.orange,
                         label: "Volume",
                         barWidth: 10
@@ -193,7 +227,7 @@ struct SelectableAnnotationsDemoView: View {
             VStack(spacing: 18) {
                 DemoChartPanel {
                     CartesianChartView(
-                        series: [LineSeries(data: data, color: DemoColors.cyan, lineWidth: 3)],
+                        series: [LineSeries(data: data, id: DemoSeriesID.selectableLine, color: DemoColors.cyan, lineWidth: 3)],
                         xDomain: .fixed(0...8),
                         yDomain: .fixed(0...100),
                         pointAnnotations: [
@@ -279,12 +313,14 @@ struct AreaAndBarDemoView: View {
                         series: [
                             BarSeries(
                                 data: bars,
+                                id: DemoSeriesID.mixedBars,
                                 color: DemoColors.purple.opacity(0.65),
                                 label: "Volume",
                                 barWidth: 18
                             ).eraseToAnyChartSeries(),
                             AreaSeries(
                                 data: trend,
+                                id: DemoSeriesID.mixedTrend,
                                 color: DemoColors.cyan,
                                 fillOpacity: 0.16,
                                 baseline: 0,
@@ -355,6 +391,7 @@ struct DonutScoreDemoView: View {
                         series: [
                             DonutSeries(
                                 data: mockData,
+                                id: DemoSeriesID.donutScore,
                                 colors: legend.map(\.2),
                                 segmentStyles: [
                                     DonutSegmentStyle(
@@ -426,6 +463,7 @@ struct HeightDemoView: View {
                         series: [
                             LineSeries(
                                 data: mockData,
+                                id: DemoSeriesID.productLine,
                                 color: DemoColors.purple,
                                 lineWidth: 4,
                                 interpolation: .monotone,
@@ -550,6 +588,7 @@ struct AccuracyDemoView: View {
                         series: [
                             ViolinSeries(
                                 data: mockData,
+                                id: DemoSeriesID.violinAccuracy,
                                 centerX: 50,
                                 maxHalfWidth: 40,
                                 sideMapper: { $0 == .result ? .left : .right },
@@ -590,7 +629,7 @@ struct AccuracyDemoView: View {
                                 labelColor: .yellow,
                                 labelFont: .caption2.weight(.semibold),
                                 showsLabel: true,
-                                labelXPosition: 0.57,
+                                labelXPosition: 0.62,
                                 labelAnchor: .leading,
                                 labelYOffset: -16
                             )
@@ -687,6 +726,7 @@ struct PointsDistributionDemoView: View {
                         series: [
                             StackedAreaSeries(
                                 data: layers.stacked,
+                                id: DemoSeriesID.pointsDistribution,
                                 stackOrder: [.basic, .bonus, .streak],
                                 colorMapper: { layer in
                                     switch layer {
@@ -750,7 +790,7 @@ struct PointsDistributionDemoView: View {
 enum StarType: Hashable { case s1, s2, s3, remainder }
 
 struct StarAchievementDemoView: View {
-    @State private var selectedTooltipRow: Int?
+    @State private var selectedElement: ChartSelectedElement?
 
     /// y=0 Current, y=1 Last, y=2 Average, y=3 High score.
     let mockData: [GroupedPoint2D<StarType>] = [
@@ -787,6 +827,7 @@ struct StarAchievementDemoView: View {
                         series: [
                             StackedBarSeries(
                                 data: mockData,
+                                id: DemoSeriesID.starAchievement,
                                 stackOrder: [.s1, .s2, .s3, .remainder],
                                 colorMapper: { star in
                                     switch star {
@@ -850,22 +891,18 @@ struct StarAchievementDemoView: View {
                                 }
                             )
                         ],
-                        customViewAnnotations: scoreLabels,
+                        customViewAnnotations: starAnnotations,
                         isHorizontalScrollEnabled: false,
                         isHorizontalZoomEnabled: false,
                         isVerticalScrollEnabled: false,
                         isVerticalZoomEnabled: false
-                    ) { points in
-                        StarAchievementTooltip(
-                            rowTitle: selectedRowTitle(from: points),
-                            lines: selectedStarLines(from: points)
-                        )
+                    ) { _ in
+                        EmptyView()
                     }
-                    .chartSelection(.nearestPoint, behavior: .tapAndDrag, hitboxRadius: 80, clearsOnEnd: false) { points in
-                        selectedTooltipRow = selectedRow(from: points)
+                    .chartSelection(.none, behavior: .tapAndDrag, clearsOnEnd: false)
+                    .chartElementSelection { elements in
+                        selectedElement = elements.first
                     }
-                    .chartTooltipPlacement(.fixed(tooltipAnchor(for: selectedTooltipRow)), padding: 8)
-                    .chartTooltipOffset(.zero)
                     .frame(height: 340)
 
                     DemoLegend(items: [
@@ -882,9 +919,17 @@ struct StarAchievementDemoView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var starAnnotations: [CustomViewAnnotation<Double, Double>] {
+        var annotations = scoreLabels
+        if let tooltipAnnotation {
+            annotations.append(tooltipAnnotation)
+        }
+        return annotations
+    }
+
     private var scoreLabels: [CustomViewAnnotation<Double, Double>] {
         totals.map { row, score in
-            CustomViewAnnotation(x: 94, y: Double(row)) {
+            CustomViewAnnotation(id: DemoAnnotationID.starScore(row: row), x: 94, y: Double(row)) {
                 Text(String(format: "%.2f", score))
                     .font(.caption.weight(.bold))
                     .foregroundColor(.white)
@@ -893,14 +938,35 @@ struct StarAchievementDemoView: View {
         }
     }
 
-    private func selectedRowTitle(from points: [ChartPointContext<GroupedPoint2D<StarType>>]) -> String {
-        guard let row = selectedRow(from: points) else { return "Result" }
-        return yLabels[row] ?? "Result"
+    private var tooltipAnnotation: CustomViewAnnotation<Double, Double>? {
+        guard
+            let selectedElement,
+            let rowValue = selectedElement.y,
+            let pointID = selectedElement.pointID,
+            let selectedPoint = mockData.first(where: { $0.id == pointID })
+        else { return nil }
+
+        let row = Int(rowValue.rounded())
+        let placement = tooltipPlacement(for: row)
+        return CustomViewAnnotation(
+            id: DemoAnnotationID.starTooltip,
+            x: segmentCenterX(row: row, group: selectedPoint.group),
+            y: Double(row),
+            placement: placement.chartPlacement,
+            collisionPriority: 100,
+            avoidsCollisions: false,
+            padding: 6
+        ) {
+            StarAchievementTooltip(
+                rowTitle: yLabels[row] ?? "Result",
+                lines: selectedStarLines(for: row),
+                arrowEdge: placement.arrowEdge
+            )
+        }
     }
 
-    private func selectedStarLines(from points: [ChartPointContext<GroupedPoint2D<StarType>>]) -> [String] {
-        guard let row = selectedRow(from: points) else { return [] }
-        let segments = visibleSegments(for: row)
+    private func selectedStarLines(for row: Int) -> [String] {
+        let segments = visibleSegments(for: row, includingRemainder: false)
         var cumulative = 0.0
 
         return segments.enumerated().map { index, item in
@@ -912,23 +978,28 @@ struct StarAchievementDemoView: View {
         }
     }
 
-    private func selectedRow(from points: [ChartPointContext<GroupedPoint2D<StarType>>]) -> Int? {
-        points.first.map { Int($0.originalPoint.y.rounded()) }
-    }
-
-    private func tooltipAnchor(for row: Int?) -> CGPoint {
+    private func tooltipPlacement(for row: Int) -> StarTooltipPlacement {
         switch row {
-        case 3: return CGPoint(x: 120, y: 72)
-        case 2: return CGPoint(x: 120, y: 132)
-        case 1: return CGPoint(x: 120, y: 192)
-        case 0: return CGPoint(x: 120, y: 240)
-        default: return CGPoint(x: 120, y: 132)
+        case 0, 1: return .above
+        default: return .below
         }
     }
 
-    private func visibleSegments(for row: Int) -> [(group: StarType, value: Double)] {
+    private func segmentCenterX(row: Int, group selectedGroup: StarType) -> Double {
+        var cursor = 0.0
+        for segment in visibleSegments(for: row, includingRemainder: true) {
+            let center = cursor + segment.value / 2
+            if segment.group == selectedGroup {
+                return center
+            }
+            cursor += segment.value
+        }
+        return 50
+    }
+
+    private func visibleSegments(for row: Int, includingRemainder: Bool) -> [(group: StarType, value: Double)] {
         mockData
-            .filter { Int($0.y.rounded()) == row && $0.group != .remainder }
+            .filter { Int($0.y.rounded()) == row && (includingRemainder || $0.group != .remainder) }
             .sorted { lhs, rhs in
                 starOrder(lhs.group) < starOrder(rhs.group)
             }
@@ -954,9 +1025,34 @@ struct StarAchievementDemoView: View {
     }
 }
 
+private enum StarTooltipPlacement {
+    case above
+    case below
+
+    var chartPlacement: ChartLabelPlacement {
+        switch self {
+        case .above: return .top
+        case .below: return .bottom
+        }
+    }
+
+    var arrowEdge: StarTooltipArrowEdge {
+        switch self {
+        case .above: return .bottom
+        case .below: return .top
+        }
+    }
+}
+
+private enum StarTooltipArrowEdge {
+    case top
+    case bottom
+}
+
 private struct StarAchievementTooltip: View {
     let rowTitle: String
     let lines: [String]
+    let arrowEdge: StarTooltipArrowEdge
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -969,21 +1065,30 @@ private struct StarAchievementTooltip: View {
         }
         .frame(width: 156, alignment: .leading)
         .chartCalloutStyle(.productLight)
-        .overlay(alignment: .top) {
-            TooltipTriangle()
+        .overlay(alignment: arrowEdge == .top ? .top : .bottom) {
+            TooltipTriangle(pointsTo: arrowEdge)
                 .fill(Color.white)
                 .frame(width: 14, height: 8)
-                .offset(y: -7)
+                .offset(y: arrowEdge == .top ? -7 : 7)
         }
     }
 }
 
 private struct TooltipTriangle: Shape {
+    let pointsTo: StarTooltipArrowEdge
+
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        switch pointsTo {
+        case .top:
+            path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        case .bottom:
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        }
         path.closeSubpath()
         return path
     }
@@ -1042,6 +1147,7 @@ struct AnimationShowcaseView: View {
                         series: [
                             LineSeries(
                                 data: useAltData ? data2 : data1,
+                                id: DemoSeriesID.animatedLine,
                                 color: DemoColors.cyan,
                                 lineWidth: 4,
                                 animation: selectedStyleTag.style
@@ -1101,7 +1207,7 @@ struct HybridChartDemoView: View {
 
                     CartesianChartView(
                         series: [
-                            LineSeries(data: mockData, color: DemoColors.cyan, lineWidth: 4)
+                            LineSeries(data: mockData, id: DemoSeriesID.hybridLine, color: DemoColors.cyan, lineWidth: 4)
                         ],
                         xScale: LinearScale(domain: 0...10),
                         yScale: LinearScale(domain: 0...250),
@@ -1170,7 +1276,7 @@ struct LiveTrackingDemoView: View {
                 DemoChartPanel {
                     CartesianChartView(
                         series: [
-                            LineSeries(data: data, color: DemoColors.green, lineWidth: 3)
+                            LineSeries(data: data, id: DemoSeriesID.liveTrackingLine, color: DemoColors.green, lineWidth: 3)
                         ],
                         xScale: LinearScale(domain: fullDomain),
                         yScale: LinearScale(domain: 0...100),
@@ -1288,7 +1394,7 @@ struct EventStackDemoView: View {
                 DemoChartPanel {
                     CartesianChartView(
                         series: [
-                            LineSeries(data: mockData, color: DemoColors.secondaryText.opacity(0.7), lineWidth: 2)
+                            LineSeries(data: mockData, id: DemoSeriesID.emptyStateLine, color: DemoColors.secondaryText.opacity(0.7), lineWidth: 2)
                         ],
                         xScale: LinearScale(domain: 0...10),
                         yScale: LinearScale(domain: 0...100),

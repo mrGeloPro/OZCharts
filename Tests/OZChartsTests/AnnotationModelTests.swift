@@ -34,6 +34,25 @@ final class AnnotationModelTests: XCTestCase {
         XCTAssertEqual(annotation.labelYOffset, -12)
     }
 
+    func testRangeAnnotationLabelAnchorMapsAnchorPointToTextCenter() {
+        let size = CGSize(width: 80, height: 20)
+        let anchorPoint = CGPoint(x: 120, y: 40)
+
+        let leadingCenter = AnnotationLabelLayout.center(
+            forAnchorPoint: anchorPoint,
+            size: size,
+            anchor: .leading
+        )
+        let trailingCenter = AnnotationLabelLayout.center(
+            forAnchorPoint: anchorPoint,
+            size: size,
+            anchor: .trailing
+        )
+
+        XCTAssertEqual(leadingCenter, CGPoint(x: 160, y: 40))
+        XCTAssertEqual(trailingCenter, CGPoint(x: 80, y: 40))
+    }
+
     func testEventMarkerCreatesSelectablePointAnnotation() {
         let id = UUID()
         let marker = ChartEventMarker(
