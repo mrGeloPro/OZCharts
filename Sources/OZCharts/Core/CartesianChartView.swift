@@ -39,6 +39,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     public var isHorizontalZoomEnabled:   Bool = true
     public var isVerticalZoomEnabled:     Bool = true
     public var isLiveTrackingEnabled:     Bool = false
+    public var liveTrackingMode: ChartLiveTrackingMode = .disabled
     public var initialViewport: ChartInitialViewport?
     var viewportBinding: Binding<ChartViewportState>?
     var selectionStateBinding: Binding<ChartSelectionState>?
@@ -98,6 +99,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         isVerticalScrollEnabled: Bool                         = true,
         isVerticalZoomEnabled: Bool                           = true,
         isLiveTrackingEnabled: Bool                           = false,
+        liveTrackingMode: ChartLiveTrackingMode?              = nil,
         initialViewport: ChartInitialViewport?                = nil,
         viewport: Binding<ChartViewportState>?                = nil,
         selectionState: Binding<ChartSelectionState>?         = nil,
@@ -127,7 +129,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         self.isHorizontalZoomEnabled   = isHorizontalZoomEnabled
         self.isVerticalScrollEnabled   = isVerticalScrollEnabled
         self.isVerticalZoomEnabled     = isVerticalZoomEnabled
-        self.isLiveTrackingEnabled     = isLiveTrackingEnabled
+        let resolvedLiveTrackingMode = liveTrackingMode ??
+            (isLiveTrackingEnabled ? .followLatest() : .disabled)
+        self.isLiveTrackingEnabled     = resolvedLiveTrackingMode.isEnabled
+        self.liveTrackingMode          = resolvedLiveTrackingMode
         self.initialViewport           = initialViewport
         self.viewportBinding           = viewport
         self.selectionStateBinding     = selectionState
@@ -160,6 +165,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         isVerticalScrollEnabled: Bool                         = true,
         isVerticalZoomEnabled: Bool                           = true,
         isLiveTrackingEnabled: Bool                           = false,
+        liveTrackingMode: ChartLiveTrackingMode?              = nil,
         initialViewport: ChartInitialViewport?                = nil,
         viewport: Binding<ChartViewportState>?                = nil,
         selectionState: Binding<ChartSelectionState>?         = nil,
@@ -191,6 +197,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             isVerticalScrollEnabled: isVerticalScrollEnabled,
             isVerticalZoomEnabled: isVerticalZoomEnabled,
             isLiveTrackingEnabled: isLiveTrackingEnabled,
+            liveTrackingMode: liveTrackingMode,
             initialViewport: initialViewport,
             viewport: viewport,
             selectionState: selectionState,
@@ -227,6 +234,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             store.handleDataChange(
                 series: series,
                 isLiveTrackingEnabled: isLiveTrackingEnabled,
+                liveTrackingMode: liveTrackingMode,
                 initialViewport: initialViewport,
                 isHorizontalScrollEnabled: isHorizontalScrollEnabled,
                 isVerticalScrollEnabled: isVerticalScrollEnabled
@@ -469,6 +477,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             isVerticalZoomEnabled: isVerticalZoomEnabled,
             minZoomScale: minZoomScale,
             hitboxRadius: hitboxRadius,
+            liveTrackingMode: liveTrackingMode,
             selectionMode: selectionMode,
             overlappingSelectionMode: overlappingSelectionMode,
             series: series
@@ -544,11 +553,20 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
     private func handleScaleDomainChange() {
         syncBaseScales()
-        if !isLiveTrackingEnabled {
+        if liveTrackingMode.isEnabled {
+            store.handleDataChange(
+                series: series,
+                isLiveTrackingEnabled: isLiveTrackingEnabled,
+                liveTrackingMode: liveTrackingMode,
+                initialViewport: initialViewport,
+                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                isVerticalScrollEnabled: isVerticalScrollEnabled
+            )
+        } else {
             store.resetViewport()
             initializeViewportIfNeeded()
+            store.queueUpdate(series: series, in: store.canvasSize, animate: false)
         }
-        store.queueUpdate(series: series, in: store.canvasSize, animate: false)
         publishViewportState()
     }
 
@@ -562,8 +580,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
 
     private func restoreBoundViewportOrInitialize() {
         if let state = boundViewportState,
-           state.visibleXDomain != nil || state.visibleYDomain != nil {
-            store.applyViewportState(state)
+           state.visibleXDomain != nil ||
+            state.visibleYDomain != nil ||
+            state.command != nil {
+            store.applyViewportState(state, liveTrackingMode: liveTrackingMode)
         } else {
             initializeViewportIfNeeded()
         }
@@ -580,8 +600,9 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     private func applyBoundViewportState(_ state: ChartViewportState?) {
         guard let state, state != store.viewportState else { return }
         syncBaseScales()
-        store.applyViewportState(state)
+        store.applyViewportState(state, liveTrackingMode: liveTrackingMode)
         store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
+        publishViewportState()
     }
 
     private func publishViewportState() {

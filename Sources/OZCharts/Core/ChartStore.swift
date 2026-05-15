@@ -85,6 +85,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
     public func handleDataChange(
         series: [AnyChartSeries<Point>],
         isLiveTrackingEnabled: Bool,
+        liveTrackingMode: ChartLiveTrackingMode? = nil,
         initialViewport: ChartInitialViewport? = nil,
         isHorizontalScrollEnabled: Bool = true,
         isVerticalScrollEnabled: Bool = true
@@ -95,7 +96,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             return
         }
 
-        if isLiveTrackingEnabled {
+        let resolvedLiveTrackingMode = liveTrackingMode ??
+            (isLiveTrackingEnabled ? .followLatest() : .disabled)
+
+        if resolvedLiveTrackingMode.isEnabled {
             initializeViewport(
                 initialViewport: initialViewport,
                 isHorizontalScrollEnabled: isHorizontalScrollEnabled,
@@ -107,17 +111,23 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
                 viewport.visibleXDomain = currentDomain
             }
             viewport.applyLiveTracking(
+                mode: resolvedLiveTrackingMode,
                 newGlobalMax: baseXScale.domain.upperBound,
                 currentWindowWidth: windowWidth,
                 globalXDomain: baseXScale.domain
             )
             applyViewportToScales()
-        } else if !isLiveTrackingEnabled {
+        } else {
             initializeViewport(
                 initialViewport: initialViewport,
                 isHorizontalScrollEnabled: isHorizontalScrollEnabled,
                 isVerticalScrollEnabled: isVerticalScrollEnabled
             )
+            viewport.clampVisibleDomains(
+                globalXDomain: baseXScale.domain,
+                globalYDomain: baseYScale.domain
+            )
+            applyViewportToScales()
         }
 
         let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
@@ -134,6 +144,7 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         isVerticalZoomEnabled: Bool,
         minZoomScale: Double,
         hitboxRadius: CGFloat,
+        liveTrackingMode: ChartLiveTrackingMode = .disabled,
         selectionMode: ChartSelectionMode = .pointsInRadius,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
         series: [AnyChartSeries<Point>]
@@ -158,7 +169,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
 
         case .panEnded:
-            viewport.endPan()
+            viewport.endPan(
+                liveTrackingMode: liveTrackingMode,
+                globalXDomain: baseXScale.domain
+            )
 
         case .zoomChanged(let magnification):
             highlightedPoints = []
@@ -177,7 +191,10 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
             queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
 
         case .zoomEnded:
-            viewport.endZoom()
+            viewport.endZoom(
+                liveTrackingMode: liveTrackingMode,
+                globalXDomain: baseXScale.domain
+            )
 
         case .highlight(let location):
             let elementContexts = selectElementContexts(near: location)
@@ -343,13 +360,52 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         }
     }
 
-    public func applyViewportState(_ state: ChartViewportState) {
+    public func applyViewportState(
+        _ state: ChartViewportState,
+        liveTrackingMode: ChartLiveTrackingMode = .disabled
+    ) {
         activeXScale = baseXScale
         activeYScale = baseYScale
-        viewport.applyState(
-            state,
-            globalXDomain: baseXScale.domain,
-            globalYDomain: baseYScale.domain
+
+        let currentXDomain = viewport.visibleXDomain ?? state.visibleXDomain ?? baseXScale.domain
+        let currentWindowWidth = max(0, currentXDomain.upperBound - currentXDomain.lowerBound)
+
+        if state.visibleXDomain != nil ||
+            state.visibleYDomain != nil ||
+            state.liveTrackingStatus != .inactive {
+            var stateWithoutCommand = state
+            stateWithoutCommand.command = nil
+            viewport.applyState(
+                stateWithoutCommand,
+                globalXDomain: baseXScale.domain,
+                globalYDomain: baseYScale.domain
+            )
+            if liveTrackingMode.isEnabled,
+               state.liveTrackingStatus == .inactive,
+               state.visibleXDomain != nil {
+                viewport.endPan(
+                    liveTrackingMode: liveTrackingMode,
+                    globalXDomain: baseXScale.domain
+                )
+            }
+        }
+
+        if state.command == .jumpToLatest {
+            viewport.jumpToLatest(
+                currentWindowWidth: currentWindowWidth,
+                globalXDomain: baseXScale.domain
+            )
+        }
+
+        applyViewportToScales()
+    }
+
+    public func jumpToLatest() {
+        let currentDomain = viewport.visibleXDomain ?? baseXScale.domain
+        let windowWidth = max(0, currentDomain.upperBound - currentDomain.lowerBound)
+        viewport.jumpToLatest(
+            currentWindowWidth: windowWidth,
+            globalXDomain: baseXScale.domain
         )
         applyViewportToScales()
     }

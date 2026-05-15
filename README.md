@@ -275,6 +275,31 @@ CartesianChartView(
 .chartZoomControls(step: 2)
 ```
 
+For live charts, keep the full data range wider than the visible window and
+let OZCharts pause follow mode when the user scrolls back into history:
+
+```swift
+@State private var viewport = ChartViewportState.automatic
+
+CartesianChartView(
+    series: [LineSeries(data: samples, id: signalSeriesID, color: .cyan)],
+    xDomain: .fixed(historyStart...latestTimestamp),
+    yDomain: .fixed(0...100)
+) { _ in
+    EmptyView()
+}
+.chartInitialViewport(xWindow: 60 * 60, anchor: .trailing)
+.chartLiveTracking(.followLatest(pauseOnUserInteraction: true))
+.chartViewport($viewport)
+
+Button("Live") {
+    viewport.requestJumpToLatest()
+}
+```
+
+`viewport.liveTrackingStatus` reports whether the chart is following latest
+data or paused because the user is viewing history.
+
 Share selection state when multiple charts should move together:
 
 ```swift

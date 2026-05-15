@@ -1157,6 +1157,10 @@ struct LiveTrackingDemoView: View {
     @State private var data: [Point2D] = []
     @State private var timer: Timer?
     @State private var counter: Double = 0
+    @State private var viewport = ChartViewportState.automatic
+
+    private let visibleWindow: Double = 20
+    private let historyWindow: Double = 120
 
     var body: some View {
         ScrollView {
@@ -1166,9 +1170,12 @@ struct LiveTrackingDemoView: View {
                         series: [
                             LineSeries(data: data, color: DemoColors.green, lineWidth: 3)
                         ],
-                        xScale: LinearScale(domain: visibleDomain),
+                        xScale: LinearScale(domain: fullDomain),
                         yScale: LinearScale(domain: 0...100),
                         isLiveTrackingEnabled: true,
+                        liveTrackingMode: .followLatest(pauseOnUserInteraction: true),
+                        initialViewport: .xWindow(length: visibleWindow, anchor: .trailing),
+                        viewport: $viewport,
                         emptyState: {
                             AnyView(
                                 VStack(spacing: 10) {
@@ -1192,6 +1199,19 @@ struct LiveTrackingDemoView: View {
                     .frame(height: 330)
                 }
 
+                HStack(spacing: 12) {
+                    DemoHint(text: viewport.liveTrackingStatus == .pausedByUser ? "Viewing history" : "Live")
+
+                    if viewport.liveTrackingStatus == .pausedByUser {
+                        DemoActionButton(
+                            title: "Jump to Latest",
+                            color: DemoColors.green,
+                            action: { viewport.requestJumpToLatest() }
+                        )
+                        .frame(maxWidth: 180)
+                    }
+                }
+
                 DemoActionButton(
                     title: timer == nil ? "Start Telemetry" : "Stop",
                     color: timer == nil ? DemoColors.green : DemoColors.pink,
@@ -1209,9 +1229,10 @@ struct LiveTrackingDemoView: View {
         }
     }
 
-    var visibleDomain: ClosedRange<Double> {
-        let upperBound = max(counter, 20)
-        return (upperBound - 20)...upperBound
+    var fullDomain: ClosedRange<Double> {
+        let upperBound = max(counter, visibleWindow)
+        let lowerBound = max(0, upperBound - historyWindow)
+        return lowerBound...upperBound
     }
 
     func toggleTimer() {
@@ -1220,7 +1241,7 @@ struct LiveTrackingDemoView: View {
                 let newPoint = Point2D(x: counter, y: Double.random(in: 40...80))
                 data.append(newPoint)
                 counter += 0.5
-                if data.count > 100 { data.removeFirst() }
+                data.removeAll { $0.x < fullDomain.lowerBound }
             }
         } else {
             stopTimer()

@@ -93,6 +93,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.tooltipPadding, 14)
         XCTAssertEqual(view.tooltipMaxWidth, 180)
         XCTAssertTrue(view.isLiveTrackingEnabled)
+        XCTAssertEqual(view.liveTrackingMode, .followLatest())
         XCTAssertEqual(view.initialViewport, .xWindow(length: 8, anchor: .trailing))
         XCTAssertEqual(view.viewportBinding?.wrappedValue.visibleXDomain, 0...8)
         XCTAssertEqual(view.selectionStateBinding?.wrappedValue.selectedX, 4)
@@ -111,6 +112,16 @@ final class CartesianChartViewModifierTests: XCTestCase {
         }
 
         XCTAssertNotNil(view.customLegendContent)
+    }
+
+    func testLiveTrackingModifierAcceptsExplicitMode() {
+        let view = makeChart().chartLiveTracking(
+            .followLatest(pauseOnUserInteraction: false, trailingToleranceRatio: 0.1)
+        )
+
+        XCTAssertTrue(view.isLiveTrackingEnabled)
+        XCTAssertEqual(view.liveTrackingMode.pauseOnUserInteraction, false)
+        XCTAssertEqual(view.liveTrackingMode.trailingToleranceRatio, 0.1)
     }
 
     func testAccessibilityModifierInstallsDescriptor() {

@@ -141,7 +141,15 @@ public extension CartesianChartView {
 
     func chartLiveTracking(_ isEnabled: Bool = true) -> Self {
         var copy = self
-        copy.isLiveTrackingEnabled = isEnabled
+        copy.liveTrackingMode = isEnabled ? .followLatest() : .disabled
+        copy.isLiveTrackingEnabled = copy.liveTrackingMode.isEnabled
+        return copy
+    }
+
+    func chartLiveTracking(_ mode: ChartLiveTrackingMode) -> Self {
+        var copy = self
+        copy.liveTrackingMode = mode
+        copy.isLiveTrackingEnabled = mode.isEnabled
         return copy
     }
 

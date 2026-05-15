@@ -219,6 +219,41 @@ YAxisConfig(
 
 Useful transforms include `.linear`, `.offset`, `.percentage(of:)`, `.reciprocal`, `.clamped(to:)`, `.replacingNonFinite(with:)`, and `.combined(with:)`.
 
+## Live Viewports
+
+For telemetry, medical monitoring, finance ticks, workout streams, or logs,
+keep the chart domain wider than the visible viewport. The chart can show the
+latest hour while retaining a scrollable 24 hour history.
+
+```swift
+@State private var viewport = ChartViewportState.automatic
+
+CartesianChartView(
+    series: [LineSeries(data: events, id: liveSeriesID, color: .cyan)],
+    xDomain: .fixed(historyStart...latestTimestamp),
+    yDomain: .fixed(0...100)
+) { selectedPoints in
+    EmptyView()
+}
+.chartInitialViewport(xWindow: 60 * 60, anchor: .trailing)
+.chartLiveTracking(.followLatest(pauseOnUserInteraction: true))
+.chartViewport($viewport)
+```
+
+When the user stays near the trailing edge, new events keep the viewport pinned
+to the latest data. When the user scrolls back, `viewport.liveTrackingStatus`
+becomes `.pausedByUser`; incoming events update the data without snapping the
+viewport forward. Resume live mode from external UI by requesting a jump:
+
+```swift
+Button("Live") {
+    viewport.requestJumpToLatest()
+}
+```
+
+If old data is trimmed from the app-side buffer, OZCharts clamps the paused
+viewport into the remaining domain instead of jumping to the latest window.
+
 ## Linked Charts
 
 Use `ChartSelectionState` and `ChartViewportState` when charts should share selection or zoom.

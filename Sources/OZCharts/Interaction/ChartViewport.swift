@@ -18,11 +18,13 @@ public struct ChartViewport {
 
     var isDragging: Bool = false
     var isZooming: Bool = false
+    var liveTrackingStatus: ChartLiveTrackingStatus = .inactive
 
     var state: ChartViewportState {
         ChartViewportState(
             visibleXDomain: visibleXDomain,
-            visibleYDomain: visibleYDomain
+            visibleYDomain: visibleYDomain,
+            liveTrackingStatus: liveTrackingStatus
         )
     }
 
@@ -85,10 +87,17 @@ public struct ChartViewport {
         }
     }
 
-    mutating func endPan() {
+    mutating func endPan(
+        liveTrackingMode: ChartLiveTrackingMode = .disabled,
+        globalXDomain: ClosedRange<Double>? = nil
+    ) {
         dragStartXDomain = nil
         dragStartYDomain = nil
         isDragging = false
+        updateLiveTrackingStatusAfterInteraction(
+            mode: liveTrackingMode,
+            globalXDomain: globalXDomain
+        )
     }
 
     // MARK: - Zoom
@@ -122,10 +131,17 @@ public struct ChartViewport {
         }
     }
 
-    mutating func endZoom() {
+    mutating func endZoom(
+        liveTrackingMode: ChartLiveTrackingMode = .disabled,
+        globalXDomain: ClosedRange<Double>? = nil
+    ) {
         zoomStartXDomain = nil
         zoomStartYDomain = nil
         isZooming = false
+        updateLiveTrackingStatusAfterInteraction(
+            mode: liveTrackingMode,
+            globalXDomain: globalXDomain
+        )
     }
 
     mutating func applyProgrammaticZoom(
@@ -183,6 +199,7 @@ public struct ChartViewport {
         zoomStartYDomain = nil
         isDragging = false
         isZooming = false
+        liveTrackingStatus = state.liveTrackingStatus
     }
 
     // MARK: - Reset
@@ -196,20 +213,78 @@ public struct ChartViewport {
         zoomStartYDomain = nil
         isDragging       = false
         isZooming        = false
+        liveTrackingStatus = .inactive
     }
 
     // MARK: - Live tracking
 
     mutating func applyLiveTracking(
+        mode: ChartLiveTrackingMode,
         newGlobalMax: Double,
         currentWindowWidth: Double,
         globalXDomain: ClosedRange<Double>
     ) {
-        guard !isDragging, visibleXDomain != nil else {
+        guard mode.isEnabled else {
+            liveTrackingStatus = .inactive
+            clampVisibleDomains(globalXDomain: globalXDomain, globalYDomain: nil)
             return
         }
+
+        guard !isDragging, !isZooming, visibleXDomain != nil else {
+            if liveTrackingStatus == .inactive {
+                liveTrackingStatus = .followingLatest
+            }
+            return
+        }
+
+        let canFollow = !mode.pauseOnUserInteraction ||
+            liveTrackingStatus != .pausedByUser ||
+            isAtTrailingEdge(globalXDomain: globalXDomain, toleranceRatio: mode.trailingToleranceRatio)
+
+        guard canFollow else {
+            clampVisibleDomains(globalXDomain: globalXDomain, globalYDomain: nil)
+            liveTrackingStatus = .pausedByUser
+            return
+        }
+
         let newDomain = (newGlobalMax - currentWindowWidth)...newGlobalMax
         visibleXDomain = clamp(newDomain, within: globalXDomain)
+        liveTrackingStatus = .followingLatest
+    }
+
+    mutating func jumpToLatest(
+        currentWindowWidth: Double,
+        globalXDomain: ClosedRange<Double>
+    ) {
+        guard currentWindowWidth.isFinite, currentWindowWidth > 0 else {
+            visibleXDomain = globalXDomain
+            dragStartXDomain = nil
+            zoomStartXDomain = nil
+            isDragging = false
+            isZooming = false
+            liveTrackingStatus = .followingLatest
+            return
+        }
+
+        let newDomain = (globalXDomain.upperBound - currentWindowWidth)...globalXDomain.upperBound
+        visibleXDomain = clamp(newDomain, within: globalXDomain)
+        dragStartXDomain = nil
+        zoomStartXDomain = nil
+        isDragging = false
+        isZooming = false
+        liveTrackingStatus = .followingLatest
+    }
+
+    mutating func clampVisibleDomains(
+        globalXDomain: ClosedRange<Double>?,
+        globalYDomain: ClosedRange<Double>?
+    ) {
+        if let globalXDomain, let visibleXDomain {
+            self.visibleXDomain = validClamped(visibleXDomain, within: globalXDomain)
+        }
+        if let globalYDomain, let visibleYDomain {
+            self.visibleYDomain = validClamped(visibleYDomain, within: globalYDomain)
+        }
     }
 
     // MARK: - Private helpers
@@ -237,6 +312,37 @@ public struct ChartViewport {
         }
 
         return clamp(range, within: global)
+    }
+
+    private mutating func updateLiveTrackingStatusAfterInteraction(
+        mode: ChartLiveTrackingMode,
+        globalXDomain: ClosedRange<Double>?
+    ) {
+        guard mode.isEnabled else {
+            liveTrackingStatus = .inactive
+            return
+        }
+
+        guard mode.pauseOnUserInteraction, let globalXDomain else {
+            liveTrackingStatus = .followingLatest
+            return
+        }
+
+        liveTrackingStatus = isAtTrailingEdge(
+            globalXDomain: globalXDomain,
+            toleranceRatio: mode.trailingToleranceRatio
+        ) ? .followingLatest : .pausedByUser
+    }
+
+    private func isAtTrailingEdge(
+        globalXDomain: ClosedRange<Double>,
+        toleranceRatio: Double
+    ) -> Bool {
+        guard let visibleXDomain else { return true }
+
+        let windowWidth = max(visibleXDomain.upperBound - visibleXDomain.lowerBound, 0)
+        let tolerance = max(windowWidth * max(0, toleranceRatio), .ulpOfOne)
+        return abs(globalXDomain.upperBound - visibleXDomain.upperBound) <= tolerance
     }
 
     private func zoomed(

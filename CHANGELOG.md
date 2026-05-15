@@ -20,6 +20,7 @@
 * `.chartElementSelection(...)` for non-point interaction callbacks.
 * `selectedElements` support in `ChartSelectionState`.
 * `selectedElementFormatter` support in chart accessibility descriptors.
+* `ChartLiveTrackingMode`, live viewport status, and jump-to-latest viewport commands.
 * Stable `id:` parameters for chart series and custom view annotations.
 * Placement, collision priority, and padding controls for `CustomViewAnnotation`.
 * Product snapshot signature tests and optional performance benchmark tests.
@@ -30,6 +31,8 @@
 * Donut segments can expose product labels through `segmentLabelMapper`.
 * Custom SwiftUI annotations are clamped and resolved through the shared label collision engine.
 * Canvas-drawn range and value labels now use shared collision/clamping rules.
+* Live tracking now pauses when users scroll into history and resumes only when they return to the latest window.
+* Live viewports are clamped safely when older data is trimmed from the domain.
 
 ## 2.0.0
 

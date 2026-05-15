@@ -277,6 +277,7 @@ final class ChartViewportTests: XCTestCase {
         viewport.visibleXDomain = 80...100
 
         viewport.applyLiveTracking(
+            mode: .followLatest(),
             newGlobalMax: 120,
             currentWindowWidth: 20,
             globalXDomain: 0...120
@@ -287,6 +288,7 @@ final class ChartViewportTests: XCTestCase {
 
         viewport.isDragging = true
         viewport.applyLiveTracking(
+            mode: .followLatest(),
             newGlobalMax: 140,
             currentWindowWidth: 20,
             globalXDomain: 0...140
@@ -301,6 +303,7 @@ final class ChartViewportTests: XCTestCase {
         viewport.visibleXDomain = 0...50
 
         viewport.applyLiveTracking(
+            mode: .followLatest(),
             newGlobalMax: 30,
             currentWindowWidth: 50,
             globalXDomain: 0...30
@@ -308,5 +311,79 @@ final class ChartViewportTests: XCTestCase {
 
         XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 0, accuracy: 0.0001)
         XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 30, accuracy: 0.0001)
+    }
+
+    func testLiveTrackingPausesAfterUserScrollsAwayFromLatest() {
+        var viewport = ChartViewport()
+        viewport.visibleXDomain = 80...100
+
+        viewport.applyPan(
+            translationWidth: 50,
+            translationHeight: 0,
+            canvasSize: CGSize(width: 100, height: 100),
+            globalXDomain: 0...100,
+            globalYDomain: 0...100,
+            scrollX: true,
+            scrollY: false
+        )
+        viewport.endPan(liveTrackingMode: .followLatest(), globalXDomain: 0...100)
+
+        XCTAssertEqual(viewport.liveTrackingStatus, .pausedByUser)
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 70, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 90, accuracy: 0.0001)
+
+        viewport.applyLiveTracking(
+            mode: .followLatest(),
+            newGlobalMax: 120,
+            currentWindowWidth: 20,
+            globalXDomain: 0...120
+        )
+
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 70, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 90, accuracy: 0.0001)
+        XCTAssertEqual(viewport.liveTrackingStatus, .pausedByUser)
+    }
+
+    func testLiveTrackingContinuesWhenUserEndsAtTrailingEdge() {
+        var viewport = ChartViewport()
+        viewport.visibleXDomain = 80...100
+
+        viewport.applyPan(
+            translationWidth: -50,
+            translationHeight: 0,
+            canvasSize: CGSize(width: 100, height: 100),
+            globalXDomain: 0...100,
+            globalYDomain: 0...100,
+            scrollX: true,
+            scrollY: false
+        )
+        viewport.endPan(liveTrackingMode: .followLatest(), globalXDomain: 0...100)
+
+        XCTAssertEqual(viewport.liveTrackingStatus, .followingLatest)
+
+        viewport.applyLiveTracking(
+            mode: .followLatest(),
+            newGlobalMax: 120,
+            currentWindowWidth: 20,
+            globalXDomain: 0...120
+        )
+
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 100, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 120, accuracy: 0.0001)
+    }
+
+    func testJumpToLatestResumesPausedLiveTracking() {
+        var viewport = ChartViewport()
+        viewport.visibleXDomain = 30...50
+        viewport.liveTrackingStatus = .pausedByUser
+
+        viewport.jumpToLatest(
+            currentWindowWidth: 20,
+            globalXDomain: 0...120
+        )
+
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 100, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 120, accuracy: 0.0001)
+        XCTAssertEqual(viewport.liveTrackingStatus, .followingLatest)
     }
 }
