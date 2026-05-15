@@ -13,6 +13,7 @@ Use this checklist before sending the framework to an external company or using 
 * `Docs/HandoffGuide.md` explains the external-team integration path.
 * `Docs/Release-2.1.md` explains prerelease scope and verification.
 * `Sources/OZCharts/OZCharts.docc` provides Xcode DocC documentation.
+* `.swiftformat` and `.swiftlint.yml` define the shared code style.
 
 ## Demo
 
@@ -50,6 +51,13 @@ Run:
 
 ```bash
 swift test
+```
+
+Style checks:
+
+```bash
+swiftformat --lint .
+swiftlint lint --no-cache
 ```
 
 Expected coverage:

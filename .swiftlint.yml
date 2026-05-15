@@ -1,0 +1,81 @@
+# OZCharts SwiftLint configuration.
+# The rules are intentionally practical for a framework handoff. SwiftFormat
+# owns whitespace and wrapping; SwiftLint focuses on clarity checks that should
+# not force a broad rewrite of the existing public API or demo screens.
+
+included:
+  - Sources
+  - Tests
+  - DemoApp/DemoApp
+
+excluded:
+  - .build
+  - build
+  - DerivedData
+  - DemoApp/DemoApp.xcodeproj
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - fatal_error_message
+  - first_where
+  - joined_default_parameter
+  - lower_acl_than_parent
+  - overridden_super_call
+  - private_action
+  - private_outlet
+  - redundant_nil_coalescing
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - yoda_condition
+
+disabled_rules:
+  - colon
+  - file_length
+  - function_body_length
+  - function_parameter_count
+  - large_tuple
+  - line_length
+  - opening_brace
+  - trailing_whitespace
+  - todo
+  - type_name
+  - vertical_whitespace
+
+analyzer_rules:
+  - unused_import
+
+type_body_length:
+  warning: 900
+  error: 1200
+
+cyclomatic_complexity:
+  warning: 30
+  error: 45
+
+identifier_name:
+  min_length:
+    warning: 2
+  excluded:
+    - c
+    - h
+    - id
+    - i
+    - j
+    - k
+    - n
+    - p
+    - s
+    - t
+    - u
+    - v
+    - x
+    - y
+
+nesting:
+  type_level:
+    warning: 2
+  function_level:
+    warning: 4
+
+reporter: "xcode"

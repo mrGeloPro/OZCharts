@@ -556,14 +556,14 @@ where XScale.InputType == Point.XValue, XScale.OutputType == CGFloat,
         for points: [ChartPointContext<Point>]
     ) -> [ChartSelectedPoint] {
         points.map { context in
-            let seriesMatch = seriesContexts.enumerated().first { _, contexts in
+            let seriesIndex = seriesContexts.firstIndex { contexts in
                 contexts.contains { $0.originalPoint.id == context.originalPoint.id }
             }
 
             return ChartSelectedPoint(
                 pointID: context.originalPoint.id,
-                seriesID: seriesMatch.flatMap { currentSeriesIDs[safe: $0.offset] },
-                seriesIndex: seriesMatch?.offset,
+                seriesID: seriesIndex.flatMap { currentSeriesIDs[safe: $0] },
+                seriesIndex: seriesIndex,
                 x: context.originalPoint.x,
                 y: context.originalPoint.y
             )

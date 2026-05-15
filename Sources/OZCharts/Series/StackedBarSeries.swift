@@ -160,8 +160,8 @@ where P.XValue == Double, P.YValue == Double {
         var layouts: [StackedBarSegmentLayout<P.GroupID>] = []
 
         for (rowYValue, segmentsByGroup) in rows {
-            let ordered = stackOrder.compactMap { g in
-                segmentsByGroup[g].map { (group: g, value: $0.value, screenY: $0.screenY, pointID: $0.pointID) }
+            let ordered = stackOrder.compactMap { group in
+                segmentsByGroup[group].map { (group: group, value: $0.value, screenY: $0.screenY, pointID: $0.pointID) }
             }
             guard let firstSeg = ordered.first else { continue }
             let rowY = firstSeg.screenY

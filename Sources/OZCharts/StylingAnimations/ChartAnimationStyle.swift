@@ -29,10 +29,10 @@ public enum ChartAnimationStyle {
 
     public var swiftUIAnimation: Animation? {
         switch self {
-        case .none:           return nil
-        case .morph(let a):   return a
-        case .draw(let a):    return a
-        case .fade(let a):    return a
+        case .none: return nil
+        case .morph(let animation): return animation
+        case .draw(let animation): return animation
+        case .fade(let animation): return animation
         }
     }
 }

@@ -97,8 +97,8 @@ public extension CartesianChartView {
         return copy
     }
 
-    func chartAnnotationTooltip<AnnotationTooltipContent: View>(
-        @ViewBuilder content: @escaping ([ChartAnnotationContext]) -> AnnotationTooltipContent
+    func chartAnnotationTooltip<Content: View>(
+        @ViewBuilder content: @escaping ([ChartAnnotationContext]) -> Content
     ) -> Self {
         var copy = self
         copy.annotationTooltipContent = { AnyView(content($0)) }

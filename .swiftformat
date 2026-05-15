@@ -1,0 +1,24 @@
+# OZCharts SwiftFormat configuration.
+# Keep this conservative: formatting should stabilize diffs without rewriting API style.
+
+--swiftversion 5.9
+--indent 4
+--tabwidth 4
+--linebreaks lf
+--semicolons never
+--commas inline
+--trimwhitespace always
+--insertlines enabled
+--allman false
+--ifdef no-indent
+
+--exclude .build,build,DerivedData,DemoApp/DemoApp.xcodeproj
+
+# Keep explicit API shape and declaration order stable for a public framework.
+--disable andOperator
+--disable organizeDeclarations
+--disable redundantExtensionACL
+--disable redundantSelf
+--disable redundantType
+--disable strongOutlets
+--disable wrapMultilineStatementBraces

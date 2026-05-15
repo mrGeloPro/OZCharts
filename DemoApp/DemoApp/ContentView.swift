@@ -469,19 +469,20 @@ struct HeightDemoView: View {
                                         .foregroundColor(DemoColors.secondaryText)
                                 }
                             )
-                        }
-                    ) { points in
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(points, id: \.originalPoint.id) { pointContext in
-                                Text("\(String(format: "%.1f", pointContext.originalPoint.y))")
-                                    .foregroundColor(.white)
-                                    .font(.caption).bold()
+                        },
+                        tooltipContent: { points in
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(points, id: \.originalPoint.id) { pointContext in
+                                    Text("\(String(format: "%.1f", pointContext.originalPoint.y))")
+                                        .foregroundColor(.white)
+                                        .font(.caption).bold()
+                                }
                             }
+                            .padding(6)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(6)
                         }
-                        .padding(6)
-                        .background(Color.black.opacity(0.8))
-                        .cornerRadius(6)
-                    }
+                    )
                     .frame(height: 330)
                 }
 
@@ -749,7 +750,7 @@ struct PointsDistributionDemoView: View {
 enum StarType: Hashable { case s1, s2, s3, remainder }
 
 struct StarAchievementDemoView: View {
-    @State private var selectedTooltipRow: Int? = nil
+    @State private var selectedTooltipRow: Int?
 
     /// y=0 Current, y=1 Last, y=2 Average, y=3 High score.
     let mockData: [GroupedPoint2D<StarType>] = [
@@ -1189,17 +1190,18 @@ struct LiveTrackingDemoView: View {
                                 }
                                 .foregroundColor(DemoColors.secondaryText)
                             )
+                        },
+                        tooltipContent: { points in
+                            if let p = points.last {
+                                Text("\(Int(p.originalPoint.y))%")
+                                    .bold()
+                                    .padding(4)
+                                    .background(Color.black.opacity(0.8))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(4)
+                            }
                         }
-                    ) { points in
-                        if let p = points.last {
-                            Text("\(Int(p.originalPoint.y))%")
-                                .bold()
-                                .padding(4)
-                                .background(Color.black.opacity(0.8))
-                                .foregroundColor(.white)
-                                .cornerRadius(4)
-                        }
-                    }
+                    )
                     .frame(height: 330)
                 }
 

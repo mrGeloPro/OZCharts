@@ -565,6 +565,20 @@ The package includes a DocC catalog in `Sources/OZCharts/OZCharts.docc`.
 Open the package in Xcode and build documentation to browse the public API,
 live chart guidance, selection and annotations, and product-chart recipes.
 
+## Code Style
+
+The repository includes SwiftFormat and SwiftLint configs for consistent handoff
+style:
+
+```bash
+swiftformat .
+swiftlint lint --no-cache
+```
+
+The configs are intentionally conservative. They focus on readable diffs,
+reasonable function/file size limits, import hygiene, and common Swift clarity
+checks without forcing a broad rewrite of the public API.
+
 ## Running the Demo App
 
 This repository includes a comprehensive `DemoApp`. The first section is tuned
