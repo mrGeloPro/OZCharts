@@ -20,6 +20,8 @@ public protocol ChartSeriesProtocol: Identifiable {
     var usesAnimatableOverlay: Bool { get }
     var legendItem: ChartLegendItem? { get }
     var legendItems: [ChartLegendItem] { get }
+    var layoutSignature: ChartSeriesSignature { get }
+    var renderSignature: ChartSeriesSignature { get }
 
     func render(
         into context: inout GraphicsContext,
@@ -45,6 +47,22 @@ public protocol ChartSeriesProtocol: Identifiable {
     ) -> AnyView
 }
 
+public struct ChartSeriesSignature: Equatable {
+    public var kind: String
+    public var values: [Double]
+    public var tokens: [String]
+
+    public init(
+        kind: String,
+        values: [Double] = [],
+        tokens: [String] = []
+    ) {
+        self.kind = kind
+        self.values = values
+        self.tokens = tokens
+    }
+}
+
 public struct AnyChartSeries<Point: ChartDataPoint>: Identifiable
     where Point.XValue == Double, Point.YValue == Double {
     public let id: UUID
@@ -53,6 +71,8 @@ public struct AnyChartSeries<Point: ChartDataPoint>: Identifiable
     public let animation: ChartAnimationStyle
     public let legendItem: ChartLegendItem?
     public let legendItems: [ChartLegendItem]
+    let layoutSignature: ChartSeriesSignature
+    let renderSignature: ChartSeriesSignature
 
     private let renderBody: (inout GraphicsContext, [ChartPointContext<Point>], CGSize) -> Void
     private let renderContextsBody: ([ChartPointContext<Point>], CGSize) -> [ChartPointContext<Point>]
@@ -67,6 +87,8 @@ public struct AnyChartSeries<Point: ChartDataPoint>: Identifiable
         self.animation = series.animation
         self.legendItem = series.legendItem
         self.legendItems = series.legendItems
+        self.layoutSignature = series.layoutSignature
+        self.renderSignature = series.renderSignature
         self.usesAnimatableOverlay = series.usesAnimatableOverlay
         self.renderBody = { context, contexts, size in
             series.render(into: &context, contexts: contexts, size: size)
@@ -118,6 +140,17 @@ public struct AnyChartSeries<Point: ChartDataPoint>: Identifiable
 }
 
 public extension ChartSeriesProtocol {
+    var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            tokens: [String(describing: animation.kind)]
+        )
+    }
+
+    var renderSignature: ChartSeriesSignature {
+        layoutSignature
+    }
+
     var usesAnimatableOverlay: Bool {
         false
     }

@@ -9,13 +9,15 @@
 import SwiftUI
 
 public struct AreaSeries<P: ChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
     public var animation: ChartAnimationStyle
-    public var usesAnimatableOverlay: Bool { true }
+    public var usesAnimatableOverlay: Bool {
+        true
+    }
+
     public var label: String?
 
     public var color: Color
@@ -67,6 +69,22 @@ where P.XValue == Double, P.YValue == Double {
         label.map {
             ChartLegendItem(id: id, title: $0, color: fillColor, symbol: .square)
         }
+    }
+
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(fillOpacity),
+                baseline ?? Double.greatestFiniteMagnitude,
+                Double(lineWidth)
+            ],
+            tokens: [
+                "interpolation:\(interpolation)",
+                "downsampling:\(downsampling)",
+                "animation:\(animation.kind)"
+            ]
+        )
     }
 
     public func render(

@@ -87,6 +87,8 @@ public struct CartesianChartView<
             ChartSeriesChangeSignature(
                 seriesID: series.id,
                 zIndex: series.zIndex,
+                layoutSignature: series.layoutSignature,
+                renderSignature: series.renderSignature,
                 points: series.data.map { ChartPointValueSignature(x: $0.x, y: $0.y) }
             )
         }
@@ -235,7 +237,7 @@ public struct CartesianChartView<
             if allData.isEmpty, let emptyView = emptyState?() {
                 emptyView.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                let insets = ChartLayoutEngine.insets(xAxes: xAxes, yAxes: yAxes)
+                let insets = ChartLayoutEngine.measuredInsets(xAxes: xAxes, yAxes: yAxes)
 
                 chartWithLegend(topH: insets.top, bottomH: insets.bottom)
             }
@@ -783,6 +785,8 @@ public struct CartesianChartView<
 struct ChartSeriesChangeSignature: Equatable {
     let seriesID: UUID
     let zIndex: Int
+    let layoutSignature: ChartSeriesSignature
+    let renderSignature: ChartSeriesSignature
     let points: [ChartPointValueSignature]
 }
 

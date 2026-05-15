@@ -7,8 +7,8 @@
 //
 
 import CoreGraphics
-import XCTest
 @testable import OZCharts
+import XCTest
 
 final class ChartLayoutEngineTests: XCTestCase {
     func testInsetsUseAxisDimensions() {
@@ -29,6 +29,49 @@ final class ChartLayoutEngineTests: XCTestCase {
         XCTAssertEqual(layout.insets.leading, 40)
         XCTAssertEqual(layout.insets.trailing, 52)
         XCTAssertEqual(layout.plotArea, CGRect(x: 40, y: 24, width: 228, height: 184))
+    }
+
+    func testMeasuredInsetsExpandForLongAxisLabels() {
+        let measured = ChartLayoutEngine.measuredInsets(
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "Extremely long localized bottom label" },
+                    height: 8
+                )
+            ],
+            yAxes: [
+                YAxisConfig(
+                    position: .trailing,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "1,000,000 bpm" },
+                    width: 8
+                )
+            ]
+        )
+
+        XCTAssertGreaterThan(measured.bottom, 8)
+        XCTAssertGreaterThan(measured.trailing, 8)
+    }
+
+    func testMeasuredLayoutUsesExpandedInsetsWhenRequested() {
+        let layout = ChartLayoutEngine.layout(
+            in: CGSize(width: 200, height: 120),
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "Long bottom label" },
+                    height: 8
+                )
+            ],
+            yAxes: [],
+            usesMeasuredInsets: true
+        )
+
+        XCTAssertGreaterThan(layout.insets.bottom, 8)
+        XCTAssertLessThan(layout.plotArea.height, 112)
     }
 
     func testPlotAreaNeverBecomesNegative() {

@@ -20,8 +20,7 @@ private struct StackedAreaKey<GroupID: Hashable>: Hashable {
 }
 
 public struct StackedAreaSeries<P: GroupedChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
@@ -70,6 +69,23 @@ where P.XValue == Double, P.YValue == Double {
             guard let title = groupLabel(group) else { return nil }
             return ChartLegendItem(title: title, color: colorMapper(group), symbol: .square)
         }
+    }
+
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(lineWidth),
+                fillOpacity
+            ],
+            tokens: [
+                "stackOrder:\(stackOrder.map { String(describing: $0) }.joined(separator: "|"))",
+                "interpolation:\(interpolation)",
+                "hasFillStyleMapper:\(fillStyleMapper != nil)",
+                "hasGroupLabel:\(groupLabel != nil)",
+                "animation:\(animation.kind)"
+            ]
+        )
     }
 
     public func render(
@@ -132,7 +148,7 @@ where P.XValue == Double, P.YValue == Double {
                 upper.append(CGPoint(x: reference.scaleX(x), y: reference.scaleY(upperValue)))
             }
 
-            if upper.contains(where: { $0.y.isFinite }) {
+            if upper.contains(where: \.y.isFinite) {
                 layers.append(StackedAreaLayer(group: group, lower: lower, upper: upper))
             }
         }
@@ -163,7 +179,7 @@ where P.XValue == Double, P.YValue == Double {
     private func resolvedPathPoints(from points: [CGPoint]) -> [CGPoint] {
         guard let first = points.first else { return [] }
         var result = [first]
-        for index in 1..<points.count {
+        for index in 1 ..< points.count {
             if interpolation == .step {
                 result.append(CGPoint(x: points[index].x, y: points[index - 1].y))
             }

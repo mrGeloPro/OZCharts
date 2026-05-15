@@ -25,8 +25,7 @@ private struct PendingStackedBarLabel {
 }
 
 public struct StackedBarSeries<P: GroupedChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
@@ -49,24 +48,24 @@ where P.XValue == Double, P.YValue == Double {
         fillStyleMapper: ((P.GroupID) -> ChartFillStyle)? = nil,
         groupLabel: ((P.GroupID) -> String?)? = nil,
         valueLabelStyle: ChartValueLabelStyle? = nil,
-        barHeight: CGFloat             = 28,
-        cornerRadius: CGFloat          = 4,
-        segmentGap: CGFloat            = 2,
+        barHeight: CGFloat = 28,
+        cornerRadius: CGFloat = 4,
+        segmentGap: CGFloat = 2,
         animation: ChartAnimationStyle = .none,
-        zIndex: Int                    = 0
+        zIndex: Int = 0
     ) {
-        self.id           = id
-        self.data         = data
-        self.stackOrder   = stackOrder
-        self.colorMapper  = colorMapper
+        self.id = id
+        self.data = data
+        self.stackOrder = stackOrder
+        self.colorMapper = colorMapper
         self.fillStyleMapper = fillStyleMapper
-        self.groupLabel   = groupLabel
+        self.groupLabel = groupLabel
         self.valueLabelStyle = valueLabelStyle
-        self.barHeight    = barHeight
+        self.barHeight = barHeight
         self.cornerRadius = cornerRadius
-        self.segmentGap   = segmentGap
-        self.animation    = animation
-        self.zIndex       = zIndex
+        self.segmentGap = segmentGap
+        self.animation = animation
+        self.zIndex = zIndex
     }
 
     public var legendItems: [ChartLegendItem] {
@@ -75,6 +74,24 @@ where P.XValue == Double, P.YValue == Double {
             guard let title = groupLabel(group) else { return nil }
             return ChartLegendItem(title: title, color: colorMapper(group), symbol: .square)
         }
+    }
+
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(barHeight),
+                Double(cornerRadius),
+                Double(segmentGap)
+            ],
+            tokens: [
+                "stackOrder:\(stackOrder.map { String(describing: $0) }.joined(separator: "|"))",
+                "hasFillStyleMapper:\(fillStyleMapper != nil)",
+                "hasGroupLabel:\(groupLabel != nil)",
+                "valueLabelPosition:\(String(describing: valueLabelStyle?.position))",
+                "animation:\(animation.kind)"
+            ]
+        )
     }
 
     public func render(
@@ -97,14 +114,13 @@ where P.XValue == Double, P.YValue == Double {
 
         let pendingLabels = rowLabels.map { row -> PendingStackedBarLabel in
             let label = valueLabelStyle.formatter(row.rowValue)
-            let x: CGFloat
-            switch valueLabelStyle.position {
+            let x: CGFloat = switch valueLabelStyle.position {
             case .hidden:
-                x = row.rect.midX
+                row.rect.midX
             case .inside:
-                x = max(row.rect.minX + 8, row.rowEndX - 22)
+                max(row.rect.minX + 8, row.rowEndX - 22)
             case .outside:
-                x = row.rowEndX + 24
+                row.rowEndX + 24
             }
             return PendingStackedBarLabel(
                 id: row.pointID ?? UUID(),
@@ -204,7 +220,7 @@ where P.XValue == Double, P.YValue == Double {
 
     public func selectionElements(
         contexts: [ChartPointContext<P>],
-        size: CGSize
+        size _: CGSize
     ) -> [ChartElementContext] {
         segmentLayouts(contexts: contexts).enumerated().map { index, segment in
             let label = groupLabel?(segment.group)

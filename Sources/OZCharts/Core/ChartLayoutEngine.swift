@@ -42,10 +42,31 @@ public struct ChartPlotLayout: Equatable {
 public enum ChartLayoutEngine {
     public static func insets(xAxes: [XAxisConfig], yAxes: [YAxisConfig]) -> ChartInsets {
         ChartInsets(
-            top:      xAxes.filter { $0.position == .top      }.reduce(0) { $0 + $1.height },
-            leading:  yAxes.filter { $0.position == .leading  }.reduce(0) { $0 + $1.width  },
-            bottom:   xAxes.filter { $0.position == .bottom   }.reduce(0) { $0 + $1.height },
-            trailing: yAxes.filter { $0.position == .trailing }.reduce(0) { $0 + $1.width  }
+            top: xAxes.filter { $0.position == .top }.reduce(0) { $0 + $1.height },
+            leading: yAxes.filter { $0.position == .leading }.reduce(0) { $0 + $1.width },
+            bottom: xAxes.filter { $0.position == .bottom }.reduce(0) { $0 + $1.height },
+            trailing: yAxes.filter { $0.position == .trailing }.reduce(0) { $0 + $1.width }
+        )
+    }
+
+    public static func measuredInsets(
+        xAxes: [XAxisConfig],
+        yAxes: [YAxisConfig],
+        labelSampleLimit: Int = 12
+    ) -> ChartInsets {
+        ChartInsets(
+            top: xAxes
+                .filter { $0.position == .top }
+                .reduce(0) { $0 + measuredHeight(for: $1, labelSampleLimit: labelSampleLimit) },
+            leading: yAxes
+                .filter { $0.position == .leading }
+                .reduce(0) { $0 + measuredWidth(for: $1, labelSampleLimit: labelSampleLimit) },
+            bottom: xAxes
+                .filter { $0.position == .bottom }
+                .reduce(0) { $0 + measuredHeight(for: $1, labelSampleLimit: labelSampleLimit) },
+            trailing: yAxes
+                .filter { $0.position == .trailing }
+                .reduce(0) { $0 + measuredWidth(for: $1, labelSampleLimit: labelSampleLimit) }
         )
     }
 
@@ -62,9 +83,72 @@ public enum ChartLayoutEngine {
     public static func layout(
         in size: CGSize,
         xAxes: [XAxisConfig],
-        yAxes: [YAxisConfig]
+        yAxes: [YAxisConfig],
+        usesMeasuredInsets: Bool = false
     ) -> ChartPlotLayout {
-        ChartPlotLayout(containerSize: size, insets: insets(xAxes: xAxes, yAxes: yAxes))
+        let resolvedInsets = usesMeasuredInsets
+            ? measuredInsets(xAxes: xAxes, yAxes: yAxes)
+            : insets(xAxes: xAxes, yAxes: yAxes)
+        return ChartPlotLayout(containerSize: size, insets: resolvedInsets)
+    }
+
+    private static func measuredHeight(
+        for axis: XAxisConfig,
+        labelSampleLimit: Int
+    ) -> CGFloat {
+        guard axis.height > 0 else { return 0 }
+        let labelHeight = sampleLabelSizes(
+            explicitValues: axis.explicitValues,
+            tickCount: axis.tickCount,
+            axisTransform: axis.axisTransform,
+            formatter: axis.labelFormatter,
+            labelSampleLimit: labelSampleLimit
+        )
+        .map(\.height)
+        .max() ?? 0
+        let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
+        let measured = axis.tickLength + axis.labelSpacing + labelHeight + titleHeight
+        return max(axis.height, measured.rounded(.up))
+    }
+
+    private static func measuredWidth(
+        for axis: YAxisConfig,
+        labelSampleLimit: Int
+    ) -> CGFloat {
+        guard axis.width > 0 else { return 0 }
+        let labelWidth = sampleLabelSizes(
+            explicitValues: axis.explicitValues,
+            tickCount: axis.tickCount,
+            axisTransform: axis.axisTransform,
+            formatter: axis.labelFormatter,
+            labelSampleLimit: labelSampleLimit
+        )
+        .map(\.width)
+        .max() ?? 0
+        let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
+        let measured = axis.tickLength + axis.labelSpacing + labelWidth + titleHeight
+        return max(axis.width, measured.rounded(.up))
+    }
+
+    private static func sampleLabelSizes(
+        explicitValues: [Double]?,
+        tickCount: Int,
+        axisTransform: AxisTransform,
+        formatter: (Double) -> String,
+        labelSampleLimit: Int
+    ) -> [CGSize] {
+        let values = explicitValues ?? regularSampleValues(count: tickCount)
+        return values
+            .prefix(max(1, labelSampleLimit))
+            .map { formatter(axisTransform($0)) }
+            .map { ChartTextMetrics.estimatedSize(for: $0) }
+    }
+
+    private static func regularSampleValues(count: Int) -> [Double] {
+        let resolvedCount = max(2, count)
+        return (0 ..< resolvedCount).map { index in
+            Double(index) / Double(max(1, resolvedCount - 1)) * 1000
+        }
     }
 }
 

@@ -9,17 +9,18 @@
 import Foundation
 import SwiftUI
 
-
 // MARK: - ScatterSeries
 
 public struct ScatterSeries<P: ChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
     public var animation: ChartAnimationStyle
-    public var usesAnimatableOverlay: Bool { true }
+    public var usesAnimatableOverlay: Bool {
+        true
+    }
+
     public var label: String?
 
     public var color: Color
@@ -31,25 +32,25 @@ where P.XValue == Double, P.YValue == Double {
     public init(
         data: [P],
         id: UUID = UUID(),
-        color: Color              = .purple,
-        label: String?            = nil,
-        pointSize: CGFloat        = 8,
-        symbol: ChartSymbolShape  = .circle,
-        strokeColor: Color?       = Color.black.opacity(0.3),
-        strokeWidth: CGFloat      = 1,
+        color: Color = .purple,
+        label: String? = nil,
+        pointSize: CGFloat = 8,
+        symbol: ChartSymbolShape = .circle,
+        strokeColor: Color? = Color.black.opacity(0.3),
+        strokeWidth: CGFloat = 1,
         animation: ChartAnimationStyle = .none,
-        zIndex: Int               = 0
+        zIndex: Int = 0
     ) {
-        self.id          = id
-        self.data        = data
-        self.label       = label
-        self.color       = color
-        self.pointSize   = pointSize
-        self.symbol      = symbol
+        self.id = id
+        self.data = data
+        self.label = label
+        self.color = color
+        self.pointSize = pointSize
+        self.symbol = symbol
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
-        self.animation   = animation
-        self.zIndex      = zIndex
+        self.animation = animation
+        self.zIndex = zIndex
     }
 
     public var legendItem: ChartLegendItem? {
@@ -58,10 +59,25 @@ where P.XValue == Double, P.YValue == Double {
         }
     }
 
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(pointSize),
+                Double(strokeWidth)
+            ],
+            tokens: [
+                "symbol:\(symbol)",
+                "hasStroke:\(strokeColor != nil)",
+                "animation:\(animation.kind)"
+            ]
+        )
+    }
+
     public func render(
         into context: inout GraphicsContext,
         contexts: [ChartPointContext<P>],
-        size: CGSize
+        size _: CGSize
     ) {
         for ctx in contexts {
             let rect = CGRect(
@@ -76,7 +92,7 @@ where P.XValue == Double, P.YValue == Double {
             }
         }
     }
-    
+
     public func animatableView(oldContexts: [ChartPointContext<P>], newContexts: [ChartPointContext<P>], progress: CGFloat) -> AnyView {
         if animation.kind == .none { return AnyView(EmptyView()) }
         return AnyView(
@@ -95,26 +111,27 @@ where P.XValue == Double, P.YValue == Double {
 }
 
 // MARK: - Dummy Animations for Static Series
-extension StackedBarSeries {
-    public func animatableView(oldContexts: [ChartPointContext<P>], newContexts: [ChartPointContext<P>], progress: CGFloat) -> AnyView {
+
+public extension StackedBarSeries {
+    func animatableView(oldContexts _: [ChartPointContext<P>], newContexts _: [ChartPointContext<P>], progress _: CGFloat) -> AnyView {
         AnyView(EmptyView())
     }
 }
 
-extension BarSeries {
-    public func animatableView(oldContexts: [ChartPointContext<P>], newContexts: [ChartPointContext<P>], progress: CGFloat) -> AnyView {
+public extension BarSeries {
+    func animatableView(oldContexts _: [ChartPointContext<P>], newContexts _: [ChartPointContext<P>], progress _: CGFloat) -> AnyView {
         AnyView(EmptyView())
     }
 }
 
-extension ViolinSeries {
-    public func animatableView(oldContexts: [ChartPointContext<P>], newContexts: [ChartPointContext<P>], progress: CGFloat) -> AnyView {
+public extension ViolinSeries {
+    func animatableView(oldContexts _: [ChartPointContext<P>], newContexts _: [ChartPointContext<P>], progress _: CGFloat) -> AnyView {
         AnyView(EmptyView())
     }
 }
 
-extension DonutSeries {
-    public func animatableView(oldContexts: [ChartPointContext<P>], newContexts: [ChartPointContext<P>], progress: CGFloat) -> AnyView {
+public extension DonutSeries {
+    func animatableView(oldContexts _: [ChartPointContext<P>], newContexts _: [ChartPointContext<P>], progress _: CGFloat) -> AnyView {
         AnyView(EmptyView())
     }
 }

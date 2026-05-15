@@ -103,6 +103,25 @@ public struct LineSeries<P: ChartDataPoint>: ChartSeriesProtocol
         }
     }
 
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(lineWidth),
+                Double(dashPhase),
+                area?.baseline ?? Double.greatestFiniteMagnitude
+            ],
+            tokens: [
+                "interpolation:\(interpolation)",
+                "lineCap:\(lineCap.rawValue)",
+                "dash:\(dash.map(String.init(describing:)).joined(separator: ","))",
+                "downsampling:\(downsampling)",
+                "area:\(area != nil)",
+                "animation:\(animation.kind)"
+            ]
+        )
+    }
+
     public func render(
         into context: inout GraphicsContext,
         contexts: [ChartPointContext<P>],

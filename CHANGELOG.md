@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 2.5.1
+
+### Fixed
+
+* Chart layout now measures long axis labels before reserving plot insets, reducing clipping for localized or high-precision labels.
+* Stable series ids now also track series layout/render style changes, so restyled charts refresh even when point values are unchanged.
+* `ChartStore` remains public to avoid a source-compatibility regression from 2.5.0.
+
 ### Added
 
 * `OZChart` fluent API for common line, area, bar, and scatter charts.

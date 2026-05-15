@@ -38,8 +38,7 @@ public struct ChartValueLabelStyle {
 }
 
 public struct BarSeries<P: ChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
@@ -86,6 +85,21 @@ where P.XValue == Double, P.YValue == Double {
         label.map {
             ChartLegendItem(id: id, title: $0, color: color, symbol: .square)
         }
+    }
+
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(barWidth),
+                Double(cornerRadius),
+                baseline
+            ],
+            tokens: [
+                "valueLabelPosition:\(String(describing: valueLabelStyle?.position))",
+                "animation:\(animation.kind)"
+            ]
+        )
     }
 
     public func render(
@@ -188,7 +202,7 @@ where P.XValue == Double, P.YValue == Double {
 
     public func selectionElements(
         contexts: [ChartPointContext<P>],
-        size: CGSize
+        size _: CGSize
     ) -> [ChartElementContext] {
         zip(barLayouts(contexts: contexts), contexts).map { layout, context in
             let payload = ChartSelectedElement(

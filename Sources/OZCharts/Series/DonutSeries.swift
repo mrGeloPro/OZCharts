@@ -38,8 +38,7 @@ public struct DonutSegmentStyle {
 }
 
 public struct DonutSeries<P: ChartDataPoint>: ChartSeriesProtocol
-where P.XValue == Double, P.YValue == Double {
-
+    where P.XValue == Double, P.YValue == Double {
     public let id: UUID
     public var data: [P]
     public var zIndex: Int
@@ -59,27 +58,27 @@ where P.XValue == Double, P.YValue == Double {
         id: UUID = UUID(),
         colors: [Color],
         segmentStyles: [DonutSegmentStyle] = [],
-        label: String?                    = nil,
+        label: String? = nil,
         segmentLabelMapper: ((P) -> String?)? = nil,
-        thickness: CGFloat             = 40,
-        gapAngle: Angle                = .degrees(6),
-        startAngle: Angle              = .degrees(-90),
-        lineCap: CGLineCap             = .butt,
+        thickness: CGFloat = 40,
+        gapAngle: Angle = .degrees(6),
+        startAngle: Angle = .degrees(-90),
+        lineCap: CGLineCap = .butt,
         animation: ChartAnimationStyle = .none,
-        zIndex: Int                    = 0
+        zIndex: Int = 0
     ) {
-        self.id         = id
-        self.data       = data
-        self.label      = label
+        self.id = id
+        self.data = data
+        self.label = label
         self.segmentLabelMapper = segmentLabelMapper
-        self.colors     = colors
+        self.colors = colors
         self.segmentStyles = segmentStyles
-        self.thickness  = thickness
-        self.gapAngle   = gapAngle
+        self.thickness = thickness
+        self.gapAngle = gapAngle
         self.startAngle = startAngle
-        self.lineCap    = lineCap
-        self.animation  = animation
-        self.zIndex     = zIndex
+        self.lineCap = lineCap
+        self.animation = animation
+        self.zIndex = zIndex
     }
 
     public var legendItem: ChartLegendItem? {
@@ -88,9 +87,33 @@ where P.XValue == Double, P.YValue == Double {
         }
     }
 
+    public var layoutSignature: ChartSeriesSignature {
+        ChartSeriesSignature(
+            kind: String(reflecting: Self.self),
+            values: [
+                Double(thickness),
+                gapAngle.radians,
+                startAngle.radians
+            ] + segmentStyles.flatMap {
+                [
+                    Double($0.explodedOffset),
+                    Double($0.shadow?.radius ?? 0),
+                    Double($0.shadow?.x ?? 0),
+                    Double($0.shadow?.y ?? 0)
+                ]
+            },
+            tokens: [
+                "lineCap:\(lineCap.rawValue)",
+                "segmentStyles:\(segmentStyles.count)",
+                "hasSegmentLabelMapper:\(segmentLabelMapper != nil)",
+                "animation:\(animation.kind)"
+            ]
+        )
+    }
+
     public func render(
         into context: inout GraphicsContext,
-        contexts: [ChartPointContext<P>],
+        contexts _: [ChartPointContext<P>],
         size: CGSize
     ) {
         for segment in segmentLayouts(size: size) {
@@ -102,7 +125,7 @@ where P.XValue == Double, P.YValue == Double {
                 center: segment.center,
                 radius: segment.radius,
                 startAngle: .radians(segment.startAngle),
-                endAngle:   .radians(segment.endAngle),
+                endAngle: .radians(segment.endAngle),
                 clockwise: false
             )
 
@@ -180,7 +203,7 @@ where P.XValue == Double, P.YValue == Double {
     }
 
     public func selectionElements(
-        contexts: [ChartPointContext<P>],
+        contexts _: [ChartPointContext<P>],
         size: CGSize
     ) -> [ChartElementContext] {
         segmentLayouts(size: size).map { segment in

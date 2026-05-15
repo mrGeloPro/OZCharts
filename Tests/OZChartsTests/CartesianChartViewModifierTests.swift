@@ -241,6 +241,40 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(first.seriesChangeSignature, rerendered.seriesChangeSignature)
     }
 
+    func testSeriesChangeSignatureTracksStyleChangesForStableSeriesIDs() throws {
+        let seriesID = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000125"))
+        let data = [Point2D(id: UUID(), x: 0, y: 1), Point2D(id: UUID(), x: 1, y: 2)]
+        let first = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: data,
+                    id: seriesID,
+                    color: .blue,
+                    interpolation: .linear,
+                    downsampling: .none
+                )
+            ],
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
+        ) { _ in EmptyView() }
+
+        let restyled = CartesianChartView(
+            series: [
+                LineSeries(
+                    data: data,
+                    id: seriesID,
+                    color: .blue,
+                    interpolation: .monotone,
+                    downsampling: .automatic(maxPointsPerPixel: 1)
+                )
+            ],
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
+        ) { _ in EmptyView() }
+
+        XCTAssertNotEqual(first.seriesChangeSignature, restyled.seriesChangeSignature)
+    }
+
     func testAccessibilityModifierInstallsDescriptor() {
         let view = makeChart().chartAccessibility(label: "Sales", summary: "Monthly sales")
 
