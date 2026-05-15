@@ -18,6 +18,7 @@ diagnostics, and release discipline.
 * Render contexts are now separated from full interaction contexts.
 * Dense hit-testing avoids avoidable extra passes and sort work.
 * Point hit-testing uses a lazy cached x-index for dense interactive datasets.
+* Radius and nearest-point hit-testing use a lazy adaptive 2D spatial grid.
 * `ChartDiagnostics` can be consumed directly or through `.chartDiagnostics`.
 * CI covers SwiftPM tests, SwiftLint, DemoApp build, and manual benchmarks.
 * API stability policy is documented for 2.x adoption.
@@ -70,8 +71,7 @@ RUN_OZCHARTS_PERFORMANCE_TESTS=1 swift test --filter PerformanceBenchmarkTests
 
 ## Remaining 2.x Opportunities
 
-* Add a two-dimensional spatial grid only if product charts exceed hundreds of
-  thousands of visible interactive points with radius-heavy selection.
+* Add memory benchmarks for hundreds of thousands of visible interactive points.
 * Add pixel/perceptual screenshot baselines for final product charts.
 * Expand accessibility navigation beyond summary and selected-value text.
 * Run a broad SwiftFormat-only cleanup as a separate mechanical change.

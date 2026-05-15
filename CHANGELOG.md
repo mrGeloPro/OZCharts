@@ -44,7 +44,7 @@
 * Live tracking now supports frozen history and delayed-live paused windows when users scroll away from latest.
 * Live viewports are clamped safely when older data is trimmed from the domain.
 * Dense hit-testing now avoids extra collection passes and sort work on the hot interaction path.
-* Point hit-testing now uses a lazy cached x-index owned by `ChartStore` for dense interactive datasets.
+* Point hit-testing now uses a lazy cached x-index and adaptive 2D spatial grid owned by `ChartStore` for dense interactive datasets.
 * Render contexts are separated from full interaction contexts so dense series can draw downsampled data while selection remains precise.
 * `OZChart` default series ids are deterministic across SwiftUI rebuilds.
 

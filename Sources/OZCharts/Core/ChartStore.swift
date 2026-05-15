@@ -243,7 +243,7 @@ public final class ChartStore<
     ) -> [ChartPointContext<Point>] {
         ChartHitTestResolver.points(
             near: location,
-            index: currentPointInteractionIndex(),
+            index: currentPointInteractionIndex(preferredHitRadius: radius),
             radius: radius,
             mode: mode,
             overlappingSelectionMode: overlappingSelectionMode,
@@ -533,12 +533,18 @@ public final class ChartStore<
         return newContexts
     }
 
-    private func currentPointInteractionIndex() -> ChartPointInteractionIndex<Point> {
+    private func currentPointInteractionIndex(
+        preferredHitRadius: CGFloat = 20
+    ) -> ChartPointInteractionIndex<Point> {
         if let pointInteractionIndex {
             return pointInteractionIndex
         }
 
-        let newIndex = ChartPointInteractionIndex(seriesContexts: seriesContexts)
+        let newIndex = ChartPointInteractionIndex(
+            seriesContexts: seriesContexts,
+            canvasSize: canvasSize,
+            preferredHitRadius: preferredHitRadius
+        )
         pointInteractionIndex = newIndex
         return newIndex
     }

@@ -107,6 +107,53 @@ final class ChartHitTestResolverTests: XCTestCase {
         XCTAssertEqual(selected?.originalPoint.x, 3)
     }
 
+    func testPointInteractionIndexRadiusUsesTwoDimensionalCells() {
+        let sameXOutsideRadius = ChartPointContext(
+            originalPoint: Point2D(x: 1, y: 10),
+            position: CGPoint(x: 10, y: 80)
+        )
+        let nearby = ChartPointContext(
+            originalPoint: Point2D(x: 2, y: 20),
+            position: CGPoint(x: 14, y: 18)
+        )
+        let negativeCellNearby = ChartPointContext(
+            originalPoint: Point2D(x: 3, y: 30),
+            position: CGPoint(x: -6, y: -4)
+        )
+        let index = ChartPointInteractionIndex(
+            contexts: [sameXOutsideRadius, nearby, negativeCellNearby]
+        )
+
+        let selected = index.pointsInRadius(
+            near: CGPoint(x: 0, y: 0),
+            radius: 24
+        )
+
+        XCTAssertEqual(selected.map(\.originalPoint.x), [2, 3])
+    }
+
+    func testPointInteractionIndexNearestPointUsesSpatialGridExactly() {
+        let nearXFarY = ChartPointContext(
+            originalPoint: Point2D(x: 1, y: 10),
+            position: CGPoint(x: 49, y: 200)
+        )
+        let farXNearY = ChartPointContext(
+            originalPoint: Point2D(x: 2, y: 20),
+            position: CGPoint(x: 75, y: 52)
+        )
+        let closest = ChartPointContext(
+            originalPoint: Point2D(x: 3, y: 30),
+            position: CGPoint(x: 61, y: 56)
+        )
+        let index = ChartPointInteractionIndex(
+            contexts: [nearXFarY, farXNearY, closest]
+        )
+
+        let selected = index.nearestPoint(near: CGPoint(x: 50, y: 50))
+
+        XCTAssertEqual(selected?.originalPoint.x, 3)
+    }
+
     func testPointInteractionIndexSelectsNearestOriginalXValue() {
         let first = ChartPointContext(
             originalPoint: Point2D(x: 4, y: 10),

@@ -52,7 +52,10 @@ enum ChartHitTestResolver {
     ) -> [ChartPointContext<Point>] where Point.XValue == Double, Point.YValue == Double {
         points(
             near: location,
-            index: ChartPointInteractionIndex(contexts: contexts),
+            index: ChartPointInteractionIndex(
+                contexts: contexts,
+                preferredHitRadius: radius
+            ),
             radius: radius,
             mode: mode,
             overlappingSelectionMode: overlappingSelectionMode,

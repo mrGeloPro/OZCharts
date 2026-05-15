@@ -55,8 +55,8 @@ OZCharts does not promise fixed frame times across all data sizes, but 2.5
 commits to these engineering rules:
 
 * render contexts may be downsampled separately from interaction contexts;
-* internal interaction indexes may be cached lazily to keep hit-testing fast
-  without adding layout cost;
+* internal x-indexes and adaptive spatial grids may be cached lazily to keep
+  hit-testing fast without adding layout cost;
 * selection should preserve full data accuracy unless a series explicitly opts
   into a reduced interaction model;
 * optional benchmarks should be run before release tags;

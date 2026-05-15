@@ -149,7 +149,11 @@ final class PerformanceBenchmarkTests: XCTestCase {
         let probeLocations = stride(from: 0, to: 390, by: 13).map {
             CGPoint(x: CGFloat($0), y: 130)
         }
-        let pointIndex = ChartPointInteractionIndex(contexts: pointContexts)
+        let pointIndex = ChartPointInteractionIndex(
+            contexts: pointContexts,
+            canvasSize: CGSize(width: 390, height: 260),
+            preferredHitRadius: 16
+        )
         var selectedPointCount = 0
 
         measure {
@@ -161,7 +165,7 @@ final class PerformanceBenchmarkTests: XCTestCase {
                     near: location,
                     index: pointIndex,
                     radius: 16,
-                    mode: .nearestX,
+                    mode: .pointsInRadius,
                     overlappingSelectionMode: .all,
                     cycleIDs: &cycleIDs,
                     cycleIndex: &cycleIndex

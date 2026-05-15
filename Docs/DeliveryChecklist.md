@@ -56,8 +56,8 @@ Use this checklist before sending the framework to an external company or using 
 * `OZChart` supports fluent common chart setup while `CartesianChartView` remains the advanced API.
 * Option structs group interaction, selection, tooltip, viewport, and render settings.
 * Render contexts can be downsampled separately from full interaction contexts.
-* Point hit-testing uses a lazy x-index cache that layout updates invalidate
-  instead of rebuilding eagerly.
+* Point hit-testing uses lazy x-index and adaptive 2D spatial-grid caches that
+  layout updates invalidate instead of rebuilding eagerly.
 
 ## Tests
 
