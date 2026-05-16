@@ -34,6 +34,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var diagnosticsHandler: ([ChartDiagnostic]) -> Void
     private var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
     private var onElementSelectionChanged: ([ChartSelectedElement]) -> Void
+    private var onChartSelectionChanged: (ChartSelection<Point>) -> Void
     private var viewportBinding: Binding<ChartViewportState>?
     private var selectionStateBinding: Binding<ChartSelectionState>?
     private var tooltipContent: ([ChartPointContext<Point>]) -> TooltipContent
@@ -73,6 +74,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.diagnosticsHandler = { _ in }
         self.onSelectionChanged = { _ in }
         self.onElementSelectionChanged = { _ in }
+        self.onChartSelectionChanged = { _ in }
         self.viewportBinding = nil
         self.selectionStateBinding = nil
         self.tooltipContent = tooltip
@@ -98,6 +100,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
             selectionState: selectionStateBinding,
             onSelectionChanged: onSelectionChanged,
             onElementSelectionChanged: onElementSelectionChanged,
+            onChartSelectionChanged: onChartSelectionChanged,
             emptyState: emptyState,
             tooltipContent: tooltipContent
         )
@@ -382,6 +385,14 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func onSelection(
+        _ handler: @escaping (ChartSelection<Point>) -> Void
+    ) -> Self {
+        var copy = self
+        copy.onChartSelectionChanged = handler
+        return copy
+    }
+
     public func emptyState(
         @ViewBuilder _ content: @escaping () -> some View
     ) -> Self {
@@ -428,6 +439,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.diagnosticsHandler = diagnosticsHandler
         copy.onSelectionChanged = onSelectionChanged
         copy.onElementSelectionChanged = onElementSelectionChanged
+        copy.onChartSelectionChanged = onChartSelectionChanged
         copy.viewportBinding = viewportBinding
         copy.selectionStateBinding = selectionStateBinding
         return copy

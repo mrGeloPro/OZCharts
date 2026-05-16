@@ -84,6 +84,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
     func testSelectionModifierUpdatesModeHitboxAndCallback() {
         var callbackWasCalled = false
         var elementCallbackWasCalled = false
+        var unifiedCallbackWasCalled = false
         let view = makeChart()
             .chartSelection(
                 .nearestX,
@@ -101,6 +102,9 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartElementSelection { _ in
                 elementCallbackWasCalled = true
             }
+            .chartSelectionChanged { selection in
+                unifiedCallbackWasCalled = selection.isEmpty
+            }
 
         XCTAssertEqual(view.selectionMode, .nearestX)
         XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
@@ -116,6 +120,9 @@ final class CartesianChartViewModifierTests: XCTestCase {
 
         view.onElementSelectionChanged([])
         XCTAssertTrue(elementCallbackWasCalled)
+
+        view.onChartSelectionChanged(.none)
+        XCTAssertTrue(unifiedCallbackWasCalled)
     }
 
     func testAnnotationTooltipModifierInstallsBuilder() {
@@ -320,6 +327,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .selectionState(.constant(ChartSelectionState()))
             .onSelectionChanged { _ in }
             .onElementSelectionChanged { _ in }
+            .onSelection { _ in }
             .tooltip { points in
                 Text("\(points.count)")
             }

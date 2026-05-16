@@ -41,6 +41,7 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
         onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        onChartSelectionChanged: @escaping (ChartSelection<Point>) -> Void = { _ in },
         canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
@@ -89,6 +90,7 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
             onElementSelectionChanged: onElementSelectionChanged,
+            onChartSelectionChanged: onChartSelectionChanged,
             canvasRenderOrder: canvasRenderOrder,
             emptyState: emptyState,
             tooltipContent: tooltipContent
@@ -127,6 +129,7 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
         onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        onChartSelectionChanged: @escaping (ChartSelection<Point>) -> Void = { _ in },
         canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
@@ -163,6 +166,7 @@ public extension CartesianChartView where XScale == LinearScale, YScale == Linea
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
             onElementSelectionChanged: onElementSelectionChanged,
+            onChartSelectionChanged: onChartSelectionChanged,
             canvasRenderOrder: canvasRenderOrder,
             emptyState: emptyState,
             tooltipContent: tooltipContent

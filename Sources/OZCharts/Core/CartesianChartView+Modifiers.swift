@@ -111,6 +111,14 @@ public extension CartesianChartView {
         return copy
     }
 
+    func chartSelectionChanged(
+        _ onChange: @escaping (ChartSelection<Point>) -> Void
+    ) -> Self {
+        var copy = self
+        copy.onChartSelectionChanged = onChange
+        return copy
+    }
+
     func chartSelectedElementStyle(_ style: ChartSelectedElementStyle) -> Self {
         var copy = self
         copy.selectedElementStyle = style

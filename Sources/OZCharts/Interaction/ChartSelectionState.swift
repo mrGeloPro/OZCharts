@@ -108,3 +108,42 @@ public struct ChartSelectionState: Equatable {
 
     public static let none = ChartSelectionState()
 }
+
+public struct ChartSelection<Point: ChartDataPoint> where Point.XValue == Double, Point.YValue == Double {
+    public var points: [ChartPointContext<Point>]
+    public var elements: [ChartSelectedElement]
+    public var annotations: [ChartAnnotationContext]
+    public var state: ChartSelectionState
+
+    public init(
+        points: [ChartPointContext<Point>] = [],
+        elements: [ChartSelectedElement] = [],
+        annotations: [ChartAnnotationContext] = [],
+        state: ChartSelectionState = .none
+    ) {
+        self.points = points
+        self.elements = elements
+        self.annotations = annotations
+        self.state = state
+    }
+
+    public var isEmpty: Bool {
+        points.isEmpty && elements.isEmpty && annotations.isEmpty
+    }
+
+    public var primaryPoint: ChartPointContext<Point>? {
+        points.first
+    }
+
+    public var primaryElement: ChartSelectedElement? {
+        elements.first
+    }
+
+    public var primaryAnnotation: ChartAnnotationContext? {
+        annotations.first
+    }
+
+    public static var none: ChartSelection<Point> {
+        ChartSelection()
+    }
+}

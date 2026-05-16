@@ -1,6 +1,34 @@
 # Selection And Annotations
 
-OZCharts uses one interaction model across point, bar, stacked bar, donut, and annotation layers.
+OZCharts 3.0 uses one selection payload across point, bar, stacked bar, donut,
+and annotation layers.
+
+## Unified Selection
+
+Prefer the unified callback for new product screens:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .selection(.nearestX)
+    .onSelection { selection in
+        selectedPoint = selection.primaryPoint?.originalPoint
+        selectedElement = selection.primaryElement
+        selectedAnnotation = selection.primaryAnnotation
+    }
+```
+
+For low-level charts, use the matching modifier:
+
+```swift
+.chartSelectionChanged { selection in
+    detailState = selection.state
+}
+```
+
+`ChartSelection` carries `points`, `elements`, `annotations`, and a stable
+`ChartSelectionState` for linked charts. The older point, element, and
+annotation callbacks remain available during the 3.0 transition.
 
 ## Point Selection
 

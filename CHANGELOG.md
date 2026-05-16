@@ -4,6 +4,8 @@
 
 ### Added
 
+* `ChartSelection<Point>` and unified selection callbacks as the first 3.0 API-shaping step.
+* OZCharts 3.0 roadmap for the upcoming architecture and migration work.
 * `OZChart.donut(...)`, `.stackedArea(...)`, `.stackedBar(...)`, and `.violin(...)` fluent helpers for advanced dashboard series.
 * `OZDonutChart` for donut-only cards with center content, dashboard defaults, legend support, and element selection without fake cartesian domains in app code.
 * `OZChart.legend(...)`, `.staticChart()`, `.hiddenAxes()`, `.compactAxes(...)`, `ChartRenderOptions.dashboard(...)`, `ChartTheme.dashboard`, and compact axis presets for mobile dashboard charts.

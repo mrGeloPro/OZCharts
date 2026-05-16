@@ -73,6 +73,7 @@ public struct CartesianChartView<
     let tooltipContent: ([ChartPointContext<Point>]) -> TooltipContent
     var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
     var onElementSelectionChanged: ([ChartSelectedElement]) -> Void = { _ in }
+    var onChartSelectionChanged: (ChartSelection<Point>) -> Void = { _ in }
     var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
     var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
     var onDiagnosticsChanged: ([ChartDiagnostic]) -> Void = { _ in }
@@ -130,6 +131,7 @@ public struct CartesianChartView<
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
         onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        onChartSelectionChanged: @escaping (ChartSelection<Point>) -> Void = { _ in },
         canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
@@ -166,6 +168,7 @@ public struct CartesianChartView<
         self.tooltipPlacement = tooltipPlacement
         self.onSelectionChanged = onSelectionChanged
         self.onElementSelectionChanged = onElementSelectionChanged
+        self.onChartSelectionChanged = onChartSelectionChanged
         self.canvasRenderOrder = canvasRenderOrder
         self.emptyState = emptyState
         self.tooltipContent = tooltipContent
@@ -202,6 +205,7 @@ public struct CartesianChartView<
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
         onElementSelectionChanged: @escaping ([ChartSelectedElement]) -> Void = { _ in },
+        onChartSelectionChanged: @escaping (ChartSelection<Point>) -> Void = { _ in },
         canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
         emptyState: (() -> AnyView)? = nil,
         @ViewBuilder tooltipContent: @escaping ([ChartPointContext<Point>]) -> TooltipContent
@@ -237,6 +241,7 @@ public struct CartesianChartView<
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
             onElementSelectionChanged: onElementSelectionChanged,
+            onChartSelectionChanged: onChartSelectionChanged,
             canvasRenderOrder: canvasRenderOrder,
             emptyState: emptyState,
             tooltipContent: tooltipContent
@@ -527,6 +532,7 @@ public struct CartesianChartView<
         case .highlight, .highlightCleared, .panChanged, .zoomChanged:
             onSelectionChanged(store.highlightedPoints)
             onElementSelectionChanged(store.selectedElements)
+            onChartSelectionChanged(currentSelection)
         case .panEnded, .zoomEnded:
             break
         }
@@ -568,6 +574,7 @@ public struct CartesianChartView<
                 store.selectedElements = []
                 onSelectionChanged([])
                 onElementSelectionChanged([])
+                onChartSelectionChanged(currentSelection)
                 return true
             }
 
@@ -577,6 +584,7 @@ public struct CartesianChartView<
             if !highlightedAnnotations.isEmpty {
                 highlightedAnnotations = []
                 onAnnotationSelectionChanged([])
+                onChartSelectionChanged(currentSelection)
             }
             return false
 
@@ -585,6 +593,7 @@ public struct CartesianChartView<
             if !highlightedAnnotations.isEmpty {
                 highlightedAnnotations = []
                 onAnnotationSelectionChanged([])
+                onChartSelectionChanged(currentSelection)
             }
             return false
 
@@ -667,6 +676,7 @@ public struct CartesianChartView<
         onAnnotationSelectionChanged([])
         onSelectionChanged(store.highlightedPoints)
         onElementSelectionChanged(store.selectedElements)
+        onChartSelectionChanged(currentSelection)
     }
 
     private func publishSelectionState() {
@@ -674,6 +684,15 @@ public struct CartesianChartView<
         if selectionStateBinding?.wrappedValue != state {
             selectionStateBinding?.wrappedValue = state
         }
+    }
+
+    private var currentSelection: ChartSelection<Point> {
+        ChartSelection(
+            points: store.highlightedPoints,
+            elements: store.selectedElements,
+            annotations: highlightedAnnotations,
+            state: store.selectionState
+        )
     }
 
     private func applyProgrammaticZoom(magnification: Double) {
