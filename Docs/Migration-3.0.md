@@ -105,9 +105,7 @@ After:
 OZDonutChart(slices, colors: colors, label: "Score") {
     Text("82%")
 }
-.selection { segments in
-    selectedSegment = segments.first
-}
+.selection(.elementTap)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }

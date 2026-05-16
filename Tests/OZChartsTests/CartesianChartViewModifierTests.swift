@@ -341,7 +341,25 @@ final class CartesianChartViewModifierTests: XCTestCase {
     func testOZChartBuilderCompilesCommonFluentAPI() {
         let data = [Point2D(x: 0, y: 1), Point2D(x: 1, y: 3)]
         let chart = OZChart(data)
-            .line(color: .blue, downsampling: .automatic())
+            .line(
+                color: .blue,
+                lineWidth: 3,
+                dash: [4, 2],
+                lineCap: .round,
+                interpolation: .monotone,
+                strokeStyle: .gradient([.blue, .cyan]),
+                shadow: ChartShadowStyle(color: .blue.opacity(0.2), radius: 4),
+                area: AreaStyle(fillStyle: .gradient([.blue.opacity(0.2), .clear]), baseline: 0),
+                downsampling: .automatic()
+            )
+            .area(
+                color: .green,
+                fillStyle: .gradient([.green.opacity(0.2), .clear]),
+                baseline: 0,
+                lineWidth: 2,
+                strokeStyle: .color(.green),
+                shadow: ChartShadowStyle(color: .green.opacity(0.2), radius: 3)
+            )
             .presentation(.interactiveExploration())
             .selection(.nearestX)
             .domain(y: .fixed(0 ... 5))
@@ -412,7 +430,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 Text("65%")
             }
             .legend(.bottom)
-            .selection { _ in }
+            .selection(.elementTap)
             .onSelection { _ in }
 
         XCTAssertNotNil(chart.body)

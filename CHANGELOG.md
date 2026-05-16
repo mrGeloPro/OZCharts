@@ -14,12 +14,15 @@
 * `OZDonutChart` for donut-only cards with center content, dashboard defaults, legend support, and element selection without fake cartesian domains in app code.
 * `OZChart.legend(...)`, `.staticChart()`, `.hiddenAxes()`, `.compactAxes(...)`, `ChartRenderOptions.dashboard(...)`, `ChartTheme.dashboard`, and compact axis presets for mobile dashboard charts.
 * `OZChart.stackedBar(... rowLabel:)` for row labels without manual y-axis mapping.
+* `OZChart.line(...)` and `.area(...)` now expose gradient strokes, shadows, area fills, baselines, dash styling, and line caps for polished dashboard charts without dropping to `LineSeries` or `AreaSeries`.
 * Element selection now supports overlapping `.all` and `.cycle` behavior for bars, stacked-bar segments, donut segments, and other selectable element marks.
+* OZCharts 3.0 release notes and README first-read examples for the new fluent product API.
 * OZCharts 2.6 release notes and updated product-chart recipes for the new fluent API.
 
 ### Deprecated
 
 * `OZChart.onSelectionChanged`, `OZChart.onElementSelectionChanged`, and low-level `.chartElementSelection(...)` now point new code to unified selection callbacks.
+* `OZDonutChart.selection(_:onChange:)` now points new code to `selection(_:)` plus unified `.onSelection`.
 
 ## 2.5.2
 

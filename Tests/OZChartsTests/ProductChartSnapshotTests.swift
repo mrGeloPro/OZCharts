@@ -68,38 +68,26 @@ final class ProductChartSnapshotTests: XCTestCase {
             throw XCTSkip("ImageRenderer requires macOS 13 or newer.")
         }
 
-        let view = CartesianChartView(
-            series: [
-                DonutSeries(
-                    data: [
-                        Point2D(id: UUID(uuidString: "00000000-0000-0000-0000-000000000101")!, x: 0, y: 85.2),
-                        Point2D(id: UUID(uuidString: "00000000-0000-0000-0000-000000000102")!, x: 1, y: 11.3),
-                        Point2D(id: UUID(uuidString: "00000000-0000-0000-0000-000000000103")!, x: 2, y: 3.5)
-                    ],
-                    colors: [.cyan, .purple, .yellow],
-                    segmentStyles: [
-                        DonutSegmentStyle(fill: .gradient([.cyan, .blue.opacity(0.75)])),
-                        DonutSegmentStyle(fill: .gradient([.purple, .pink]), explodedOffset: 10),
-                        DonutSegmentStyle(fill: .gradient([.yellow, .orange]), explodedOffset: 12)
-                    ],
-                    segmentLabelMapper: { point in
-                        ["Basic", "Bonus", "Streak"][safe: Int(point.x)]
-                    },
-                    thickness: 38,
-                    gapAngle: .degrees(9),
-                    lineCap: .round
-                )
+        let view = OZDonutChart(
+            [
+                Point2D(id: UUID(uuidString: "00000000-0000-0000-0000-000000000101")!, x: 0, y: 85.2),
+                Point2D(id: UUID(uuidString: "00000000-0000-0000-0000-000000000102")!, x: 1, y: 11.3),
+                Point2D(id: UUID(uuidString: "00000000-0000-0000-0000-000000000103")!, x: 2, y: 3.5)
             ],
-            xDomain: .fixed(0...1),
-            yDomain: .fixed(0...1),
-            theme: .dark,
-            xAxes: [.hidden()],
-            yAxes: [.hidden()],
-            isHorizontalScrollEnabled: false,
-            isHorizontalZoomEnabled: false,
-            isVerticalScrollEnabled: false,
-            isVerticalZoomEnabled: false
-        ) { _ in EmptyView() }
+            colors: [.cyan, .purple, .yellow],
+            segmentStyles: [
+                DonutSegmentStyle(fill: .gradient([.cyan, .blue.opacity(0.75)])),
+                DonutSegmentStyle(fill: .gradient([.purple, .pink]), explodedOffset: 10),
+                DonutSegmentStyle(fill: .gradient([.yellow, .orange]), explodedOffset: 12)
+            ],
+            segmentLabelMapper: { point in
+                ["Basic", "Bonus", "Streak"][safe: Int(point.x)]
+            },
+            thickness: 38,
+            gapAngle: .degrees(9),
+            lineCap: .round,
+            theme: .dark
+        )
         .frame(width: 260, height: 220)
 
         let signature = try renderSignature(view)

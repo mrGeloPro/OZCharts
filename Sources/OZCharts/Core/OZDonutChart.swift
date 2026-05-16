@@ -116,6 +116,13 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         return copy
     }
 
+    public func selection(_ options: ChartSelectionOptions = .elementTap) -> Self {
+        var copy = self
+        copy.selectionOptions = options
+        return copy
+    }
+
+    @available(*, deprecated, message: "Use selection(_:) to configure behavior and onSelection(_:) to read selection.elements instead.")
     public func selection(
         _ options: ChartSelectionOptions = .elementTap,
         onChange: @escaping ([ChartSelectedElement]) -> Void

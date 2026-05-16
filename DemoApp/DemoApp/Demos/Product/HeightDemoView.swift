@@ -23,25 +23,22 @@ struct HeightDemoView: View {
         ScrollView {
             VStack(spacing: 18) {
                 DemoChartPanel {
-                    CartesianChartView(
-                        series: [
-                            LineSeries(
-                                data: mockData,
-                                id: DemoSeriesID.productLine,
-                                color: DemoColors.purple,
-                                lineWidth: 4,
-                                interpolation: .monotone,
-                                strokeStyle: .gradient([DemoColors.purple, DemoColors.pink], startPoint: .leading, endPoint: .trailing),
-                                shadow: ChartShadowStyle(color: DemoColors.purple.opacity(0.36), radius: 8),
-                                area: AreaStyle(
-                                    fillStyle: .gradient([DemoColors.purple.opacity(0.34), DemoColors.purple.opacity(0.02)]),
-                                    baseline: 0
-                                )
+                    OZChart(mockData)
+                        .line(
+                            id: DemoSeriesID.productLine,
+                            color: DemoColors.purple,
+                            lineWidth: 4,
+                            interpolation: .monotone,
+                            strokeStyle: .gradient([DemoColors.purple, DemoColors.pink], startPoint: .leading, endPoint: .trailing),
+                            shadow: ChartShadowStyle(color: DemoColors.purple.opacity(0.36), radius: 8),
+                            area: AreaStyle(
+                                fillStyle: .gradient([DemoColors.purple.opacity(0.34), DemoColors.purple.opacity(0.02)]),
+                                baseline: 0
                             )
-                        ],
-                        xScale: LinearScale(domain: 1...20),
-                        yScale: LinearScale(domain: 0...10),
-                        xAxes: [
+                        )
+                        .domain(x: .fixed(1...20), y: .fixed(0...10))
+                        .axes(
+                            x: [
                             XAxisConfig(
                                 position: .bottom,
                                 showGrid: false,
@@ -49,8 +46,8 @@ struct HeightDemoView: View {
                                 labelFormatter: { "\(Int($0))s" },
                                 showAxisLine: true
                             )
-                        ],
-                        yAxes: [
+                            ],
+                            y: [
                             YAxisConfig(
                                 position: .leading,
                                 gridColor: .gray.opacity(0.25),
@@ -59,20 +56,19 @@ struct HeightDemoView: View {
                                 labelFormatter: { "\(Int($0))" },
                                 showAxisLine: true
                             )
-                        ],
-                        emptyState: {
-                            AnyView(
-                                VStack(spacing: 12) {
-                                    Image(systemName: "chart.xyaxis.line")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(DemoColors.secondaryText)
-                                    Text("No Data Available")
-                                        .font(.headline)
-                                        .foregroundColor(DemoColors.secondaryText)
-                                }
-                            )
-                        },
-                        tooltipContent: { points in
+                            ]
+                        )
+                        .emptyState {
+                            VStack(spacing: 12) {
+                                Image(systemName: "chart.xyaxis.line")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(DemoColors.secondaryText)
+                                Text("No Data Available")
+                                    .font(.headline)
+                                    .foregroundColor(DemoColors.secondaryText)
+                            }
+                        }
+                        .tooltip { points in
                             VStack(alignment: .leading, spacing: 4) {
                                 ForEach(points, id: \.originalPoint.id) { pointContext in
                                     Text("\(String(format: "%.1f", pointContext.originalPoint.y))")
@@ -84,8 +80,7 @@ struct HeightDemoView: View {
                             .background(Color.black.opacity(0.8))
                             .cornerRadius(6)
                         }
-                    )
-                    .frame(height: 330)
+                        .frame(height: 330)
                 }
 
                 DemoActionButton(

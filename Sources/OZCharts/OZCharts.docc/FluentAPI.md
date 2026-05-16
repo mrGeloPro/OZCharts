@@ -30,8 +30,8 @@ OZChart(samples)
 
 Available fluent series helpers:
 
-* ``OZChart/line(id:color:label:lineWidth:interpolation:downsampling:animation:zIndex:)``;
-* ``OZChart/area(id:color:fillColor:label:fillOpacity:interpolation:downsampling:animation:zIndex:)``;
+* ``OZChart/line(id:color:label:lineWidth:dash:dashPhase:lineCap:interpolation:strokeStyle:shadow:area:downsampling:animation:zIndex:)``;
+* ``OZChart/area(id:color:fillColor:fillStyle:label:fillOpacity:baseline:lineWidth:interpolation:strokeStyle:shadow:downsampling:animation:zIndex:)``;
 * ``OZChart/bar(id:color:label:barWidth:cornerRadius:baseline:zIndex:)``;
 * ``OZChart/scatter(id:color:label:pointSize:symbol:zIndex:)``;
 * ``OZChart/donut(id:colors:segmentStyles:label:segmentLabelMapper:thickness:gapAngle:startAngle:lineCap:animation:zIndex:)``;
@@ -64,8 +64,9 @@ not declare cartesian domains:
 OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
     Text("82%")
 }
-.selection { segments in
-    selectedSegment = segments.first
+.selection(.elementTap)
+.onSelection { selection in
+    selectedSegment = selection.primaryElement
 }
 ```
 

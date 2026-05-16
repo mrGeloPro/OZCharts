@@ -169,3 +169,15 @@ Before cutting 3.0:
 * Public API compile tests
 * Product snapshot smoke tests
 * Migration guide reviewed against all DemoApp product screens
+
+## Implementation Status
+
+Core 3.0 implementation is now in release-hardening state:
+
+* Advanced fluent series, dashboard presets, legend options, unified selection,
+  donut wrapper, and shared polar donut layout are implemented.
+* Deprecated 2.x callback paths remain available for migration, but first-read
+  docs and product examples now prefer `.onSelection` and `.chartSelectionChanged`.
+* Product smoke tests cover the donut wrapper without app-level fake domains.
+* Remaining work before a tag should be limited to release-gate verification,
+  DocC link cleanup if documentation emits warnings, and release-note review.

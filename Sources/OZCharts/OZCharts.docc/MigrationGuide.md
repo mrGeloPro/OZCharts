@@ -55,6 +55,7 @@ Use `OZDonutChart` when a donut is the whole chart:
 OZDonutChart(slices, colors: colors, label: "Score") {
     Text("82%")
 }
+.selection(.elementTap)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }

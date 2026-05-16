@@ -10,36 +10,37 @@ import OZCharts
 
 struct LatencyChart: View {
     private static let latencySeriesID = UUID()
+    @State private var selectedSample: Point2D?
     let samples: [Point2D]
 
     var body: some View {
-        CartesianChartView(
-            series: [
-                LineSeries(
-                    data: samples,
-                    id: Self.latencySeriesID,
-                    color: .cyan,
-                    lineWidth: 3,
-                    interpolation: .monotone
-                )
-            ],
-            xDomain: .auto(padding: 0.02),
-            yDomain: .auto(padding: 0.12, includeZero: true),
-            theme: .dark,
-            xAxes: [.time(suffix: "s")]
-        ) { points in
-            if let point = points.first {
-                Text("\(Int(point.originalPoint.y)) ms")
-                    .padding(8)
-                    .background(.black.opacity(0.8))
-                    .foregroundStyle(.white)
-                    .cornerRadius(8)
+        OZChart(samples, theme: .dark)
+            .line(
+                id: Self.latencySeriesID,
+                color: .cyan,
+                lineWidth: 3,
+                interpolation: .monotone
+            )
+            .domain(
+                x: .auto(padding: 0.02),
+                y: .auto(padding: 0.12, includeZero: true)
+            )
+            .axes(x: [.time(suffix: "s")])
+            .selection(.nearestX)
+            .onSelection { selection in
+                selectedSample = selection.primaryPoint?.originalPoint
             }
-        }
-        .chartSelection(.nearestX, hitboxRadius: 28)
-        .chartCrosshair(.vertical())
-        .chartLegend(.bottom)
-        .frame(height: 300)
+            .tooltip { points in
+                if let point = points.first {
+                    Text("\(Int(point.originalPoint.y)) ms")
+                        .padding(8)
+                        .background(.black.opacity(0.8))
+                        .foregroundStyle(.white)
+                        .cornerRadius(8)
+                }
+            }
+            .rendering(.dashboard())
+            .frame(height: 300)
     }
 }
 ```

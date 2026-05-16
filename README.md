@@ -40,26 +40,24 @@ struct ContentView: View {
     ]
     
     var body: some View {
-        CartesianChartView(
-            series: [
-                LineSeries(data: data, color: .blue, lineWidth: 3)
-            ],
-            xDomain: .auto(padding: 0.05),
-            yDomain: .auto(padding: 0.12, includeZero: true),
-            theme: .light,
-            xAxes: [.time(suffix: "s")]
-        ) { points in
-            if let point = points.first {
-                Text("Value: \(Int(point.originalPoint.y))")
-                    .padding(8)
-                    .background(Color.black.opacity(0.8))
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-            } else {
-                EmptyView()
+        OZChart(data, theme: .light)
+            .line(color: .blue, lineWidth: 3)
+            .domain(
+                x: .auto(padding: 0.05),
+                y: .auto(padding: 0.12, includeZero: true)
+            )
+            .axes(x: [.time(suffix: "s")])
+            .selection(.nearestX)
+            .tooltip { points in
+                if let point = points.first {
+                    Text("Value: \(Int(point.originalPoint.y))")
+                        .padding(8)
+                        .background(Color.black.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
             }
-        }
-        .frame(height: 300)
+            .frame(height: 300)
     }
 }
 ```
@@ -72,8 +70,8 @@ For most dashboard and result-screen charts, start with `OZChart`:
 OZChart(data)
     .line(color: .blue, lineWidth: 3, downsampling: .automatic())
     .selection(.nearestX)
-    .onSelectionChanged { points in
-        selectedValue = points.first?.originalPoint.y
+    .onSelection { selection in
+        selectedValue = selection.primaryPoint?.originalPoint.y
     }
     .domain(y: .auto(padding: 0.12, includeZero: true))
     .tooltip { points in
@@ -110,8 +108,9 @@ OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
     Text("82%")
         .font(.title.bold())
 }
-.selection { segments in
-    selectedSegment = segments.first
+.selection(.elementTap)
+.onSelection { selection in
+    selectedSegment = selection.primaryElement
 }
 .frame(height: 220)
 ```
@@ -129,6 +128,8 @@ For prerelease scope, see [OZCharts 2.1 Prerelease Notes](Docs/Release-2.1.md).
 For the 2.5 release, see [OZCharts 2.5 Release Notes](Docs/Release-2.5.md).
 For the 2.5.2 patch, see [OZCharts 2.5.2 Release Notes](Docs/Release-2.5.2.md).
 For the 2.6 release plan, see [OZCharts 2.6 Release Notes](Docs/Release-2.6.md).
+For the 3.0 release plan, see [OZCharts 3.0 Release Notes](Docs/Release-3.0.md).
+For the 3.0 migration path, see the [OZCharts 3.0 Migration Guide](Docs/Migration-3.0.md).
 For API compatibility expectations, see [OZCharts 2.5 API Stability Policy](Docs/APIStability-2.5.md).
 For migration details, see the [OZCharts 2.1 Migration Guide](Docs/Migration-2.1.md).
 For performance expectations, see [Performance Benchmarks](Docs/PerformanceBenchmarks.md).
@@ -254,29 +255,25 @@ Selectable annotations can show their own detail overlay without replacing the d
 Use `selectionMode` when you want predictable tooltip behavior:
 
 ```swift
-CartesianChartView(
-    series: [
-        LineSeries(data: current, color: .blue),
-        LineSeries(data: previous, color: .green)
-    ],
-    xDomain: .auto(),
-    yDomain: .auto(),
-    selectionMode: .nearestX,
-    crosshairStyle: .vertical(),
-    onSelectionChanged: { points in
-        print(points.map(\.originalPoint.y))
+OZChart(current)
+    .line(color: .blue, label: "Current")
+    .line(color: .green, label: "Previous")
+    .selection(.nearestX)
+    .onSelection { selection in
+        print(selection.points.map(\.originalPoint.y))
     }
-) { points in
-    VStack(alignment: .leading) {
-        ForEach(points, id: \.id) { point in
-            Text("\(Int(point.originalPoint.y))")
+    .tooltip { points in
+        VStack(alignment: .leading) {
+            ForEach(points, id: \.id) { point in
+                Text("\(Int(point.originalPoint.y))")
+            }
         }
+        .padding(8)
+        .background(Color.black.opacity(0.8))
+        .foregroundColor(.white)
+        .cornerRadius(8)
     }
-    .padding(8)
-    .background(Color.black.opacity(0.8))
-    .foregroundColor(.white)
-    .cornerRadius(8)
-}
+    .rendering(.dashboard())
 ```
 
 Available modes:
@@ -419,11 +416,12 @@ For overlapping points, cycle one selected item at a time and keep the details v
 Tooltip placements: `.automatic`, `.top`, `.bottom`, `.leading`, `.trailing`, `.center`, `.fixed(CGPoint)`.
 `ChartSelectionState` keeps the old `selectedX` behavior for linked crosshair charts and also exposes `selectedPoints` with stable point ids, series ids, series indices, and domain values for richer product interactions.
 
-Non-point charts can publish selected visual elements:
+Non-point charts publish selected visual elements through the unified selection
+payload:
 
 ```swift
-.chartElementSelection { elements in
-    guard let element = elements.first else { return }
+.chartSelectionChanged { selection in
+    guard let element = selection.primaryElement else { return }
     print(element.kind, element.label ?? "", element.value ?? 0)
 }
 ```
@@ -529,18 +527,18 @@ Available interpolation modes are `.linear`, `.step`, and `.monotone`.
 Use reusable render styles when matching polished product charts:
 
 ```swift
-LineSeries(
-    data: streaks,
-    color: .purple,
-    lineWidth: 4,
-    interpolation: .monotone,
-    strokeStyle: .gradient([.purple, .pink], startPoint: .leading, endPoint: .trailing),
-    shadow: ChartShadowStyle(color: .purple.opacity(0.35), radius: 8),
-    area: AreaStyle(
-        fillStyle: .gradient([.purple.opacity(0.34), .purple.opacity(0.02)]),
-        baseline: 0
+OZChart(streaks)
+    .line(
+        color: .purple,
+        lineWidth: 4,
+        interpolation: .monotone,
+        strokeStyle: .gradient([.purple, .pink], startPoint: .leading, endPoint: .trailing),
+        shadow: ChartShadowStyle(color: .purple.opacity(0.35), radius: 8),
+        area: AreaStyle(
+            fillStyle: .gradient([.purple.opacity(0.34), .purple.opacity(0.02)]),
+            baseline: 0
+        )
     )
-)
 ```
 
 `ChartFillStyle` supports solid colors, linear gradients, and striped fills. Stripes are useful for remainder or unavailable segments in stacked bars.

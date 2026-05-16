@@ -183,9 +183,7 @@ OZDonutChart(
     Text("82%")
         .font(.title.bold())
 }
-.selection { segments in
-    selectedSegment = segments.first
-}
+.selection(.elementTap)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }
