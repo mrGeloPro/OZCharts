@@ -55,6 +55,9 @@ Use `OZDonutChart` when a donut is the whole chart:
 OZDonutChart(slices, colors: colors, label: "Score") {
     Text("82%")
 }
+.onSelection { selection in
+    selectedSegment = selection.primaryElement
+}
 ```
 
 Apps no longer need to provide fake cartesian domains for donut-only cards.

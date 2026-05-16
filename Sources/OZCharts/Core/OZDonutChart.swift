@@ -25,6 +25,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
     private var renderOptions: ChartRenderOptions
     private var selectionOptions: ChartSelectionOptions
     private var selectedElementHandler: ([ChartSelectedElement]) -> Void
+    private var chartSelectionHandler: (ChartSelection<Point>) -> Void
     private var centerContent: () -> CenterContent
 
     public init(
@@ -57,6 +58,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         self.renderOptions = .dashboard(legend: label == nil ? .hidden : .bottom)
         self.selectionOptions = .disabled
         self.selectedElementHandler = { _ in }
+        self.chartSelectionHandler = { _ in }
         self.centerContent = center
     }
 
@@ -93,6 +95,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
             }
             .chartInteractionOptions(.static)
             .chartSelectionOptions(selectionOptions)
+            .chartSelectionChanged(chartSelectionHandler)
             .chartRenderOptions(renderOptions)
 
             centerContent()
@@ -120,6 +123,14 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         var copy = self
         copy.selectionOptions = options
         copy.selectedElementHandler = onChange
+        return copy
+    }
+
+    public func onSelection(
+        _ onChange: @escaping (ChartSelection<Point>) -> Void
+    ) -> Self {
+        var copy = self
+        copy.chartSelectionHandler = onChange
         return copy
     }
 
@@ -156,6 +167,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         copy.renderOptions = renderOptions
         copy.selectionOptions = selectionOptions
         copy.selectedElementHandler = selectedElementHandler
+        copy.chartSelectionHandler = chartSelectionHandler
         return copy
     }
 }

@@ -117,8 +117,18 @@ Acceptance criteria:
 
 ### 5. Polar And Donut Architecture
 
-Donut already has `OZDonutChart`; 3.0 should decide whether the internal
-implementation stays cartesian-backed or moves to a dedicated polar container.
+Donut already has `OZDonutChart`. 3.0 keeps that as the public donut-only
+entry point and avoids adding a broad `OZPolarChart` until OZCharts supports a
+second real polar chart family.
+
+Current 3.0 direction:
+
+* Donut geometry is owned by `PolarCoordinator` through dedicated
+  `PolarDonutLayoutOptions` and `PolarSegmentLayout` values.
+* `DonutSeries` consumes the polar layout engine for rendering and selectable
+  segment hit shapes instead of owning polar math directly.
+* `OZDonutChart` remains a focused wrapper with dashboard defaults, center
+  content, legend support, element selection, and unified `.onSelection`.
 
 Acceptance criteria:
 

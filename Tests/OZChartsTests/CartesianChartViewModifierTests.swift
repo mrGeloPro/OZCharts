@@ -413,6 +413,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             }
             .legend(.bottom)
             .selection { _ in }
+            .onSelection { _ in }
 
         XCTAssertNotNil(chart.body)
     }

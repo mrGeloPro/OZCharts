@@ -8,6 +8,7 @@
 * `ChartPresentationPreset` with dashboard, sparkline, static report, interactive exploration, and dense timeline presets.
 * `ChartLegendOptions` with compact/dashboard legend presets, item limits, overflow labels, and option-based fluent legend modifiers.
 * OZCharts 3.0 migration guide for unified selection, advanced fluent series, donut wrappers, row labels, presets, and legend options.
+* Dedicated polar donut layout API through `PolarDonutLayoutOptions` and `PolarSegmentLayout`, plus unified `.onSelection` support on `OZDonutChart`.
 * OZCharts 3.0 roadmap for the upcoming architecture and migration work.
 * `OZChart.donut(...)`, `.stackedArea(...)`, `.stackedBar(...)`, and `.violin(...)` fluent helpers for advanced dashboard series.
 * `OZDonutChart` for donut-only cards with center content, dashboard defaults, legend support, and element selection without fake cartesian domains in app code.

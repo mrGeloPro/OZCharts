@@ -145,61 +145,36 @@ public struct DonutSeries<P: ChartDataPoint>: ChartSeriesProtocol
     }
 
     func segmentLayouts(size: CGSize) -> [DonutSegmentLayout] {
-        let values = data.map(\.y)
-        let total = values.reduce(0, +)
-        guard total > 0 else { return [] }
-
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let maxExplodedOffset = segmentStyles.map(\.explodedOffset).max() ?? 0
-        let maxShadowRadius = segmentStyles.compactMap(\.shadow?.radius).max() ?? 0
-        let outerR = max(0, min(size.width, size.height) / 2 - 2 - maxExplodedOffset - maxShadowRadius)
-        let radius = outerR - thickness / 2
-        guard radius > 0 else { return [] }
-
-        let totalGapRad = gapAngle.radians * Double(values.count)
-        let available = 2 * Double.pi - totalGapRad
-        guard available > 0 else { return [] }
-
-        var layouts: [DonutSegmentLayout] = []
-        var currentRad = startAngle.radians
-
-        for (index, point) in data.enumerated() {
-            let delta = (point.y / total) * available
-            let segmentStart = currentRad + gapAngle.radians / 2
-            let segmentEnd = segmentStart + delta
-            let middle = (segmentStart + segmentEnd) / 2
-            let explodedOffset = segmentStyles[safe: index]?.explodedOffset ?? 0
-            let segmentCenter = CGPoint(
-                x: center.x + CGFloat(cos(middle)) * explodedOffset,
-                y: center.y + CGFloat(sin(middle)) * explodedOffset
-            )
-            let outerRadius = radius + thickness / 2
-            let bounds = CGRect(
-                x: segmentCenter.x - outerRadius,
-                y: segmentCenter.y - outerRadius,
-                width: outerRadius * 2,
-                height: outerRadius * 2
-            )
-
-            layouts.append(
-                DonutSegmentLayout(
-                    index: index,
-                    pointID: point.id,
-                    value: point.y,
-                    x: point.x,
-                    center: segmentCenter,
-                    radius: radius,
+        PolarCoordinator()
+            .calculateDonutSegments(
+                from: data.map(\.y),
+                in: size,
+                options: PolarDonutLayoutOptions(
                     thickness: thickness,
-                    startAngle: segmentStart,
-                    endAngle: segmentEnd,
-                    bounds: bounds
+                    gapAngle: gapAngle,
+                    startAngle: startAngle,
+                    explodedOffsets: segmentStyles.map(\.explodedOffset),
+                    shadowRadii: segmentStyles.compactMap(\.shadow?.radius)
                 )
             )
+            .compactMap { segment in
+                guard let point = data[safe: segment.index] else {
+                    return nil
+                }
 
-            currentRad += delta + gapAngle.radians
-        }
-
-        return layouts
+                return DonutSegmentLayout(
+                    index: segment.index,
+                    pointID: point.id,
+                    value: segment.value,
+                    x: point.x,
+                    center: segment.center,
+                    radius: segment.radius,
+                    thickness: segment.thickness,
+                    startAngle: segment.startAngle,
+                    endAngle: segment.endAngle,
+                    bounds: segment.bounds
+                )
+            }
     }
 
     public func selectionElements(

@@ -52,7 +52,9 @@ let layout = ChartAnchoredCalloutLayout.vertical(
 
 Use ``OZDonutChart`` with `gapAngle`, `lineCap`, `thickness`, and
 per-segment `DonutSegmentStyle` values to match product art direction without
-declaring cartesian domains at the call site.
+declaring cartesian domains at the call site. Donut segment geometry is resolved
+by the polar layout engine shared by rendering, hit-testing, and selected
+segment overlays.
 
 ```swift
 OZDonutChart(
@@ -68,6 +70,9 @@ OZDonutChart(
     lineCap: .round
 ) {
     Text("82%")
+}
+.onSelection { selection in
+    selectedSegment = selection.primaryElement
 }
 ```
 

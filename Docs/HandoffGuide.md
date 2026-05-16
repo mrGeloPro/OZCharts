@@ -12,7 +12,11 @@ This guide is the shortest path for an external team to evaluate and integrate O
 
 ## Integration Path
 
-Add the Swift package, import `OZCharts`, and begin with `CartesianChartView` for cartesian charts or `DonutSeries` for score composition. Feed the chart domain values from app data or API events. Avoid precomputing screen coordinates in the host app.
+Add the Swift package, import `OZCharts`, and begin with `OZChart` for product
+cartesian charts or `OZDonutChart` for score composition. Use
+`CartesianChartView` only when a screen needs low-level custom composition.
+Feed the chart domain values from app data or API events. Avoid precomputing
+screen coordinates in the host app.
 
 Use fixed domains for product contracts and `.auto(...)` for exploratory charts. Use stable series ids whenever SwiftUI recreates series inside `body`.
 

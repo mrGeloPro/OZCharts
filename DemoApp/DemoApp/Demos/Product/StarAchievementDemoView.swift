@@ -132,8 +132,8 @@ struct StarAchievementDemoView: View {
                             hitboxRadius: 24,
                             clearsSelectionOnGestureEnd: false
                         ))
-                        .onElementSelectionChanged { elements in
-                            selectedElement = elements.first
+                        .onSelection { selection in
+                            selectedElement = selection.primaryElement
                         }
                         .frame(height: 340)
 

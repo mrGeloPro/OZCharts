@@ -186,10 +186,15 @@ OZDonutChart(
 .selection { segments in
     selectedSegment = segments.first
 }
+.onSelection { selection in
+    selectedSegment = selection.primaryElement
+}
 ```
 
 `gapAngle`, `thickness`, `lineCap`, and per-segment `explodedOffset` are the
-main spacing controls. Use `segmentLabelMapper` when donut selection or
+main spacing controls. Donut geometry is resolved by the shared polar layout
+engine, so selection hit shapes and selected-segment overlays use the same
+segment math as rendering. Use `segmentLabelMapper` when donut selection or
 accessibility should say "Basic", "Bonus", or "Streak" instead of a generic
 series label.
 

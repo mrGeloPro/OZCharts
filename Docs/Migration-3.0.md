@@ -108,6 +108,9 @@ OZDonutChart(slices, colors: colors, label: "Score") {
 .selection { segments in
     selectedSegment = segments.first
 }
+.onSelection { selection in
+    selectedSegment = selection.primaryElement
+}
 ```
 
 ## Stacked Bar Rows
