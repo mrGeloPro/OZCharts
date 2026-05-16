@@ -131,8 +131,15 @@ public struct ChartViewportOptions: Equatable {
 }
 
 public struct ChartRenderOptions {
-    public var legendPosition: ChartLegendPosition
-    public var legendSpacing: CGFloat
+    public var legendOptions: ChartLegendOptions
+    public var legendPosition: ChartLegendPosition {
+        get { legendOptions.position }
+        set { legendOptions.position = newValue }
+    }
+    public var legendSpacing: CGFloat {
+        get { legendOptions.itemSpacing }
+        set { legendOptions.itemSpacing = newValue }
+    }
     public var selectedElementStyle: ChartSelectedElementStyle
     public var canvasRenderOrder: [CanvasLayer]
 
@@ -142,8 +149,17 @@ public struct ChartRenderOptions {
         selectedElementStyle: ChartSelectedElementStyle = .product,
         canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
     ) {
-        self.legendPosition = legendPosition
-        self.legendSpacing = legendSpacing
+        self.legendOptions = ChartLegendOptions(position: legendPosition, itemSpacing: legendSpacing)
+        self.selectedElementStyle = selectedElementStyle
+        self.canvasRenderOrder = canvasRenderOrder
+    }
+
+    public init(
+        legend: ChartLegendOptions,
+        selectedElementStyle: ChartSelectedElementStyle = .product,
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
+    ) {
+        self.legendOptions = legend
         self.selectedElementStyle = selectedElementStyle
         self.canvasRenderOrder = canvasRenderOrder
     }
@@ -155,9 +171,23 @@ public struct ChartRenderOptions {
         spacing: CGFloat = 10
     ) -> ChartRenderOptions {
         ChartRenderOptions(
-            legendPosition: legend,
-            legendSpacing: spacing,
+            legend: ChartLegendOptions.dashboard(position: legend),
+            selectedElementStyle: .product
+        ).withLegendSpacing(spacing)
+    }
+
+    public static func dashboard(
+        legend: ChartLegendOptions
+    ) -> ChartRenderOptions {
+        ChartRenderOptions(
+            legend: legend,
             selectedElementStyle: .product
         )
+    }
+
+    private func withLegendSpacing(_ spacing: CGFloat) -> ChartRenderOptions {
+        var copy = self
+        copy.legendSpacing = spacing
+        return copy
     }
 }

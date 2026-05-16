@@ -80,4 +80,44 @@ final class ChartLegendTests: XCTestCase {
 
         XCTAssertEqual(series.legendItems.map(\.title), ["Second", "First"])
     }
+
+    func testLegendOptionsLimitItemsAndAppendOverflowItem() {
+        let items = [
+            ChartLegendItem(title: "A", color: .red),
+            ChartLegendItem(title: "B", color: .green),
+            ChartLegendItem(title: "C", color: .blue)
+        ]
+        let options = ChartLegendOptions.compact(itemLimit: 2)
+
+        let displayed = options.displayedItems(from: items)
+
+        XCTAssertEqual(displayed.map(\.title), ["A", "B", "+1 more"])
+        XCTAssertEqual(displayed.last?.symbol, .circle)
+    }
+
+    func testLegendOptionsKeepAllItemsWhenLimitIsNotExceeded() {
+        let items = [
+            ChartLegendItem(title: "A", color: .red),
+            ChartLegendItem(title: "B", color: .green)
+        ]
+        let options = ChartLegendOptions.dashboard(itemLimit: 3)
+
+        XCTAssertEqual(options.displayedItems(from: items).map(\.title), ["A", "B"])
+    }
+
+    func testLegendOptionsAllowCustomOverflowCopy() {
+        let items = [
+            ChartLegendItem(title: "A", color: .red),
+            ChartLegendItem(title: "B", color: .green),
+            ChartLegendItem(title: "C", color: .blue),
+            ChartLegendItem(title: "D", color: .orange)
+        ]
+        let options = ChartLegendOptions(
+            itemLimit: 1,
+            overflowTitlePrefix: "and ",
+            overflowTitleSuffix: " hidden"
+        )
+
+        XCTAssertEqual(options.displayedItems(from: items).map(\.title), ["A", "and 3 hidden"])
+    }
 }

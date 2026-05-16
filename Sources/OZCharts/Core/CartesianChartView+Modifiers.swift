@@ -267,10 +267,15 @@ public extension CartesianChartView {
 
     func chartRenderOptions(_ options: ChartRenderOptions) -> Self {
         var copy = self
-        copy.legendPosition = options.legendPosition
-        copy.legendSpacing = options.legendSpacing
+        copy.legendOptions = options.legendOptions
         copy.selectedElementStyle = options.selectedElementStyle
         copy.canvasRenderOrder = options.canvasRenderOrder
+        return copy
+    }
+
+    func chartLegend(_ options: ChartLegendOptions) -> Self {
+        var copy = self
+        copy.legendOptions = options
         return copy
     }
 
@@ -279,8 +284,16 @@ public extension CartesianChartView {
         spacing: CGFloat = 12
     ) -> Self {
         var copy = self
-        copy.legendPosition = position
-        copy.legendSpacing = spacing
+        copy.legendOptions = ChartLegendOptions(position: position, itemSpacing: spacing)
+        return copy
+    }
+
+    func chartLegend(
+        _ options: ChartLegendOptions,
+        @ViewBuilder content: @escaping ([ChartLegendItem]) -> some View
+    ) -> Self {
+        var copy = chartLegend(options)
+        copy.customLegendContent = { AnyView(content($0)) }
         return copy
     }
 

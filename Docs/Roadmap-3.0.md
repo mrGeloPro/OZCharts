@@ -91,9 +91,27 @@ Acceptance criteria:
 
 Make multi-series legends easier to use without custom view plumbing.
 
+Current 3.0 direction:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan, label: "Current")
+    .line(color: .orange, label: "Target")
+    .legend(.dashboard(position: .bottom, itemLimit: 4))
+```
+
+Low-level views can apply the same configuration:
+
+```swift
+CartesianChartView(...)
+    .chartLegend(.compact(position: .trailing, itemLimit: 3))
+```
+
 Acceptance criteria:
 
 * Fluent charts can opt into grouped legends with one modifier.
+* Legend presets can tune item spacing, row spacing, symbol sizing, and compact
+  overflow behavior.
 * Custom legend content remains possible.
 * Grouped series legend labels are documented consistently.
 

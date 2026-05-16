@@ -77,8 +77,19 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.zoomControlStep, 1.25)
         XCTAssertEqual(view.legendPosition, .bottom)
         XCTAssertEqual(view.legendSpacing, 6)
+        XCTAssertEqual(view.legendOptions.rowSpacing, 8)
         XCTAssertEqual(view.selectedElementStyle.lineWidth, 3)
         XCTAssertEqual(view.canvasRenderOrder, [.coreChart])
+    }
+
+    func testLegendOptionsModifierUpdatesLegendConfiguration() {
+        let view = makeChart()
+            .chartLegend(.compact(position: .trailing, itemLimit: 2))
+
+        XCTAssertEqual(view.legendPosition, .trailing)
+        XCTAssertEqual(view.legendSpacing, 8)
+        XCTAssertEqual(view.legendOptions.rowSpacing, 6)
+        XCTAssertEqual(view.legendOptions.itemLimit, 2)
     }
 
     func testPresentationPresetUpdatesChartOptions() {
@@ -185,6 +196,17 @@ final class CartesianChartViewModifierTests: XCTestCase {
             Text("\(items.count)")
         }
 
+        XCTAssertNotNil(view.customLegendContent)
+    }
+
+    func testCustomLegendOptionsModifierInstallsBuilder() {
+        let view = makeChart()
+            .chartLegend(.dashboard(position: .top, itemLimit: 3)) { items in
+                Text("\(items.count)")
+            }
+
+        XCTAssertEqual(view.legendPosition, .top)
+        XCTAssertEqual(view.legendOptions.itemLimit, 3)
         XCTAssertNotNil(view.customLegendContent)
     }
 
@@ -375,7 +397,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 colorMapper: { $0 == "A" ? .blue : .green },
                 groupLabel: { $0 }
             )
-            .legend(.bottom)
+            .legend(.dashboard(position: .bottom, itemLimit: 3))
             .compactAxes()
 
         XCTAssertNotNil(chart.body)

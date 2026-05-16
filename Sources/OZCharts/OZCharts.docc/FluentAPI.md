@@ -53,7 +53,7 @@ OZChart(rows)
         rowLabel: { row in dayLabel(for: row) }
     )
     .compactAxes(xPosition: .top, yPosition: .leading)
-    .legend(.bottom)
+    .legend(.dashboard(position: .bottom, itemLimit: 4))
     .staticChart()
 ```
 
@@ -81,6 +81,16 @@ Use lower-level modifiers such as ``ChartRenderOptions/dashboard(legend:spacing:
 ``ChartTheme/dashboard``, ``OZChart/staticChart()``, ``OZChart/hiddenAxes()``,
 and ``OZChart/compactAxes(xTickCount:yTickCount:xPosition:yPosition:)`` when a
 screen needs custom composition beyond a preset.
+
+For dense multi-series dashboards, use ``ChartLegendOptions`` to keep legend
+layout readable without custom SwiftUI plumbing:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan, label: "Current")
+    .line(color: .orange, label: "Target")
+    .legend(.compact(position: .bottom, itemLimit: 3))
+```
 
 ## Configure Behavior
 

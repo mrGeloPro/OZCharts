@@ -62,8 +62,15 @@ public struct CartesianChartView<
     public var minZoomScale: Double = 0.01
     public var showsZoomControls: Bool = false
     public var zoomControlStep: Double = 2
-    public var legendPosition: ChartLegendPosition = .hidden
-    public var legendSpacing: CGFloat = 12
+    public var legendOptions: ChartLegendOptions = .hidden
+    public var legendPosition: ChartLegendPosition {
+        get { legendOptions.position }
+        set { legendOptions.position = newValue }
+    }
+    public var legendSpacing: CGFloat {
+        get { legendOptions.itemSpacing }
+        set { legendOptions.itemSpacing = newValue }
+    }
     public var selectedElementStyle: ChartSelectedElementStyle = .product
     public var canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
     public var emptyState: (() -> AnyView)?
@@ -301,7 +308,7 @@ public struct CartesianChartView<
             if let customLegendContent {
                 customLegendContent(items)
             } else {
-                ChartLegendView(items: items, spacing: legendSpacing)
+                ChartLegendView(items: items, options: legendOptions)
             }
         }
     }

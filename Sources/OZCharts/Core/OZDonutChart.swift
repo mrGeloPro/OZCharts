@@ -104,9 +104,12 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         _ position: ChartLegendPosition = .bottom,
         spacing: CGFloat = 12
     ) -> Self {
+        legend(ChartLegendOptions(position: position, itemSpacing: spacing))
+    }
+
+    public func legend(_ options: ChartLegendOptions) -> Self {
         var copy = self
-        copy.renderOptions.legendPosition = position
-        copy.renderOptions.legendSpacing = spacing
+        copy.renderOptions.legendOptions = options
         return copy
     }
 
