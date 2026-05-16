@@ -55,13 +55,35 @@ Use `OZDonutChart` when a donut is the whole chart:
 OZDonutChart(slices, colors: colors, label: "Score") {
     Text("82%")
 }
-.selection(.elementTap)
-.onSelection { selection in
-    selectedSegment = selection.primaryElement
+.selection(.persistentElement)
+.onSegmentSelection { segment in
+    selectedSegment = segment
 }
 ```
 
 Apps no longer need to provide fake cartesian domains for donut-only cards.
+
+Use `.transientElement` when the highlight should exist only while the user is
+pressing. This is the default for `OZDonutChart`.
+
+## Tap Priority
+
+If a product chart mixes event markers, bars, donut segments, and line points,
+configure selection priority explicitly:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .annotations(events: events)
+    .selection(.eventOnly)
+    .annotationSelection(fallbackToPointSelection: false)
+    .selectionPriority(.annotationsOnly)
+    .tooltipAnchor(.gestureLocation)
+```
+
+Use `.eventThenNearestPoint` or `.nearestX` when empty chart areas should still
+resolve to the nearest point. Use `.chartEmptyTap` when empty areas should clear
+external UI instead of selecting nearby data.
 
 ## Dashboard Presets
 

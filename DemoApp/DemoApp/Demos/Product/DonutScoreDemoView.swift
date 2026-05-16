@@ -12,6 +12,8 @@ import OZCharts
 // MARK: - Donut Demo
 
 struct DonutScoreDemoView: View {
+    @State private var selectedSegment: ChartSelectedElement?
+
     let mockData: [Point2D] = [
         Point2D(x: 0, y: 85.2),
         Point2D(x: 1, y: 11.3),
@@ -46,11 +48,18 @@ struct DonutScoreDemoView: View {
                                 explodedOffset: 12
                             )
                         ],
+                        segmentLabelMapper: { point in
+                            let index = Int(point.x)
+                            return legend.indices.contains(index) ? legend[index].0 : nil
+                        },
                         thickness: 38,
                         gapAngle: .degrees(9),
                         startAngle: .degrees(-90),
                         lineCap: .butt
                     )
+                    .onSelection { selection in
+                        selectedSegment = selection.primaryElement
+                    }
                     .frame(height: 260)
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -64,6 +73,14 @@ struct DonutScoreDemoView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
+
+                    if let selectedSegment {
+                        Text("\(selectedSegment.label ?? "Segment") - \(String(format: "%.1f", selectedSegment.value ?? 0))%")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 2)
+                    }
                 }
             }
             .padding(18)

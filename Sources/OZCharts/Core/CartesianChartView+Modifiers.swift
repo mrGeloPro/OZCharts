@@ -71,6 +71,12 @@ public extension CartesianChartView {
         return copy
     }
 
+    func chartSelectionPriority(_ priority: ChartSelectionPriority) -> Self {
+        var copy = self
+        copy.selectionPriority = priority
+        return copy
+    }
+
     func chartSelection(
         _ mode: ChartSelectionMode,
         behavior: ChartSelectionBehavior? = nil,
@@ -103,6 +109,7 @@ public extension CartesianChartView {
         _ isEnabled: Bool = true,
         hitboxRadius: CGFloat? = nil,
         overlapping: ChartOverlappingSelectionMode? = nil,
+        fallbackToPointSelection: Bool? = nil,
         onChange: (([ChartAnnotationContext]) -> Void)? = nil
     ) -> Self {
         var copy = self
@@ -112,6 +119,9 @@ public extension CartesianChartView {
         }
         if let overlapping {
             copy.annotationOverlappingSelectionMode = overlapping
+        }
+        if let fallbackToPointSelection {
+            copy.annotationFallbackToPointSelection = fallbackToPointSelection
         }
         if let onChange {
             copy.onAnnotationSelectionChanged = onChange
@@ -153,6 +163,7 @@ public extension CartesianChartView {
     func chartTooltipOptions(_ options: ChartTooltipOptions) -> Self {
         var copy = self
         copy.tooltipPlacement = options.placement
+        copy.tooltipAnchor = options.anchor
         copy.tooltipOffset = options.offset
         copy.tooltipPadding = options.padding
         copy.tooltipMaxWidth = options.maxWidth
@@ -184,6 +195,12 @@ public extension CartesianChartView {
         if let padding {
             copy.tooltipPadding = padding
         }
+        return copy
+    }
+
+    func chartTooltipAnchor(_ anchor: ChartTooltipAnchor) -> Self {
+        var copy = self
+        copy.tooltipAnchor = anchor
         return copy
     }
 
@@ -319,6 +336,14 @@ public extension CartesianChartView {
     ) -> Self {
         var copy = self
         copy.emptyState = { AnyView(content()) }
+        return copy
+    }
+
+    func chartEmptyTap(
+        _ onTap: @escaping (CGPoint) -> Void
+    ) -> Self {
+        var copy = self
+        copy.onEmptyTap = onTap
         return copy
     }
 

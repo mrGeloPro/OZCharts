@@ -40,6 +40,20 @@ final class ChartTickBuilderTests: XCTestCase {
         XCTAssertEqual(ticks.map(\.value), [0, 30, 100])
     }
 
+    func testGeneratedTicksDeduplicateRoundedLabels() {
+        let scale = LinearScale(domain: 32.0...32.9, range: 0...100)
+
+        let ticks = ChartTickBuilder.ticks(
+            scale: scale,
+            explicitValues: nil,
+            tickCount: 5,
+            strategy: .regular,
+            formatter: { "\(Int($0))m" }
+        )
+
+        XCTAssertEqual(ticks.map(\.label), ["32m"])
+    }
+
     func testCollisionFilterKeepsMinimumSpacing() {
         let ticks = [
             ScaleTick(value: Double(0), position: CGFloat(0), label: "0"),

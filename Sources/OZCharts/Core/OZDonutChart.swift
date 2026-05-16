@@ -26,6 +26,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
     private var selectionOptions: ChartSelectionOptions
     private var selectedElementHandler: ([ChartSelectedElement]) -> Void
     private var chartSelectionHandler: (ChartSelection<Point>) -> Void
+    private var segmentSelectionHandler: (ChartSelectedElement?) -> Void
     private var centerContent: () -> CenterContent
 
     public init(
@@ -56,9 +57,10 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         self.animation = animation
         self.theme = theme
         self.renderOptions = .dashboard(legend: label == nil ? .hidden : .bottom)
-        self.selectionOptions = .disabled
+        self.selectionOptions = .elementPress
         self.selectedElementHandler = { _ in }
         self.chartSelectionHandler = { _ in }
+        self.segmentSelectionHandler = { _ in }
         self.centerContent = center
     }
 
@@ -95,7 +97,10 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
             }
             .chartInteractionOptions(.static)
             .chartSelectionOptions(selectionOptions)
-            .chartSelectionChanged(chartSelectionHandler)
+            .chartSelectionChanged { selection in
+                chartSelectionHandler(selection)
+                segmentSelectionHandler(selection.primaryElement)
+            }
             .chartRenderOptions(renderOptions)
 
             centerContent()
@@ -116,7 +121,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         return copy
     }
 
-    public func selection(_ options: ChartSelectionOptions = .elementTap) -> Self {
+    public func selection(_ options: ChartSelectionOptions = .elementPress) -> Self {
         var copy = self
         copy.selectionOptions = options
         return copy
@@ -124,7 +129,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
 
     @available(*, deprecated, message: "Use selection(_:) to configure behavior and onSelection(_:) to read selection.elements instead.")
     public func selection(
-        _ options: ChartSelectionOptions = .elementTap,
+        _ options: ChartSelectionOptions = .elementPress,
         onChange: @escaping ([ChartSelectedElement]) -> Void
     ) -> Self {
         var copy = self
@@ -138,6 +143,14 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
     ) -> Self {
         var copy = self
         copy.chartSelectionHandler = onChange
+        return copy
+    }
+
+    public func onSegmentSelection(
+        _ onChange: @escaping (ChartSelectedElement?) -> Void
+    ) -> Self {
+        var copy = self
+        copy.segmentSelectionHandler = onChange
         return copy
     }
 
@@ -175,6 +188,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         copy.selectionOptions = selectionOptions
         copy.selectedElementHandler = selectedElementHandler
         copy.chartSelectionHandler = chartSelectionHandler
+        copy.segmentSelectionHandler = segmentSelectionHandler
         return copy
     }
 }

@@ -64,9 +64,9 @@ not declare cartesian domains:
 OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
     Text("82%")
 }
-.selection(.elementTap)
-.onSelection { selection in
-    selectedSegment = selection.primaryElement
+.selection(.transientElement)
+.onSegmentSelection { segment in
+    selectedSegment = segment
 }
 ```
 
@@ -111,6 +111,40 @@ OZChart(samples)
     .tooltipOptions(.automatic)
     .viewport(.automatic)
     .rendering(.automatic)
+```
+
+Selection can be tuned per screen without changing chart data. Use
+`.transientElement` for press-only overlays, `.persistentElement` for sticky
+tap details, `.eventOnly` when only rendered events should react, and
+`.eventThenNearestPoint` when the chart should prefer events but still fall
+back to a line or scatter point.
+
+`OZChart` can also decide whether selected annotations or series content wins
+when multiple objects fall inside the same tap area:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .selection(.eventThenNearestPoint)
+    .annotationSelection(fallbackToPointSelection: false)
+    .selectionPriority(.annotationsFirst)
+    .tooltipAnchor(.gestureLocation)
+    .onEmptyTap { location in
+        clearDetails(at: location)
+    }
+```
+
+Use the matching low-level modifiers when composing `CartesianChartView`
+directly:
+
+```swift
+CartesianChartView(...)
+    .chartAnnotationSelection(fallbackToPointSelection: false)
+    .chartSelectionPriority(.annotationsOnly)
+    .chartTooltipAnchor(.gestureLocation)
+    .chartEmptyTap { location in
+        clearDetails(at: location)
+    }
 ```
 
 For advanced multi-series composition, custom scales, or deeply customized

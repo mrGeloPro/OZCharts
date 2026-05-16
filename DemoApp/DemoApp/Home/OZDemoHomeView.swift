@@ -161,7 +161,7 @@ struct OZDemoHomeView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("OZCharts 2.5")
+                        Text("OZCharts 3.0")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
                         Text("Production-style charting for live data, analytics, events and rich interactions.")
@@ -299,7 +299,7 @@ private struct MetricsStrip: View {
         HStack(spacing: 10) {
             ShowcaseMetricCard(title: "Series", value: "8", trend: "types", color: DemoColors.cyan)
             ShowcaseMetricCard(title: "Input", value: "Touch", trend: "zoom", color: DemoColors.green)
-            ShowcaseMetricCard(title: "Release", value: "2.5", trend: "stable", color: DemoColors.orange)
+            ShowcaseMetricCard(title: "Release", value: "3.0", trend: "ready", color: DemoColors.orange)
         }
     }
 }

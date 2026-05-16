@@ -62,4 +62,24 @@ final class ChartSelectionTests: XCTestCase {
         XCTAssertEqual(selection.primaryAnnotation?.id, annotation.id)
         XCTAssertEqual(selection.state, state)
     }
+
+    func testElementPressSelectionClearsAtGestureEnd() {
+        XCTAssertEqual(ChartSelectionOptions.elementPress.mode, .none)
+        XCTAssertEqual(ChartSelectionOptions.elementPress.behavior, .tap)
+        XCTAssertEqual(ChartSelectionOptions.elementPress.overlappingSelectionMode, .all)
+        XCTAssertEqual(ChartSelectionOptions.elementPress.hitboxRadius, 24)
+        XCTAssertTrue(ChartSelectionOptions.elementPress.clearsSelectionOnGestureEnd)
+    }
+
+    func testSemanticSelectionPresetsDescribeCommonProductBehaviors() {
+        XCTAssertEqual(ChartSelectionOptions.transientElement, .elementPress)
+        XCTAssertEqual(ChartSelectionOptions.persistentElement, .elementTap)
+        XCTAssertEqual(ChartSelectionOptions.eventThenNearestPoint, .nearestX)
+
+        XCTAssertEqual(ChartSelectionOptions.eventOnly.mode, .none)
+        XCTAssertEqual(ChartSelectionOptions.eventOnly.behavior, .tap)
+        XCTAssertEqual(ChartSelectionOptions.eventOnly.overlappingSelectionMode, .cycle)
+        XCTAssertEqual(ChartSelectionOptions.eventOnly.hitboxRadius, 32)
+        XCTAssertTrue(ChartSelectionOptions.eventOnly.clearsSelectionOnGestureEnd)
+    }
 }

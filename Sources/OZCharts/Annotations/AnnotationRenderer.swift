@@ -221,9 +221,14 @@ public struct AnnotationRenderer {
                   yPos >= -annotation.size,
                   yPos <= size.height + annotation.size else { continue }
 
+            let radius = annotation.size / 2
+            let maxX = max(radius, size.width - radius)
+            let maxY = max(radius, size.height - radius)
+            let clampedX = min(max(xPos, radius), maxX)
+            let clampedY = min(max(yPos, radius), maxY)
             let rect = CGRect(
-                x: xPos - annotation.size / 2,
-                y: yPos - annotation.size / 2,
+                x: clampedX - radius,
+                y: clampedY - radius,
                 width: annotation.size,
                 height: annotation.size
             )

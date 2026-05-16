@@ -27,6 +27,7 @@ public final class ChartStore<
     @Published public var oldSeriesContexts: [[ChartPointContext<Point>]] = []
     @Published public var oldRenderSeriesContexts: [[ChartPointContext<Point>]] = []
     @Published public var animationProgress: CGFloat = 1.0
+    @Published public var animationPhase: Int = 0
     @Published public var isAnimationActive = false
 
     @Published public var highlightedPoints: [ChartPointContext<Point>] = []
@@ -135,7 +136,7 @@ public final class ChartStore<
         }
 
         let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
-        queueUpdate(series: series, in: canvasSize, animate: hasAnimation)
+        queueUpdate(series: series, in: canvasSize, animate: hasAnimation, coalesce: !hasAnimation)
     }
 
     // MARK: - Gesture Handling
@@ -354,6 +355,7 @@ public final class ChartStore<
         selectableElements = []
         violinBackgrounds = [:]
         animationProgress = 1.0
+        animationPhase = 0
         isAnimationActive = false
         resetSelectionCycle()
     }
@@ -466,18 +468,25 @@ public final class ChartStore<
         let currentID = updateCounter
         layoutTask?.cancel()
 
-        if !coalesce && !animate {
-            oldSeriesContexts = []
-            oldRenderSeriesContexts = []
-            let contexts = calculateSeriesContexts(for: series, in: size)
-            let renderContexts = calculateRenderSeriesContexts(for: series, contexts: contexts, in: size)
-            seriesContexts = contexts
-            renderSeriesContexts = renderContexts
-            pointInteractionIndex = nil
-            selectableElements = calculateSelectionElementContexts(for: series, contexts: contexts, in: size)
-            animationProgress = 1.0
-            isAnimationActive = false
-            layoutTask = nil
+        if !coalesce {
+            let shouldAnimate = applySeriesUpdate(
+                series: series,
+                in: size,
+                animate: animate
+            )
+            if shouldAnimate {
+                let animation = series.first(where: { $0.animation.swiftUIAnimation != nil })?.animation.swiftUIAnimation
+                layoutTask = Task { @MainActor in
+                    await Task.yield()
+                    guard !Task.isCancelled, currentID == self.updateCounter else { return }
+                    withAnimation(animation) { animationProgress = 1.0 }
+                    if currentID == self.updateCounter {
+                        layoutTask = nil
+                    }
+                }
+            } else {
+                layoutTask = nil
+            }
             return
         }
 
@@ -488,12 +497,49 @@ public final class ChartStore<
 
             guard !Task.isCancelled, currentID == self.updateCounter else { return }
 
-            if animate {
-                oldSeriesContexts = seriesContexts
-                oldRenderSeriesContexts = renderSeriesContexts
+            let shouldAnimate = applySeriesUpdate(
+                series: series,
+                in: size,
+                animate: animate
+            )
+
+            if shouldAnimate {
+                let anim = series.first(where: { $0.animation.swiftUIAnimation != nil })?.animation.swiftUIAnimation
+                await Task.yield()
+                guard !Task.isCancelled, currentID == self.updateCounter else { return }
+                withAnimation(anim) { animationProgress = 1.0 }
+            }
+
+            if currentID == self.updateCounter {
+                layoutTask = nil
+            }
+        }
+    }
+
+    @discardableResult
+    private func applySeriesUpdate(
+        series: [AnyChartSeries<Point>],
+        in size: CGSize,
+        animate: Bool
+    ) -> Bool {
+        let previousContexts = seriesContexts
+        let previousRenderContexts = renderSeriesContexts
+        let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
+        let shouldAnimate = animate && hasAnimation
+
+        let newContexts = calculateSeriesContexts(for: series, in: size)
+        let newRenderContexts = calculateRenderSeriesContexts(for: series, contexts: newContexts, in: size)
+        let newElements = calculateSelectionElementContexts(for: series, contexts: newContexts, in: size)
+
+        var resetTransaction = Transaction()
+        resetTransaction.disablesAnimations = true
+        withTransaction(resetTransaction) {
+            if shouldAnimate {
+                oldSeriesContexts = previousContexts
+                oldRenderSeriesContexts = previousRenderContexts
                 animationProgress = 0.0
+                animationPhase &+= 1
                 isAnimationActive = true
-                try? await Task.sleep(nanoseconds: 5_000_000)
             } else {
                 oldSeriesContexts = []
                 oldRenderSeriesContexts = []
@@ -501,29 +547,13 @@ public final class ChartStore<
                 isAnimationActive = false
             }
 
-            guard !Task.isCancelled, currentID == self.updateCounter else { return }
-
-            let newContexts = calculateSeriesContexts(for: series, in: size)
-            let newRenderContexts = calculateRenderSeriesContexts(for: series, contexts: newContexts, in: size)
-            let newElements = calculateSelectionElementContexts(for: series, contexts: newContexts, in: size)
-            guard !Task.isCancelled, currentID == self.updateCounter else { return }
             seriesContexts = newContexts
             renderSeriesContexts = newRenderContexts
             pointInteractionIndex = nil
             selectableElements = newElements
-
-            let hasAnimation = series.contains { $0.animation.swiftUIAnimation != nil }
-            if animate && hasAnimation {
-                let anim = series.first(where: { $0.animation.swiftUIAnimation != nil })?.animation.swiftUIAnimation
-                withAnimation(anim) { animationProgress = 1.0 }
-            } else {
-                animationProgress = 1.0
-            }
-
-            if currentID == self.updateCounter {
-                layoutTask = nil
-            }
         }
+
+        return shouldAnimate
     }
 
     private func calculateSeriesContexts(

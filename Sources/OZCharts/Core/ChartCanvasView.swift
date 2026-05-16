@@ -24,6 +24,7 @@ struct ChartCanvasView<
     let oldSeriesContexts: [[ChartPointContext<Point>]]
     let oldRenderSeriesContexts: [[ChartPointContext<Point>]]
     let animationProgress: CGFloat
+    let animationPhase: Int
     let isAnimationActive: Bool
     let animationStyle: ChartAnimationStyle
 
@@ -49,6 +50,7 @@ struct ChartCanvasView<
     let selectedElementStyle: ChartSelectedElementStyle
     let crosshairStyle: ChartCrosshairStyle
     let tooltipPlacement: ChartTooltipPlacement
+    let tooltipAnchorPoint: CGPoint?
     let tooltipOffset: CGPoint
     let tooltipPadding: CGFloat
     let tooltipMaxWidth: CGFloat?
@@ -147,12 +149,14 @@ struct ChartCanvasView<
                             newContexts: newCtx,
                             progress: animationProgress
                         )
+                        .id("\(animationPhase)-\(index)")
                     }
                 }
 
                 if !highlightedPoints.isEmpty {
                     ChartTooltipOverlay(
                         points: highlightedPoints,
+                        anchorOverride: tooltipAnchorPoint,
                         canvasSize: geometry.size,
                         placement: tooltipPlacement,
                         offset: tooltipOffset,
@@ -169,6 +173,7 @@ struct ChartCanvasView<
 private struct ChartTooltipOverlay<Point: ChartDataPoint, Content: View>: View
     where Point.XValue == Double, Point.YValue == Double {
     let points: [ChartPointContext<Point>]
+    let anchorOverride: CGPoint?
     let canvasSize: CGSize
     let placement: ChartTooltipPlacement
     let offset: CGPoint
@@ -179,7 +184,7 @@ private struct ChartTooltipOverlay<Point: ChartDataPoint, Content: View>: View
     @State private var tooltipSize: CGSize = .zero
 
     var body: some View {
-        if let anchor = ChartTooltipLayout.anchor(for: points) {
+        if let anchor = anchorOverride ?? ChartTooltipLayout.anchor(for: points) {
             content(points)
                 .frame(maxWidth: maxWidth, alignment: .leading)
                 .fixedSize(horizontal: maxWidth == nil, vertical: true)

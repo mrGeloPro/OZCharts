@@ -8,6 +8,18 @@
 
 import CoreGraphics
 
+public enum ChartTooltipAnchor: Equatable {
+    case selectedValue
+    case gestureLocation
+}
+
+public enum ChartSelectionPriority: Equatable {
+    case annotationsFirst
+    case seriesFirst
+    case annotationsOnly
+    case seriesOnly
+}
+
 public struct ChartInteractionOptions: Equatable {
     public var isHorizontalScrollEnabled: Bool
     public var isVerticalScrollEnabled: Bool
@@ -20,7 +32,7 @@ public struct ChartInteractionOptions: Equatable {
         isVerticalScrollEnabled: Bool = true,
         isHorizontalZoomEnabled: Bool = true,
         isVerticalZoomEnabled: Bool = true,
-        minZoomScale: Double = 0.01
+        minZoomScale: Double = 0.05
     ) {
         self.isHorizontalScrollEnabled = isHorizontalScrollEnabled
         self.isVerticalScrollEnabled = isVerticalScrollEnabled
@@ -86,21 +98,43 @@ public struct ChartSelectionOptions: Equatable {
         hitboxRadius: 24,
         clearsSelectionOnGestureEnd: false
     )
+
+    public static let elementPress = ChartSelectionOptions(
+        mode: .none,
+        behavior: .tap,
+        overlappingSelectionMode: .all,
+        hitboxRadius: 24,
+        clearsSelectionOnGestureEnd: true
+    )
+
+    public static let transientElement = elementPress
+    public static let persistentElement = elementTap
+    public static let eventOnly = ChartSelectionOptions(
+        mode: .none,
+        behavior: .tap,
+        overlappingSelectionMode: .cycle,
+        hitboxRadius: 32,
+        clearsSelectionOnGestureEnd: true
+    )
+    public static let eventThenNearestPoint = ChartSelectionOptions.nearestX
 }
 
 public struct ChartTooltipOptions: Equatable {
     public var placement: ChartTooltipPlacement
+    public var anchor: ChartTooltipAnchor
     public var offset: CGPoint
     public var padding: CGFloat
     public var maxWidth: CGFloat?
 
     public init(
         placement: ChartTooltipPlacement = .automatic,
+        anchor: ChartTooltipAnchor = .selectedValue,
         offset: CGPoint = CGPoint(x: 0, y: -20),
         padding: CGFloat = 8,
         maxWidth: CGFloat? = nil
     ) {
         self.placement = placement
+        self.anchor = anchor
         self.offset = offset
         self.padding = padding
         self.maxWidth = maxWidth

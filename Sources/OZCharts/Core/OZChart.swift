@@ -27,6 +27,11 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var customViewAnnotations: [CustomViewAnnotation<Double, Double>]
     private var interactionOptions: ChartInteractionOptions
     private var selectionOptions: ChartSelectionOptions
+    private var selectionPriority: ChartSelectionPriority
+    private var isAnnotationSelectionEnabled: Bool
+    private var annotationHitboxRadius: CGFloat?
+    private var annotationOverlappingSelectionMode: ChartOverlappingSelectionMode?
+    private var annotationFallbackToPointSelection: Bool?
     private var tooltipOptions: ChartTooltipOptions
     private var viewportOptions: ChartViewportOptions
     private var renderOptions: ChartRenderOptions
@@ -35,6 +40,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
     private var onElementSelectionChanged: ([ChartSelectedElement]) -> Void
     private var onChartSelectionChanged: (ChartSelection<Point>) -> Void
+    private var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void
+    private var onEmptyTap: (CGPoint) -> Void
     private var viewportBinding: Binding<ChartViewportState>?
     private var selectionStateBinding: Binding<ChartSelectionState>?
     private var tooltipContent: ([ChartPointContext<Point>]) -> TooltipContent
@@ -67,6 +74,11 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.customViewAnnotations = []
         self.interactionOptions = .automatic
         self.selectionOptions = ChartSelectionOptions()
+        self.selectionPriority = .annotationsFirst
+        self.isAnnotationSelectionEnabled = false
+        self.annotationHitboxRadius = nil
+        self.annotationOverlappingSelectionMode = nil
+        self.annotationFallbackToPointSelection = nil
         self.tooltipOptions = .automatic
         self.viewportOptions = .automatic
         self.renderOptions = .automatic
@@ -75,6 +87,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.onSelectionChanged = { _ in }
         self.onElementSelectionChanged = { _ in }
         self.onChartSelectionChanged = { _ in }
+        self.onAnnotationSelectionChanged = { _ in }
+        self.onEmptyTap = { _ in }
         self.viewportBinding = nil
         self.selectionStateBinding = nil
         self.tooltipContent = tooltip
@@ -106,9 +120,18 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         )
         .chartInteractionOptions(interactionOptions)
         .chartSelectionOptions(selectionOptions)
+        .chartAnnotationSelection(
+            isAnnotationSelectionEnabled,
+            hitboxRadius: annotationHitboxRadius,
+            overlapping: annotationOverlappingSelectionMode,
+            fallbackToPointSelection: annotationFallbackToPointSelection,
+            onChange: onAnnotationSelectionChanged
+        )
+        .chartSelectionPriority(selectionPriority)
         .chartTooltipOptions(tooltipOptions)
         .chartViewportOptions(viewportOptions)
         .chartRenderOptions(renderOptions)
+        .chartEmptyTap(onEmptyTap)
         .chartDiagnostics(onChange: diagnosticsHandler)
     }
 
@@ -324,9 +347,39 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func selectionPriority(_ priority: ChartSelectionPriority) -> Self {
+        var copy = self
+        copy.selectionPriority = priority
+        return copy
+    }
+
+    public func annotationSelection(
+        _ isEnabled: Bool = true,
+        hitboxRadius: CGFloat? = nil,
+        overlapping: ChartOverlappingSelectionMode? = nil,
+        fallbackToPointSelection: Bool? = nil,
+        onChange: (([ChartAnnotationContext]) -> Void)? = nil
+    ) -> Self {
+        var copy = self
+        copy.isAnnotationSelectionEnabled = isEnabled
+        copy.annotationHitboxRadius = hitboxRadius
+        copy.annotationOverlappingSelectionMode = overlapping
+        copy.annotationFallbackToPointSelection = fallbackToPointSelection
+        if let onChange {
+            copy.onAnnotationSelectionChanged = onChange
+        }
+        return copy
+    }
+
     public func tooltipOptions(_ options: ChartTooltipOptions) -> Self {
         var copy = self
         copy.tooltipOptions = options
+        return copy
+    }
+
+    public func tooltipAnchor(_ anchor: ChartTooltipAnchor) -> Self {
+        var copy = self
+        copy.tooltipOptions.anchor = anchor
         return copy
     }
 
@@ -439,6 +492,14 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func onEmptyTap(
+        _ handler: @escaping (CGPoint) -> Void
+    ) -> Self {
+        var copy = self
+        copy.onEmptyTap = handler
+        return copy
+    }
+
     public func emptyState(
         @ViewBuilder _ content: @escaping () -> some View
     ) -> Self {
@@ -478,6 +539,11 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.customViewAnnotations = customViewAnnotations
         copy.interactionOptions = interactionOptions
         copy.selectionOptions = selectionOptions
+        copy.selectionPriority = selectionPriority
+        copy.isAnnotationSelectionEnabled = isAnnotationSelectionEnabled
+        copy.annotationHitboxRadius = annotationHitboxRadius
+        copy.annotationOverlappingSelectionMode = annotationOverlappingSelectionMode
+        copy.annotationFallbackToPointSelection = annotationFallbackToPointSelection
         copy.tooltipOptions = tooltipOptions
         copy.viewportOptions = viewportOptions
         copy.renderOptions = renderOptions
@@ -486,6 +552,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.onSelectionChanged = onSelectionChanged
         copy.onElementSelectionChanged = onElementSelectionChanged
         copy.onChartSelectionChanged = onChartSelectionChanged
+        copy.onAnnotationSelectionChanged = onAnnotationSelectionChanged
+        copy.onEmptyTap = onEmptyTap
         copy.viewportBinding = viewportBinding
         copy.selectionStateBinding = selectionStateBinding
         return copy

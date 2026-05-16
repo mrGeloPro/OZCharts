@@ -194,6 +194,63 @@ final class ChartStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testAnimatedUpdatePublishesNewRenderContextsBeforeAnimationStarts() async {
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0 ... 2),
+            yScale: LinearScale(domain: 0 ... 20)
+        )
+        store.canvasSize = CGSize(width: 100, height: 100)
+        store.layoutCoalescingIntervalNanoseconds = 0
+
+        let seriesID = UUID()
+        let oldData = [
+            Point2D(x: 0, y: 2),
+            Point2D(x: 1, y: 4),
+            Point2D(x: 2, y: 6)
+        ]
+        let newData = [
+            Point2D(x: 0, y: 10),
+            Point2D(x: 1, y: 12),
+            Point2D(x: 2, y: 14)
+        ]
+
+        let oldSeries = LineSeries(
+            data: oldData,
+            id: seriesID,
+            color: .green
+        ).eraseToAnyChartSeries()
+        store.queueUpdate(
+            series: [oldSeries],
+            in: store.canvasSize,
+            animate: false,
+            coalesce: false
+        )
+
+        let newSeries = LineSeries(
+            data: newData,
+            id: seriesID,
+            color: .green,
+            animation: .draw(.linear(duration: 0.2))
+        ).eraseToAnyChartSeries()
+        store.queueUpdate(
+            series: [newSeries],
+            in: store.canvasSize,
+            animate: true,
+            coalesce: false
+        )
+
+        XCTAssertEqual(store.animationProgress, 0, accuracy: 0.0001)
+        XCTAssertTrue(store.isAnimationActive)
+        XCTAssertEqual(store.renderSeriesContexts.first?.map(\.originalPoint.y), newData.map(\.y))
+
+        try? await Task.sleep(nanoseconds: 8_000_000)
+
+        XCTAssertEqual(store.animationPhase, 1)
+        XCTAssertEqual(store.oldRenderSeriesContexts.first?.map(\.originalPoint.y), oldData.map(\.y))
+        XCTAssertEqual(store.renderSeriesContexts.first?.map(\.originalPoint.y), newData.map(\.y))
+    }
+
+    @MainActor
     func testViewportCanUpdateLogScaleDomains() {
         let store = ChartStore<Point2D, LogScale, LogScale>(
             xScale: LogScale(domain: 1 ... 100),

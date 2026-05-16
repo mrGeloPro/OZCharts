@@ -71,10 +71,14 @@ OZDonutChart(
 ) {
     Text("82%")
 }
-.onSelection { selection in
-    selectedSegment = selection.primaryElement
+.selection(.transientElement)
+.onSegmentSelection { segment in
+    pressedSegment = segment
 }
 ```
+
+Use `.persistentElement` instead when a tap should keep the segment selected
+after the finger lifts, for example when a dashboard opens a detail panel.
 
 ## Stacked Points Distribution
 

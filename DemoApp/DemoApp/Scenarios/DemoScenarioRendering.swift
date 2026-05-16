@@ -63,9 +63,10 @@ extension DemoScenario {
         notableEvents.compactMap { event in
             guard xDomain.contains(event.date.timeIntervalSince1970) else { return nil }
             let y = event.value ?? nearestPrimaryValue(to: event.date) ?? yAxis.max
+            let yPadding = max((yAxis.max - yAxis.min) * 0.015, 0)
             return ChartEventMarker(
                 x: event.date.timeIntervalSince1970,
-                y: min(max(y, yAxis.min), yAxis.max),
+                y: min(max(y, yAxis.min + yPadding), yAxis.max - yPadding),
                 label: event.tooltipTitle,
                 shape: event.kind.symbolShape,
                 color: event.kind.colorToken.color,
@@ -174,7 +175,7 @@ extension DemoScenario {
             let minutes = Int(date.timeIntervalSince(xAxis.startDate) / 60)
             return "\(minutes)m"
         case .hour:
-            return hourFormatter.string(from: date).replacingOccurrences(of: ":00", with: "")
+            return hourFormatter.string(from: date)
         }
     }
 

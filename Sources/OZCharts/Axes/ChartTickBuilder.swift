@@ -36,14 +36,18 @@ enum ChartTickBuilder {
 
         switch strategy {
         case .regular:
-            return scale.ticks(count: tickCount, formatter: formatter)
+            return deduplicatedGeneratedLabels(
+                scale.ticks(count: tickCount, formatter: formatter)
+            )
 
         case .nice:
-            return niceTicks(
-                domain: scale.domain,
-                tickCount: tickCount,
-                position: { scale.scale($0) },
-                formatter: formatter
+            return deduplicatedGeneratedLabels(
+                niceTicks(
+                    domain: scale.domain,
+                    tickCount: tickCount,
+                    position: { scale.scale($0) },
+                    formatter: formatter
+                )
             )
         }
     }
@@ -132,5 +136,15 @@ enum ChartTickBuilder {
 
     private static func sanitized(_ value: Double) -> Double {
         abs(value) < 1e-10 ? 0 : value
+    }
+
+    private static func deduplicatedGeneratedLabels(
+        _ ticks: [ScaleTick<Double, CGFloat>]
+    ) -> [ScaleTick<Double, CGFloat>] {
+        var labels = Set<String>()
+        return ticks.filter { tick in
+            guard !tick.label.isEmpty else { return true }
+            return labels.insert(tick.label).inserted
+        }
     }
 }

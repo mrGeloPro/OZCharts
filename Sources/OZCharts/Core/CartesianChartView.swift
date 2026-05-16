@@ -54,12 +54,15 @@ public struct CartesianChartView<
     public var isAnnotationSelectionEnabled: Bool = false
     public var annotationHitboxRadius: CGFloat = 24
     public var annotationOverlappingSelectionMode: ChartOverlappingSelectionMode = .cycle
+    public var annotationFallbackToPointSelection: Bool = true
+    public var selectionPriority: ChartSelectionPriority = .annotationsFirst
     public var crosshairStyle: ChartCrosshairStyle = .hidden
     public var tooltipPlacement: ChartTooltipPlacement = .automatic
+    public var tooltipAnchor: ChartTooltipAnchor = .selectedValue
     public var tooltipOffset: CGPoint = CGPoint(x: 0, y: -20)
     public var tooltipPadding: CGFloat = 8
     public var tooltipMaxWidth: CGFloat?
-    public var minZoomScale: Double = 0.01
+    public var minZoomScale: Double = 0.05
     public var showsZoomControls: Bool = false
     public var zoomControlStep: Double = 2
     public var legendOptions: ChartLegendOptions = .hidden
@@ -83,15 +86,18 @@ public struct CartesianChartView<
     var onChartSelectionChanged: (ChartSelection<Point>) -> Void = { _ in }
     var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
     var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
+    var onEmptyTap: (CGPoint) -> Void = { _ in }
     var onDiagnosticsChanged: ([ChartDiagnostic]) -> Void = { _ in }
 
     // MARK: - State
 
     @StateObject private var store: ChartStore<Point, XScale, YScale>
     @State private var highlightedAnnotations: [ChartAnnotationContext] = []
+    @State private var lastGestureLocation: CGPoint?
     @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
     @State private var customAnnotationSizes: [UUID: CGSize] = [:]
     @State private var lastReportedDiagnostics: [ChartDiagnostic] = []
+    @State private var handledSeriesChangeSignature: [ChartSeriesChangeSignature]?
 
     var seriesChangeSignature: [ChartSeriesChangeSignature] {
         series.map { series in
@@ -269,17 +275,12 @@ public struct CartesianChartView<
                 chartWithLegend(topH: insets.top, bottomH: insets.bottom)
             }
         }
-        .onChange(of: seriesChangeSignature) { _ in
-            syncBaseScales()
-            publishDiagnostics(canvasSize: store.canvasSize)
-            store.handleDataChange(
-                series: series,
-                isLiveTrackingEnabled: isLiveTrackingEnabled,
-                liveTrackingMode: liveTrackingMode,
-                initialViewport: initialViewport,
-                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
-                isVerticalScrollEnabled: isVerticalScrollEnabled
-            )
+        .task(id: seriesChangeSignature) {
+            await MainActor.run {
+                guard handledSeriesChangeSignature != seriesChangeSignature else { return }
+                handledSeriesChangeSignature = seriesChangeSignature
+                handleSeriesChange()
+            }
         }
         .onChange(of: baseXScale.domain) { _ in
             handleScaleDomainChange()
@@ -377,6 +378,7 @@ public struct CartesianChartView<
                             oldSeriesContexts: store.oldSeriesContexts,
                             oldRenderSeriesContexts: store.oldRenderSeriesContexts,
                             animationProgress: store.animationProgress,
+                            animationPhase: store.animationPhase,
                             isAnimationActive: store.isAnimationActive,
                             animationStyle: series.first?.animation ?? .none,
                             activeXScale: store.activeXScale,
@@ -397,6 +399,7 @@ public struct CartesianChartView<
                             selectedElementStyle: selectedElementStyle,
                             crosshairStyle: crosshairStyle,
                             tooltipPlacement: tooltipPlacement,
+                            tooltipAnchorPoint: resolvedTooltipAnchorPoint,
                             tooltipOffset: tooltipOffset,
                             tooltipPadding: tooltipPadding,
                             tooltipMaxWidth: tooltipMaxWidth,
@@ -436,6 +439,7 @@ public struct CartesianChartView<
                                 annotations: highlightedAnnotations,
                                 canvasSize: geometry.size,
                                 placement: tooltipPlacement,
+                                anchorOverride: resolvedAnnotationTooltipAnchorPoint,
                                 offset: tooltipOffset,
                                 padding: tooltipPadding,
                                 maxWidth: tooltipMaxWidth,
@@ -463,6 +467,7 @@ public struct CartesianChartView<
                         publishDiagnostics(canvasSize: geometry.size)
                         restoreBoundViewportOrInitialize()
                         publishViewportState()
+                        handledSeriesChangeSignature = seriesChangeSignature
                         store.queueUpdate(
                             series: series,
                             in: geometry.size,
@@ -510,12 +515,64 @@ public struct CartesianChartView<
 
     private func handleGestureEvent(_ event: ChartGestureEvent) {
         syncBaseScales()
-        if handleAnnotationGestureEvent(event) {
-            publishSelectionState()
-            publishViewportState()
-            return
+
+        switch event {
+        case let .highlight(location):
+            lastGestureLocation = location
+        case .highlightCleared, .panChanged, .zoomChanged:
+            lastGestureLocation = nil
+        case .panEnded, .zoomEnded:
+            break
         }
 
+        switch selectionPriority {
+        case .annotationsFirst:
+            if handleAnnotationGestureEvent(event) {
+                notifyEmptyTapIfNeeded(for: event)
+                publishSelectionState()
+                publishViewportState()
+                return
+            }
+            handlePointGestureEvent(event)
+
+        case .seriesFirst:
+            applyPointGestureEvent(event)
+            if case .highlight = event {
+                if store.highlightedPoints.isEmpty,
+                   store.selectedElements.isEmpty {
+                    _ = handleAnnotationGestureEvent(event, fallbackToPointSelection: false)
+                } else {
+                    clearAnnotationSelection()
+                }
+            }
+            notifySelectionChange(for: event)
+
+        case .annotationsOnly:
+            if case .highlight = event {
+                _ = handleAnnotationGestureEvent(event, fallbackToPointSelection: false)
+            } else {
+                _ = handleAnnotationGestureEvent(event, fallbackToPointSelection: false)
+                handlePointGestureEvent(event)
+            }
+
+        case .seriesOnly:
+            if case .highlight = event {
+                clearAnnotationSelection()
+            }
+            handlePointGestureEvent(event)
+        }
+
+        notifyEmptyTapIfNeeded(for: event)
+        publishSelectionState()
+        publishViewportState()
+    }
+
+    private func handlePointGestureEvent(_ event: ChartGestureEvent) {
+        applyPointGestureEvent(event)
+        notifySelectionChange(for: event)
+    }
+
+    private func applyPointGestureEvent(_ event: ChartGestureEvent) {
         store.handleGestureEvent(
             event,
             isHorizontalScrollEnabled: isHorizontalScrollEnabled,
@@ -529,9 +586,6 @@ public struct CartesianChartView<
             overlappingSelectionMode: overlappingSelectionMode,
             series: series
         )
-        notifySelectionChange(for: event)
-        publishSelectionState()
-        publishViewportState()
     }
 
     private func notifySelectionChange(for event: ChartGestureEvent) {
@@ -543,6 +597,24 @@ public struct CartesianChartView<
         case .panEnded, .zoomEnded:
             break
         }
+    }
+
+    private func notifyEmptyTapIfNeeded(for event: ChartGestureEvent) {
+        guard case let .highlight(location) = event,
+              store.highlightedPoints.isEmpty,
+              store.selectedElements.isEmpty,
+              highlightedAnnotations.isEmpty else { return }
+
+        onEmptyTap(location)
+    }
+
+    private func clearAnnotationSelection() {
+        guard !highlightedAnnotations.isEmpty else { return }
+
+        highlightedAnnotations = []
+        annotationSelectionCycle.reset()
+        onAnnotationSelectionChanged([])
+        onChartSelectionChanged(currentSelection)
     }
 
     private func publishDiagnostics(canvasSize: CGSize? = nil) {
@@ -558,10 +630,14 @@ public struct CartesianChartView<
         onDiagnosticsChanged(diagnostics)
     }
 
-    private func handleAnnotationGestureEvent(_ event: ChartGestureEvent) -> Bool {
+    private func handleAnnotationGestureEvent(
+        _ event: ChartGestureEvent,
+        fallbackToPointSelection: Bool? = nil
+    ) -> Bool {
         switch event {
         case let .highlight(location):
             guard isAnnotationSelectionEnabled else { return false }
+            let shouldFallbackToPointSelection = fallbackToPointSelection ?? annotationFallbackToPointSelection
 
             var cycle = annotationSelectionCycle
             let selected = ChartAnnotationSelectionResolver.select(
@@ -579,6 +655,17 @@ public struct CartesianChartView<
             if !selected.isEmpty {
                 store.highlightedPoints = []
                 store.selectedElements = []
+                store.selectedElementContexts = []
+                onSelectionChanged([])
+                onElementSelectionChanged([])
+                onChartSelectionChanged(currentSelection)
+                return true
+            }
+
+            guard shouldFallbackToPointSelection else {
+                store.highlightedPoints = []
+                store.selectedElements = []
+                store.selectedElementContexts = []
                 onSelectionChanged([])
                 onElementSelectionChanged([])
                 onChartSelectionChanged(currentSelection)
@@ -610,6 +697,19 @@ public struct CartesianChartView<
     }
 
     // MARK: - Scale sync
+
+    private func handleSeriesChange() {
+        syncBaseScales()
+        publishDiagnostics(canvasSize: store.canvasSize)
+        store.handleDataChange(
+            series: series,
+            isLiveTrackingEnabled: isLiveTrackingEnabled,
+            liveTrackingMode: liveTrackingMode,
+            initialViewport: initialViewport,
+            isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+            isVerticalScrollEnabled: isVerticalScrollEnabled
+        )
+    }
 
     private func syncBaseScales() {
         store.updateBaseScales(xScale: baseXScale, yScale: baseYScale)
@@ -700,6 +800,19 @@ public struct CartesianChartView<
             annotations: highlightedAnnotations,
             state: store.selectionState
         )
+    }
+
+    private var resolvedTooltipAnchorPoint: CGPoint? {
+        guard tooltipAnchor == .gestureLocation,
+              !store.highlightedPoints.isEmpty ||
+              !store.selectedElements.isEmpty else { return nil }
+        return lastGestureLocation
+    }
+
+    private var resolvedAnnotationTooltipAnchorPoint: CGPoint? {
+        guard tooltipAnchor == .gestureLocation,
+              !highlightedAnnotations.isEmpty else { return nil }
+        return lastGestureLocation
     }
 
     private func applyProgrammaticZoom(magnification: Double) {
@@ -843,6 +956,7 @@ private struct ChartAnnotationTooltipOverlay: View {
     let annotations: [ChartAnnotationContext]
     let canvasSize: CGSize
     let placement: ChartTooltipPlacement
+    let anchorOverride: CGPoint?
     let offset: CGPoint
     let padding: CGFloat
     let maxWidth: CGFloat?
@@ -851,7 +965,7 @@ private struct ChartAnnotationTooltipOverlay: View {
     @State private var tooltipSize: CGSize = .zero
 
     var body: some View {
-        if let anchor = ChartTooltipLayout.anchor(for: annotations.map(\.position)) {
+        if let anchor = anchorOverride ?? ChartTooltipLayout.anchor(for: annotations.map(\.position)) {
             resolvedContent
                 .frame(maxWidth: maxWidth, alignment: .leading)
                 .fixedSize(horizontal: maxWidth == nil, vertical: true)

@@ -40,6 +40,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartTooltipOptions(
                 ChartTooltipOptions(
                     placement: .leading,
+                    anchor: .gestureLocation,
                     offset: CGPoint(x: 3, y: 4),
                     padding: 10,
                     maxWidth: 220
@@ -68,6 +69,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.selectionMode, .nearestX)
         XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
         XCTAssertEqual(view.tooltipPlacement, .leading)
+        XCTAssertEqual(view.tooltipAnchor, .gestureLocation)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 3, y: 4))
         XCTAssertEqual(view.tooltipPadding, 10)
         XCTAssertEqual(view.tooltipMaxWidth, 220)
@@ -108,6 +110,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
     func testSelectionModifierUpdatesModeHitboxAndCallback() {
         var callbackWasCalled = false
         var unifiedCallbackWasCalled = false
+        var emptyTapLocation: CGPoint?
         let view = makeChart()
             .chartSelection(
                 .nearestX,
@@ -118,12 +121,17 @@ final class CartesianChartViewModifierTests: XCTestCase {
             )
             .chartAnnotationSelection(
                 hitboxRadius: 40,
-                overlapping: .all
+                overlapping: .all,
+                fallbackToPointSelection: false
             ) { _ in
                 callbackWasCalled = true
             }
             .chartSelectionChanged { selection in
                 unifiedCallbackWasCalled = selection.isEmpty
+            }
+            .chartSelectionPriority(.seriesFirst)
+            .chartEmptyTap { location in
+                emptyTapLocation = location
             }
 
         XCTAssertEqual(view.selectionMode, .nearestX)
@@ -134,12 +142,17 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertTrue(view.isAnnotationSelectionEnabled)
         XCTAssertEqual(view.annotationHitboxRadius, 40)
         XCTAssertEqual(view.annotationOverlappingSelectionMode, .all)
+        XCTAssertFalse(view.annotationFallbackToPointSelection)
+        XCTAssertEqual(view.selectionPriority, .seriesFirst)
 
         view.onAnnotationSelectionChanged([])
         XCTAssertTrue(callbackWasCalled)
 
         view.onChartSelectionChanged(.none)
         XCTAssertTrue(unifiedCallbackWasCalled)
+
+        view.onEmptyTap(CGPoint(x: 7, y: 8))
+        XCTAssertEqual(emptyTapLocation, CGPoint(x: 7, y: 8))
     }
 
     func testAnnotationTooltipModifierInstallsBuilder() {
@@ -155,6 +168,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartCrosshair(.both())
             .chartTooltipOffset(x: 4, y: -12)
             .chartTooltipPlacement(.trailing, padding: 14)
+            .chartTooltipAnchor(.gestureLocation)
             .chartTooltipMaxWidth(180)
             .chartLiveTracking()
             .chartInitialViewport(xWindow: 8, anchor: .trailing)
@@ -168,6 +182,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.crosshairStyle.mode, .both)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 4, y: -12))
         XCTAssertEqual(view.tooltipPlacement, .trailing)
+        XCTAssertEqual(view.tooltipAnchor, .gestureLocation)
         XCTAssertEqual(view.tooltipPadding, 14)
         XCTAssertEqual(view.tooltipMaxWidth, 180)
         XCTAssertTrue(view.isLiveTrackingEnabled)
@@ -362,6 +377,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
             )
             .presentation(.interactiveExploration())
             .selection(.nearestX)
+            .selectionPriority(.seriesFirst)
+            .annotationSelection(fallbackToPointSelection: false) { _ in }
             .domain(y: .fixed(0 ... 5))
             .annotations(
                 xRanges: [XRangeAnnotation(xRange: 0.2 ... 0.6)],
@@ -373,6 +390,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .viewportState(.constant(ChartViewportState()))
             .selectionState(.constant(ChartSelectionState()))
             .onSelection { _ in }
+            .tooltipAnchor(.gestureLocation)
+            .onEmptyTap { _ in }
             .tooltip { points in
                 Text("\(points.count)")
             }
@@ -432,6 +451,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .legend(.bottom)
             .selection(.elementTap)
             .onSelection { _ in }
+            .onSegmentSelection { _ in }
 
         XCTAssertNotNil(chart.body)
     }
