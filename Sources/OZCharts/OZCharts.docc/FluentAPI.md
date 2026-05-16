@@ -103,11 +103,9 @@ OZChart(samples)
     .selection(.nearestX)
     .selectionState($selectionState)
     .viewportState($viewportState)
-    .onSelectionChanged { points in
-        selectedSample = points.first?.originalPoint
-    }
-    .onElementSelectionChanged { elements in
-        selectedElement = elements.first
+    .onSelection { selection in
+        selectedSample = selection.primaryPoint?.originalPoint
+        selectedElement = selection.primaryElement
     }
     .tooltipOptions(.automatic)
     .viewport(.automatic)

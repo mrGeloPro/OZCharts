@@ -27,8 +27,9 @@ For low-level charts, use the matching modifier:
 ```
 
 `ChartSelection` carries `points`, `elements`, `annotations`, and a stable
-`ChartSelectionState` for linked charts. The older point, element, and
-annotation callbacks remain available during the 3.0 transition.
+`ChartSelectionState` for linked charts. The older point and element callbacks
+remain available during the 3.0 transition, but new product code should use the
+unified payload.
 
 ## Point Selection
 
@@ -47,8 +48,8 @@ Use `ChartSelectionState` to link charts or drive an external detail panel.
 Bars, stacked bar segments, and donut segments expose `ChartSelectedElement` payloads. The payload includes stable ids, values, labels, series metadata, bounds, element-center `position`, and gesture `interactionPosition` when selection comes from direct interaction.
 
 ```swift
-.chartElementSelection { elements in
-    guard let selected = elements.first else { return }
+.chartSelectionChanged { selection in
+    guard let selected = selection.primaryElement else { return }
     print(selected.kind, selected.label ?? "", selected.value ?? 0)
 }
 ```

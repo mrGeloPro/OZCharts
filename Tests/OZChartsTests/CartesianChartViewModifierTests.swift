@@ -107,7 +107,6 @@ final class CartesianChartViewModifierTests: XCTestCase {
 
     func testSelectionModifierUpdatesModeHitboxAndCallback() {
         var callbackWasCalled = false
-        var elementCallbackWasCalled = false
         var unifiedCallbackWasCalled = false
         let view = makeChart()
             .chartSelection(
@@ -122,9 +121,6 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 overlapping: .all
             ) { _ in
                 callbackWasCalled = true
-            }
-            .chartElementSelection { _ in
-                elementCallbackWasCalled = true
             }
             .chartSelectionChanged { selection in
                 unifiedCallbackWasCalled = selection.isEmpty
@@ -141,9 +137,6 @@ final class CartesianChartViewModifierTests: XCTestCase {
 
         view.onAnnotationSelectionChanged([])
         XCTAssertTrue(callbackWasCalled)
-
-        view.onElementSelectionChanged([])
-        XCTAssertTrue(elementCallbackWasCalled)
 
         view.onChartSelectionChanged(.none)
         XCTAssertTrue(unifiedCallbackWasCalled)
@@ -361,8 +354,6 @@ final class CartesianChartViewModifierTests: XCTestCase {
             )
             .viewportState(.constant(ChartViewportState()))
             .selectionState(.constant(ChartSelectionState()))
-            .onSelectionChanged { _ in }
-            .onElementSelectionChanged { _ in }
             .onSelection { _ in }
             .tooltip { points in
                 Text("\(points.count)")

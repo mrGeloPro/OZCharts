@@ -119,6 +119,7 @@ public extension CartesianChartView {
         return copy
     }
 
+    @available(*, deprecated, message: "Use chartSelectionChanged(_:) and read selection.elements instead.")
     func chartElementSelection(
         onChange: @escaping ([ChartSelectedElement]) -> Void
     ) -> Self {

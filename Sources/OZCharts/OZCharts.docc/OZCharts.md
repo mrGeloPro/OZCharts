@@ -25,6 +25,7 @@ Use OZCharts when a product needs more control than a standard chart view can pr
 - <doc:LiveCharts>
 - <doc:SelectionAndAnnotations>
 - <doc:ProductCharts>
+- <doc:MigrationGuide>
 - <doc:Diagnostics>
 - <doc:APIStability>
 

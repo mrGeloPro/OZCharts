@@ -136,6 +136,19 @@ Acceptance criteria:
 * Donut composition to `OZDonutChart`.
 * Manual stacked-bar row axes to `rowLabel`.
 
+Current 3.0 direction:
+
+* `Docs/Migration-3.0.md` and the DocC migration guide document the preferred
+  API for selection, advanced series, donut charts, row labels, presets, and
+  legends.
+* Fluent point and element callbacks are deprecated with messages that point to
+  `.onSelection`.
+* Low-level `chartElementSelection` is deprecated in favor of
+  `.chartSelectionChanged`.
+* Configuration APIs such as `.chartSelection(...)` and
+  `.chartAnnotationSelection(...)` remain available because they still express
+  behavior, not just legacy callback wiring.
+
 ## Release Gate
 
 Before cutting 3.0:

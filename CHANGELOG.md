@@ -7,6 +7,7 @@
 * `ChartSelection<Point>` and unified selection callbacks as the first 3.0 API-shaping step.
 * `ChartPresentationPreset` with dashboard, sparkline, static report, interactive exploration, and dense timeline presets.
 * `ChartLegendOptions` with compact/dashboard legend presets, item limits, overflow labels, and option-based fluent legend modifiers.
+* OZCharts 3.0 migration guide for unified selection, advanced fluent series, donut wrappers, row labels, presets, and legend options.
 * OZCharts 3.0 roadmap for the upcoming architecture and migration work.
 * `OZChart.donut(...)`, `.stackedArea(...)`, `.stackedBar(...)`, and `.violin(...)` fluent helpers for advanced dashboard series.
 * `OZDonutChart` for donut-only cards with center content, dashboard defaults, legend support, and element selection without fake cartesian domains in app code.
@@ -14,6 +15,10 @@
 * `OZChart.stackedBar(... rowLabel:)` for row labels without manual y-axis mapping.
 * Element selection now supports overlapping `.all` and `.cycle` behavior for bars, stacked-bar segments, donut segments, and other selectable element marks.
 * OZCharts 2.6 release notes and updated product-chart recipes for the new fluent API.
+
+### Deprecated
+
+* `OZChart.onSelectionChanged`, `OZChart.onElementSelectionChanged`, and low-level `.chartElementSelection(...)` now point new code to unified selection callbacks.
 
 ## 2.5.2
 

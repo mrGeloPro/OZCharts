@@ -391,6 +391,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    @available(*, deprecated, message: "Use onSelection(_:) and read selection.points instead.")
     public func onSelectionChanged(
         _ handler: @escaping ([ChartPointContext<Point>]) -> Void
     ) -> Self {
@@ -399,6 +400,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    @available(*, deprecated, message: "Use onSelection(_:) and read selection.elements instead.")
     public func onElementSelectionChanged(
         _ handler: @escaping ([ChartSelectedElement]) -> Void
     ) -> Self {

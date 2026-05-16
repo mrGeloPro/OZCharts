@@ -143,8 +143,8 @@ Bars, stacked-bar segments, and donut segments publish `ChartSelectedElement`.
 
 ```swift
 chart
-    .chartElementSelection { elements in
-        selectedElement = elements.first
+    .chartSelectionChanged { selection in
+        selectedElement = selection.primaryElement
     }
 ```
 

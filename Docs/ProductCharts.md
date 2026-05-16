@@ -124,8 +124,8 @@ panel from `element.interactionPosition ?? element.position` and read stable
 
 ```swift
 chart
-    .chartElementSelection { elements in
-        selectedAchievement = elements.first
+    .chartSelectionChanged { selection in
+        selectedAchievement = selection.primaryElement
     }
     .chartSelectionState($selection)
 ```
