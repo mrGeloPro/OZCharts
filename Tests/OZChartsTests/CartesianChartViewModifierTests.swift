@@ -81,6 +81,19 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.canvasRenderOrder, [.coreChart])
     }
 
+    func testPresentationPresetUpdatesChartOptions() {
+        let view = makeChart()
+            .chartPresentation(.dashboardCompact(xPosition: .top, yPosition: .trailing))
+
+        XCTAssertFalse(view.isHorizontalScrollEnabled)
+        XCTAssertFalse(view.isVerticalScrollEnabled)
+        XCTAssertEqual(view.selectionMode, .none)
+        XCTAssertEqual(view.selectionBehavior, .disabled)
+        XCTAssertEqual(view.legendPosition, .bottom)
+        XCTAssertEqual(view.xAxes.first?.position, .top)
+        XCTAssertEqual(view.yAxes.first?.position, .trailing)
+    }
+
     func testSelectionModifierUpdatesModeHitboxAndCallback() {
         var callbackWasCalled = false
         var elementCallbackWasCalled = false
@@ -314,6 +327,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         let data = [Point2D(x: 0, y: 1), Point2D(x: 1, y: 3)]
         let chart = OZChart(data)
             .line(color: .blue, downsampling: .automatic())
+            .presentation(.interactiveExploration())
             .selection(.nearestX)
             .domain(y: .fixed(0 ... 5))
             .annotations(

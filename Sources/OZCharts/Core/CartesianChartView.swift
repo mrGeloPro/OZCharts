@@ -21,8 +21,8 @@ public struct CartesianChartView<
 
     let series: [AnyChartSeries<Point>]
 
-    let xAxes: [XAxisConfig]
-    let yAxes: [YAxisConfig]
+    var xAxes: [XAxisConfig]
+    var yAxes: [YAxisConfig]
     let xRangeAnnotations: [XRangeAnnotation]
     let xyRangeAnnotations: [XYRangeAnnotation]
     let rangeAnnotations: [RangeAnnotation]

@@ -9,6 +9,22 @@
 import SwiftUI
 
 public extension CartesianChartView {
+    func chartPresentation(_ preset: ChartPresentationPreset) -> Self {
+        var copy = self
+        copy = copy.chartInteractionOptions(preset.interaction)
+        copy = copy.chartSelectionOptions(preset.selection)
+        copy = copy.chartTooltipOptions(preset.tooltip)
+        copy = copy.chartViewportOptions(preset.viewport)
+        copy = copy.chartRenderOptions(preset.rendering)
+        if let xAxes = preset.xAxes {
+            copy.xAxes = xAxes
+        }
+        if let yAxes = preset.yAxes {
+            copy.yAxes = yAxes
+        }
+        return copy
+    }
+
     func chartInteractionOptions(_ options: ChartInteractionOptions) -> Self {
         var copy = self
         copy.isHorizontalScrollEnabled = options.isHorizontalScrollEnabled

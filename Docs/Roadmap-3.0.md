@@ -56,7 +56,7 @@ Breaking candidates:
 
 ### 3. Presets And Themes
 
-Create first-class presets for common product surfaces:
+Create first-class `ChartPresentationPreset` values for common product surfaces:
 
 * dashboard compact
 * sparkline/no axes
@@ -64,12 +64,28 @@ Create first-class presets for common product surfaces:
 * interactive exploration
 * dense event timeline
 
+Recommended usage:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .presentation(.dashboardCompact(xPosition: .top, yPosition: .trailing))
+```
+
+For low-level chart composition:
+
+```swift
+CartesianChartView(...)
+    .chartPresentation(.interactiveExploration())
+```
+
 Acceptance criteria:
 
 * Presets combine interaction, axes, legend, tooltip, render style, and theme
   defaults where appropriate.
 * Axis placement remains explicit: top/bottom and leading/trailing continue to
   work through presets and manual configs.
+* Low-level views can apply presentation presets after initialization.
 
 ### 4. Legend API
 

@@ -69,9 +69,18 @@ OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
 }
 ```
 
-For compact dashboard cards, combine ``ChartRenderOptions/dashboard(legend:spacing:)``,
+For compact dashboard cards, prefer a presentation preset:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .presentation(.dashboardCompact(xPosition: .top, yPosition: .trailing))
+```
+
+Use lower-level modifiers such as ``ChartRenderOptions/dashboard(legend:spacing:)``,
 ``ChartTheme/dashboard``, ``OZChart/staticChart()``, ``OZChart/hiddenAxes()``,
-and ``OZChart/compactAxes(xTickCount:yTickCount:xPosition:yPosition:)``.
+and ``OZChart/compactAxes(xTickCount:yTickCount:xPosition:yPosition:)`` when a
+screen needs custom composition beyond a preset.
 
 ## Configure Behavior
 

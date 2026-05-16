@@ -5,6 +5,7 @@
 ### Added
 
 * `ChartSelection<Point>` and unified selection callbacks as the first 3.0 API-shaping step.
+* `ChartPresentationPreset` with dashboard, sparkline, static report, interactive exploration, and dense timeline presets.
 * OZCharts 3.0 roadmap for the upcoming architecture and migration work.
 * `OZChart.donut(...)`, `.stackedArea(...)`, `.stackedBar(...)`, and `.violin(...)` fluent helpers for advanced dashboard series.
 * `OZDonutChart` for donut-only cards with center content, dashboard defaults, legend support, and element selection without fake cartesian domains in app code.

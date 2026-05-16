@@ -320,6 +320,25 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func presentation(_ preset: ChartPresentationPreset) -> Self {
+        var copy = self
+        if let theme = preset.theme {
+            copy.theme = theme
+        }
+        copy.interactionOptions = preset.interaction
+        copy.selectionOptions = preset.selection
+        copy.tooltipOptions = preset.tooltip
+        copy.viewportOptions = preset.viewport
+        copy.renderOptions = preset.rendering
+        if let xAxes = preset.xAxes {
+            copy.xAxes = xAxes
+        }
+        if let yAxes = preset.yAxes {
+            copy.yAxes = yAxes
+        }
+        return copy
+    }
+
     public func legend(
         _ position: ChartLegendPosition = .bottom,
         spacing: CGFloat = 12
