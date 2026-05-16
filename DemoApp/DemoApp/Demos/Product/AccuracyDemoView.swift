@@ -43,29 +43,26 @@ struct AccuracyDemoView: View {
         ScrollView {
             VStack(spacing: 18) {
                 DemoChartPanel {
-                    CartesianChartView(
-                        series: [
-                            ViolinSeries(
-                                data: mockData,
-                                id: DemoSeriesID.violinAccuracy,
-                                centerX: 50,
-                                maxHalfWidth: 40,
-                                sideMapper: { $0 == .result ? .left : .right },
-                                colorMapper: { $0 == .result ? DemoColors.cyan : DemoColors.purple },
-                                fillStyleMapper: { group in
-                                    group == .result
-                                        ? .gradient([DemoColors.cyan.opacity(0.58), DemoColors.cyan.opacity(0.24)], startPoint: .leading, endPoint: .trailing)
-                                        : .gradient([DemoColors.purple.opacity(0.58), DemoColors.purple.opacity(0.24)], startPoint: .trailing, endPoint: .leading)
-                                },
-                                shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.18), radius: 8)
-                            )
-                        ],
-                        xScale: LinearScale(domain: 0...100),
-                        yScale: LinearScale(domain: 330...900),
-                        xAxes: [
+                    OZChart(mockData)
+                        .violin(
+                            id: DemoSeriesID.violinAccuracy,
+                            centerX: 50,
+                            maxHalfWidth: 40,
+                            sideMapper: { $0 == .result ? .left : .right },
+                            colorMapper: { $0 == .result ? DemoColors.cyan : DemoColors.purple },
+                            fillStyleMapper: { group in
+                                group == .result
+                                    ? .gradient([DemoColors.cyan.opacity(0.58), DemoColors.cyan.opacity(0.24)], startPoint: .leading, endPoint: .trailing)
+                                    : .gradient([DemoColors.purple.opacity(0.58), DemoColors.purple.opacity(0.24)], startPoint: .trailing, endPoint: .leading)
+                            },
+                            shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.18), radius: 8)
+                        )
+                        .domain(x: .fixed(0...100), y: .fixed(330...900))
+                        .axes(
+                            x: [
                             XAxisConfig(position: .bottom, tickCount: 0, labelFormatter: { _ in "" }, height: 34, title: "ΔT distributions", titleColor: .white)
-                        ],
-                        yAxes: [
+                            ],
+                            y: [
                             YAxisConfig(position: .leading, explicitValues: deltaTicks, labelFormatter: { "\(Int($0))" }, width: 62, title: "ΔT (ms)", titleColor: .white),
                             YAxisConfig(
                                 position: .trailing,
@@ -78,8 +75,10 @@ struct AccuracyDemoView: View {
                                 title: "Rhythm (bpm)",
                                 titleColor: .white
                             )
-                        ],
-                        rangeAnnotations: [
+                            ]
+                        )
+                        .annotations(
+                            ranges: [
                             RangeAnnotation(
                                 yRange: 496...504,
                                 label: "Target 120 bpm",
@@ -92,16 +91,18 @@ struct AccuracyDemoView: View {
                                 labelAnchor: .leading,
                                 labelYOffset: -16
                             )
-                        ],
-                        horizontalAnnotations: [
+                            ],
+                            horizontal: [
                             HorizontalAnnotation(yValue: 500, label: "Target 120 bpm", color: .yellow)
-                        ],
-                        isHorizontalScrollEnabled: false,
-                        isHorizontalZoomEnabled: false,
-                        isVerticalScrollEnabled: true,
-                        isVerticalZoomEnabled: true
-                    ) { _ in EmptyView() }
-                    .frame(height: 390)
+                            ]
+                        )
+                        .interaction(ChartInteractionOptions(
+                            isHorizontalScrollEnabled: false,
+                            isVerticalScrollEnabled: true,
+                            isHorizontalZoomEnabled: false,
+                            isVerticalZoomEnabled: true
+                        ))
+                        .frame(height: 390)
 
                     DemoLegend(items: [
                         ("Result", DemoColors.cyan),

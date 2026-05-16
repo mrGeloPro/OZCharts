@@ -20,16 +20,18 @@ YAxisConfig(
 
 ## Stacked Achievement Times
 
-Use `StackedBarSeries` with grouped points. Each row is a category, each group is a milestone segment, and striped fills can represent unavailable or remaining time.
+Use fluent ``OZChart/stackedBar(id:stackOrder:colorMapper:fillStyleMapper:groupLabel:rowLabel:valueLabelStyle:barHeight:cornerRadius:segmentGap:animation:zIndex:)`` with grouped points. Each row is a category, each group is a milestone segment, and striped fills can represent unavailable or remaining time.
 
 ```swift
-StackedBarSeries(
-    data: rows,
-    stackOrder: [.star1, .star2, .star3, .remainder],
-    colorMapper: palette.color,
-    fillStyleMapper: palette.fill,
-    valueLabelStyle: ChartValueLabelStyle(position: .outside)
-)
+OZChart(rows)
+    .stackedBar(
+        stackOrder: [.star1, .star2, .star3, .remainder],
+        colorMapper: palette.color,
+        fillStyleMapper: palette.fill,
+        rowLabel: { row in title(for: row) },
+        valueLabelStyle: ChartValueLabelStyle(position: .outside)
+    )
+    .legend(.bottom)
 ```
 
 For selected-row callouts, use `ChartAnchoredCalloutLayout.vertical` to keep the
@@ -48,11 +50,13 @@ let layout = ChartAnchoredCalloutLayout.vertical(
 
 ## Donut Score
 
-Use `DonutSeries` with `gapAngle`, `lineCap`, `thickness`, and per-segment `DonutSegmentStyle` values to match product art direction.
+Use ``OZDonutChart`` with `gapAngle`, `lineCap`, `thickness`, and
+per-segment `DonutSegmentStyle` values to match product art direction without
+declaring cartesian domains at the call site.
 
 ```swift
-DonutSeries(
-    data: scoreShare,
+OZDonutChart(
+    scoreShare,
     colors: [.cyan, .purple, .yellow],
     segmentStyles: [
         DonutSegmentStyle(fill: .gradient([.cyan, .mint])),
@@ -62,9 +66,11 @@ DonutSeries(
     thickness: 42,
     gapAngle: .degrees(7),
     lineCap: .round
-)
+) {
+    Text("82%")
+}
 ```
 
 ## Stacked Points Distribution
 
-Use `StackedAreaSeries` with `.step` interpolation when data represents accumulated incremental events. This keeps each event step visible and avoids implying continuous change where the product has discrete scoring moments.
+Use fluent ``OZChart/stackedArea(id:stackOrder:colorMapper:fillStyleMapper:groupLabel:interpolation:lineWidth:fillOpacity:shadow:animation:zIndex:)`` with `.step` interpolation when data represents accumulated incremental events. This keeps each event step visible and avoids implying continuous change where the product has discrete scoring moments.

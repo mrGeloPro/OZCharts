@@ -205,6 +205,42 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         )
     }
 
+    public func donut(
+        id: UUID? = nil,
+        colors: [Color],
+        segmentStyles: [DonutSegmentStyle] = [],
+        label: String? = nil,
+        segmentLabelMapper: ((Point) -> String?)? = nil,
+        thickness: CGFloat = 40,
+        gapAngle: Angle = .degrees(6),
+        startAngle: Angle = .degrees(-90),
+        lineCap: CGLineCap = .butt,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
+    ) -> Self {
+        var copy = addingSeries(
+            DonutSeries(
+                data: sourceData,
+                id: id ?? defaultSeriesID(kind: .donut),
+                colors: colors,
+                segmentStyles: segmentStyles,
+                label: label,
+                segmentLabelMapper: segmentLabelMapper,
+                thickness: thickness,
+                gapAngle: gapAngle,
+                startAngle: startAngle,
+                lineCap: lineCap,
+                animation: animation,
+                zIndex: zIndex
+            )
+        )
+        if copy.xAxes == nil, copy.yAxes == nil {
+            copy = copy.hiddenAxes()
+        }
+        copy.interactionOptions = .static
+        return copy
+    }
+
     public func domain(
         x: ChartDomain? = nil,
         y: ChartDomain? = nil
@@ -278,6 +314,43 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     public func rendering(_ options: ChartRenderOptions) -> Self {
         var copy = self
         copy.renderOptions = options
+        return copy
+    }
+
+    public func legend(
+        _ position: ChartLegendPosition = .bottom,
+        spacing: CGFloat = 12
+    ) -> Self {
+        var copy = self
+        copy.renderOptions.legendPosition = position
+        copy.renderOptions.legendSpacing = spacing
+        return copy
+    }
+
+    public func staticChart() -> Self {
+        var copy = self
+        copy.interactionOptions = .static
+        copy.selectionOptions = .disabled
+        copy.viewportOptions.showsZoomControls = false
+        return copy
+    }
+
+    public func hiddenAxes() -> Self {
+        var copy = self
+        copy.xAxes = [.hidden()]
+        copy.yAxes = [.hidden()]
+        return copy
+    }
+
+    public func compactAxes(
+        xTickCount: Int = 4,
+        yTickCount: Int = 4,
+        xPosition: XAxisPosition = .bottom,
+        yPosition: YAxisPosition = .leading
+    ) -> Self {
+        var copy = self
+        copy.xAxes = [.compact(position: xPosition, tickCount: xTickCount)]
+        copy.yAxes = [.compact(position: yPosition, tickCount: yTickCount)]
         return copy
     }
 
@@ -396,6 +469,124 @@ private enum OZChartSeriesKind: UInt8 {
     case area = 0x02
     case bar = 0x03
     case scatter = 0x04
+    case donut = 0x05
+    case stackedArea = 0x06
+    case stackedBar = 0x07
+    case violin = 0x08
+}
+
+public extension OZChart where Point: GroupedChartDataPoint {
+    func stackedArea(
+        id: UUID? = nil,
+        stackOrder: [Point.GroupID],
+        colorMapper: @escaping (Point.GroupID) -> Color,
+        fillStyleMapper: ((Point.GroupID) -> ChartFillStyle)? = nil,
+        groupLabel: ((Point.GroupID) -> String?)? = nil,
+        interpolation: LineInterpolation = .step,
+        lineWidth: CGFloat = 3,
+        fillOpacity: Double = 0.32,
+        shadow: ChartShadowStyle? = nil,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
+    ) -> Self {
+        addingSeries(
+            StackedAreaSeries(
+                data: sourceData,
+                id: id ?? defaultSeriesID(kind: .stackedArea),
+                stackOrder: stackOrder,
+                colorMapper: colorMapper,
+                fillStyleMapper: fillStyleMapper,
+                groupLabel: groupLabel,
+                interpolation: interpolation,
+                lineWidth: lineWidth,
+                fillOpacity: fillOpacity,
+                shadow: shadow,
+                animation: animation,
+                zIndex: zIndex
+            )
+        )
+    }
+
+    func stackedBar(
+        id: UUID? = nil,
+        stackOrder: [Point.GroupID],
+        colorMapper: @escaping (Point.GroupID) -> Color,
+        fillStyleMapper: ((Point.GroupID) -> ChartFillStyle)? = nil,
+        groupLabel: ((Point.GroupID) -> String?)? = nil,
+        rowLabel: ((Double) -> String?)? = nil,
+        valueLabelStyle: ChartValueLabelStyle? = nil,
+        barHeight: CGFloat = 28,
+        cornerRadius: CGFloat = 4,
+        segmentGap: CGFloat = 2,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
+    ) -> Self {
+        var copy = addingSeries(
+            StackedBarSeries(
+                data: sourceData,
+                id: id ?? defaultSeriesID(kind: .stackedBar),
+                stackOrder: stackOrder,
+                colorMapper: colorMapper,
+                fillStyleMapper: fillStyleMapper,
+                groupLabel: groupLabel,
+                valueLabelStyle: valueLabelStyle,
+                barHeight: barHeight,
+                cornerRadius: cornerRadius,
+                segmentGap: segmentGap,
+                animation: animation,
+                zIndex: zIndex
+            )
+        )
+
+        if let rowLabel, copy.yAxes == nil {
+            let rowValues = Array(Set(sourceData.map(\.y))).sorted()
+            copy.yAxes = [.stackedBarRows(values: rowValues, rowLabel: rowLabel)]
+        }
+        return copy
+    }
+
+    func violin(
+        id: UUID? = nil,
+        centerX: Double,
+        maxHalfWidth: CGFloat = 120,
+        sideMapper: @escaping (Point.GroupID) -> ViolinSide,
+        colorMapper: @escaping (Point.GroupID) -> Color,
+        fillStyleMapper: ((Point.GroupID) -> ChartFillStyle)? = nil,
+        groupLabel: ((Point.GroupID) -> String?)? = nil,
+        fillOpacity: Double = 0.35,
+        strokeWidth: CGFloat = 1,
+        showScatter: Bool = true,
+        scatterSize: CGFloat = 5,
+        scatterOpacity: Double = 0.9,
+        shadow: ChartShadowStyle? = nil,
+        bandwidth: Double? = nil,
+        sampleCount: Int = 80,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
+    ) -> Self {
+        addingSeries(
+            ViolinSeries(
+                data: sourceData,
+                id: id ?? defaultSeriesID(kind: .violin),
+                centerX: centerX,
+                maxHalfWidth: maxHalfWidth,
+                sideMapper: sideMapper,
+                colorMapper: colorMapper,
+                fillStyleMapper: fillStyleMapper,
+                groupLabel: groupLabel,
+                fillOpacity: fillOpacity,
+                strokeWidth: strokeWidth,
+                showScatter: showScatter,
+                scatterSize: scatterSize,
+                scatterOpacity: scatterOpacity,
+                shadow: shadow,
+                bandwidth: bandwidth,
+                sampleCount: sampleCount,
+                animation: animation,
+                zIndex: zIndex
+            )
+        )
+    }
 }
 
 public extension OZChart where TooltipContent == EmptyView {

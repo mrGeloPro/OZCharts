@@ -54,37 +54,34 @@ struct PointsDistributionDemoView: View {
         ScrollView {
             VStack(spacing: 18) {
                 DemoChartPanel {
-                    CartesianChartView(
-                        series: [
-                            StackedAreaSeries(
-                                data: layers.stacked,
-                                id: DemoSeriesID.pointsDistribution,
-                                stackOrder: [.basic, .bonus, .streak],
-                                colorMapper: { layer in
-                                    switch layer {
-                                    case .basic: return DemoColors.cyan
-                                    case .bonus: return DemoColors.purple
-                                    case .streak: return .yellow
-                                    }
-                                },
-                                fillStyleMapper: { layer in
-                                    switch layer {
-                                    case .basic:
-                                        return .gradient([DemoColors.cyan.opacity(0.36), DemoColors.cyan.opacity(0.10)])
-                                    case .bonus:
-                                        return .gradient([DemoColors.purple.opacity(0.38), DemoColors.purple.opacity(0.12)])
-                                    case .streak:
-                                        return .gradient([Color.yellow.opacity(0.34), DemoColors.orange.opacity(0.10)])
-                                    }
-                                },
-                                interpolation: .step,
-                                lineWidth: 3,
-                                shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.16), radius: 6)
-                            )
-                        ],
-                        xScale: LinearScale(domain: 0...32),
-                        yScale: LinearScale(domain: 0...640),
-                        xAxes: [
+                    OZChart(layers.stacked)
+                        .stackedArea(
+                            id: DemoSeriesID.pointsDistribution,
+                            stackOrder: [.basic, .bonus, .streak],
+                            colorMapper: { layer in
+                                switch layer {
+                                case .basic: return DemoColors.cyan
+                                case .bonus: return DemoColors.purple
+                                case .streak: return .yellow
+                                }
+                            },
+                            fillStyleMapper: { layer in
+                                switch layer {
+                                case .basic:
+                                    return .gradient([DemoColors.cyan.opacity(0.36), DemoColors.cyan.opacity(0.10)])
+                                case .bonus:
+                                    return .gradient([DemoColors.purple.opacity(0.38), DemoColors.purple.opacity(0.12)])
+                                case .streak:
+                                    return .gradient([Color.yellow.opacity(0.34), DemoColors.orange.opacity(0.10)])
+                                }
+                            },
+                            interpolation: .step,
+                            lineWidth: 3,
+                            shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.16), radius: 6)
+                        )
+                        .domain(x: .fixed(0...32), y: .fixed(0...640))
+                        .axes(
+                            x: [
                             XAxisConfig(
                                 position: .bottom,
                                 showGrid: false,
@@ -92,8 +89,8 @@ struct PointsDistributionDemoView: View {
                                 labelFormatter: { "\(Int($0))s" },
                                 showAxisLine: true
                             )
-                        ],
-                        yAxes: [
+                            ],
+                            y: [
                             YAxisConfig(
                                 position: .leading,
                                 explicitValues: [0, 100, 200, 300, 400, 500, 600],
@@ -102,9 +99,10 @@ struct PointsDistributionDemoView: View {
                                 labelFormatter: { "\(Int($0))" },
                                 showAxisLine: true
                             )
-                        ]
-                    ) { _ in EmptyView() }
-                    .frame(height: 330)
+                            ]
+                        )
+                        .staticChart()
+                        .frame(height: 330)
 
                     DemoLegend(items: legend)
                 }

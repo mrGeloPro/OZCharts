@@ -55,42 +55,41 @@ struct StarAchievementDemoView: View {
         ScrollView {
             VStack(spacing: 18) {
                 DemoChartPanel {
-                    CartesianChartView(
-                        series: [
-                            StackedBarSeries(
-                                data: mockData,
-                                id: DemoSeriesID.starAchievement,
-                                stackOrder: [.s1, .s2, .s3, .remainder],
-                                colorMapper: { star in
-                                    switch star {
-                                    case .s1: return .yellow
-                                    case .s2: return Color(red: 1.00, green: 0.72, blue: 0.00)
-                                    case .s3: return DemoColors.orange
-                                    case .remainder: return DemoColors.surface
-                                    }
-                                },
-                                fillStyleMapper: { star in
-                                    switch star {
-                                    case .s1: return .gradient([.yellow, Color.yellow.opacity(0.86)], startPoint: .leading, endPoint: .trailing)
-                                    case .s2: return .gradient([Color.yellow.opacity(0.92), DemoColors.orange], startPoint: .leading, endPoint: .trailing)
-                                    case .s3: return .gradient([DemoColors.orange, Color.orange], startPoint: .leading, endPoint: .trailing)
-                                    case .remainder:
-                                        return .stripes(
-                                            foreground: Color.white.opacity(0.12),
-                                            background: DemoColors.surface.opacity(0.70),
-                                            lineWidth: 3,
-                                            spacing: 9
-                                        )
-                                    }
-                                },
-                                barHeight: 26,
-                                cornerRadius: 3,
-                                segmentGap: 2
-                            )
-                        ],
-                        xScale: LinearScale(domain: 0...100),
-                        yScale: LinearScale(domain: -0.8...3.8),
-                        xAxes: [
+                    OZChart(mockData)
+                        .stackedBar(
+                            id: DemoSeriesID.starAchievement,
+                            stackOrder: [.s1, .s2, .s3, .remainder],
+                            colorMapper: { star in
+                                switch star {
+                                case .s1: return .yellow
+                                case .s2: return Color(red: 1.00, green: 0.72, blue: 0.00)
+                                case .s3: return DemoColors.orange
+                                case .remainder: return DemoColors.surface
+                                }
+                            },
+                            fillStyleMapper: { star in
+                                switch star {
+                                case .s1: return .gradient([.yellow, Color.yellow.opacity(0.86)], startPoint: .leading, endPoint: .trailing)
+                                case .s2: return .gradient([Color.yellow.opacity(0.92), DemoColors.orange], startPoint: .leading, endPoint: .trailing)
+                                case .s3: return .gradient([DemoColors.orange, Color.orange], startPoint: .leading, endPoint: .trailing)
+                                case .remainder:
+                                    return .stripes(
+                                        foreground: Color.white.opacity(0.12),
+                                        background: DemoColors.surface.opacity(0.70),
+                                        lineWidth: 3,
+                                        spacing: 9
+                                    )
+                                }
+                            },
+                            groupLabel: { star in starTitle(for: star) },
+                            rowLabel: { [yLabels] row in yLabels[Int(row.rounded())] },
+                            barHeight: 26,
+                            cornerRadius: 3,
+                            segmentGap: 2
+                        )
+                        .domain(x: .fixed(0...100), y: .fixed(-0.8...3.8))
+                        .axes(
+                            x: [
                             XAxisConfig(
                                 position: .bottom,
                                 showGrid: false,
@@ -98,8 +97,8 @@ struct StarAchievementDemoView: View {
                                 labelFormatter: { "\(Int($0))" },
                                 showAxisLine: true
                             )
-                        ],
-                        yAxes: [
+                            ],
+                            y: [
                             YAxisConfig(
                                 position: .leading,
                                 showGrid: false,
@@ -122,20 +121,21 @@ struct StarAchievementDemoView: View {
                                     )
                                 }
                             )
-                        ],
-                        customViewAnnotations: starAnnotations,
-                        isHorizontalScrollEnabled: false,
-                        isHorizontalZoomEnabled: false,
-                        isVerticalScrollEnabled: false,
-                        isVerticalZoomEnabled: false
-                    ) { _ in
-                        EmptyView()
-                    }
-                    .chartSelection(.none, behavior: .tapAndDrag, clearsOnEnd: false)
-                    .chartElementSelection { elements in
-                        selectedElement = elements.first
-                    }
-                    .frame(height: 340)
+                            ]
+                        )
+                        .annotations(customViews: starAnnotations)
+                        .interaction(.static)
+                        .selection(ChartSelectionOptions(
+                            mode: .none,
+                            behavior: .tapAndDrag,
+                            overlappingSelectionMode: .cycle,
+                            hitboxRadius: 24,
+                            clearsSelectionOnGestureEnd: false
+                        ))
+                        .onElementSelectionChanged { elements in
+                            selectedElement = elements.first
+                        }
+                        .frame(height: 340)
 
                     DemoLegend(items: [
                         ("Star 1", .yellow),

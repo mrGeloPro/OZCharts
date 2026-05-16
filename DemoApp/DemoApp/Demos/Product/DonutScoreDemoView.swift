@@ -28,41 +28,29 @@ struct DonutScoreDemoView: View {
         ScrollView {
             VStack(spacing: 18) {
                 DemoChartPanel {
-                    CartesianChartView(
-                        series: [
-                            DonutSeries(
-                                data: mockData,
-                                id: DemoSeriesID.donutScore,
-                                colors: legend.map(\.2),
-                                segmentStyles: [
-                                    DonutSegmentStyle(
-                                        fill: .gradient([DemoColors.cyan, DemoColors.cyan.opacity(0.78)]),
-                                        shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.28), radius: 8)
-                                    ),
-                                    DonutSegmentStyle(
-                                        fill: .gradient([DemoColors.purple, DemoColors.purple.opacity(0.78)]),
-                                        explodedOffset: 10
-                                    ),
-                                    DonutSegmentStyle(
-                                        fill: .gradient([.yellow, DemoColors.orange]),
-                                        explodedOffset: 12
-                                    )
-                                ],
-                                thickness: 38,
-                                gapAngle: .degrees(9),
-                                startAngle: .degrees(-90),
-                                lineCap: .butt
+                    OZDonutChart(
+                        mockData,
+                        id: DemoSeriesID.donutScore,
+                        colors: legend.map(\.2),
+                        segmentStyles: [
+                            DonutSegmentStyle(
+                                fill: .gradient([DemoColors.cyan, DemoColors.cyan.opacity(0.78)]),
+                                shadow: ChartShadowStyle(color: DemoColors.cyan.opacity(0.28), radius: 8)
+                            ),
+                            DonutSegmentStyle(
+                                fill: .gradient([DemoColors.purple, DemoColors.purple.opacity(0.78)]),
+                                explodedOffset: 10
+                            ),
+                            DonutSegmentStyle(
+                                fill: .gradient([.yellow, DemoColors.orange]),
+                                explodedOffset: 12
                             )
                         ],
-                        xScale: LinearScale(domain: 0...1),
-                        yScale: LinearScale(domain: 0...1),
-                        xAxes: [],
-                        yAxes: [],
-                        isHorizontalScrollEnabled: false,
-                        isHorizontalZoomEnabled: false,
-                        isVerticalScrollEnabled: false,
-                        isVerticalZoomEnabled: false
-                    ) { _ in EmptyView() }
+                        thickness: 38,
+                        gapAngle: .degrees(9),
+                        startAngle: .degrees(-90),
+                        lineCap: .butt
+                    )
                     .frame(height: 260)
 
                     VStack(alignment: .leading, spacing: 12) {

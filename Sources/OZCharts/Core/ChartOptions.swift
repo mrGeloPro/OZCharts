@@ -30,6 +30,12 @@ public struct ChartInteractionOptions: Equatable {
     }
 
     public static let automatic = ChartInteractionOptions()
+    public static let `static` = ChartInteractionOptions(
+        isHorizontalScrollEnabled: false,
+        isVerticalScrollEnabled: false,
+        isHorizontalZoomEnabled: false,
+        isVerticalZoomEnabled: false
+    )
     public static let disabled = ChartInteractionOptions(
         isHorizontalScrollEnabled: false,
         isVerticalScrollEnabled: false,
@@ -69,6 +75,14 @@ public struct ChartSelectionOptions: Equatable {
     public static let nearestX = ChartSelectionOptions(
         mode: .nearestX,
         behavior: .tapAndDrag,
+        hitboxRadius: 24,
+        clearsSelectionOnGestureEnd: false
+    )
+
+    public static let elementTap = ChartSelectionOptions(
+        mode: .none,
+        behavior: .tap,
+        overlappingSelectionMode: .all,
         hitboxRadius: 24,
         clearsSelectionOnGestureEnd: false
     )
@@ -135,4 +149,15 @@ public struct ChartRenderOptions {
     }
 
     public static let automatic = ChartRenderOptions()
+
+    public static func dashboard(
+        legend: ChartLegendPosition = .bottom,
+        spacing: CGFloat = 10
+    ) -> ChartRenderOptions {
+        ChartRenderOptions(
+            legendPosition: legend,
+            legendSpacing: spacing,
+            selectedElementStyle: .product
+        )
+    }
 }

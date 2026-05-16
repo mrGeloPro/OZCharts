@@ -201,7 +201,10 @@ public final class ChartStore<
             )
 
         case let .highlight(location):
-            let elementContexts = selectElementContexts(near: location)
+            let elementContexts = selectElementContexts(
+                near: location,
+                overlappingSelectionMode: overlappingSelectionMode
+            )
             if !elementContexts.isEmpty {
                 selectedElementContexts = elementContexts
                 selectedElements = elementContexts.map(\.payload)
@@ -224,14 +227,26 @@ public final class ChartStore<
         }
     }
 
-    func selectElements(near location: CGPoint) -> [ChartSelectedElement] {
-        selectElementContexts(near: location).map(\.payload)
+    func selectElements(
+        near location: CGPoint,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .cycle
+    ) -> [ChartSelectedElement] {
+        selectElementContexts(
+            near: location,
+            overlappingSelectionMode: overlappingSelectionMode
+        ).map(\.payload)
     }
 
-    func selectElementContexts(near location: CGPoint) -> [ChartElementContext] {
+    func selectElementContexts(
+        near location: CGPoint,
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .cycle
+    ) -> [ChartElementContext] {
         ChartHitTestResolver.elementContexts(
             near: location,
-            contexts: selectableElements
+            contexts: selectableElements,
+            overlappingSelectionMode: overlappingSelectionMode,
+            cycleIDs: &selectionCycleIDs,
+            cycleIndex: &selectionCycleIndex
         )
     }
 

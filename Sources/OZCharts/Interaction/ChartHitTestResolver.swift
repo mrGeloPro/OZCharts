@@ -14,31 +14,76 @@ enum ChartHitTestResolver {
         near location: CGPoint,
         contexts: [ChartElementContext]
     ) -> [ChartSelectedElement] {
-        elementContexts(near: location, contexts: contexts).map(\.payload)
+        var cycleIDs: [UUID] = []
+        var cycleIndex = 0
+        return elements(
+            near: location,
+            contexts: contexts,
+            overlappingSelectionMode: .cycle,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+    }
+
+    static func elements(
+        near location: CGPoint,
+        contexts: [ChartElementContext],
+        overlappingSelectionMode: ChartOverlappingSelectionMode,
+        cycleIDs: inout [UUID],
+        cycleIndex: inout Int
+    ) -> [ChartSelectedElement] {
+        elementContexts(
+            near: location,
+            contexts: contexts,
+            overlappingSelectionMode: overlappingSelectionMode,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        ).map(\.payload)
     }
 
     static func elementContexts(
         near location: CGPoint,
         contexts: [ChartElementContext]
     ) -> [ChartElementContext] {
-        var bestContext: ChartElementContext?
+        var cycleIDs: [UUID] = []
+        var cycleIndex = 0
+        return elementContexts(
+            near: location,
+            contexts: contexts,
+            overlappingSelectionMode: .cycle,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+    }
 
-        for context in contexts where context.contains(location) {
-            guard let currentBest = bestContext else {
-                bestContext = context
-                continue
+    static func elementContexts(
+        near location: CGPoint,
+        contexts: [ChartElementContext],
+        overlappingSelectionMode: ChartOverlappingSelectionMode,
+        cycleIDs: inout [UUID],
+        cycleIndex: inout Int
+    ) -> [ChartElementContext] {
+        let selected = contexts
+            .filter { $0.contains(location) }
+            .sorted { lhs, rhs in
+                if lhs.zIndex != rhs.zIndex {
+                    return lhs.zIndex > rhs.zIndex
+                }
+                return (lhs.payload.seriesIndex ?? 0) > (rhs.payload.seriesIndex ?? 0)
             }
 
-            if context.zIndex > currentBest.zIndex ||
-                (context.zIndex == currentBest.zIndex &&
-                    (context.payload.seriesIndex ?? 0) > (currentBest.payload.seriesIndex ?? 0)) {
-                bestContext = context
-            }
+        let resolved = resolveOverlappingElements(
+            selected,
+            mode: overlappingSelectionMode,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+
+        return resolved.map { context in
+            var copy = context
+            copy.payload.interactionPosition = location
+            return copy
         }
-
-        guard var context = bestContext else { return [] }
-        context.payload.interactionPosition = location
-        return [context]
     }
 
     static func points<Point: ChartDataPoint>(
@@ -123,5 +168,38 @@ enum ChartHitTestResolver {
         }
 
         return [selected[cycleIndex]]
+    }
+
+    private static func resolveOverlappingElements(
+        _ selected: [ChartElementContext],
+        mode: ChartOverlappingSelectionMode,
+        cycleIDs: inout [UUID],
+        cycleIndex: inout Int
+    ) -> [ChartElementContext] {
+        switch mode {
+        case .all:
+            if selected.count <= 1 {
+                cycleIDs = []
+                cycleIndex = 0
+            }
+            return selected
+
+        case .cycle:
+            guard selected.count > 1 else {
+                cycleIDs = []
+                cycleIndex = 0
+                return selected
+            }
+
+            let ids = selected.map(\.id)
+            if ids == cycleIDs {
+                cycleIndex = (cycleIndex + 1) % selected.count
+            } else {
+                cycleIDs = ids
+                cycleIndex = 0
+            }
+
+            return [selected[cycleIndex]]
+        }
     }
 }

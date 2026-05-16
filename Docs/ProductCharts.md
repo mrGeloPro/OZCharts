@@ -4,14 +4,20 @@ These recipes show how to recreate the product-style charts used in the demo app
 
 ## Accuracy Overview
 
-Use a `ViolinSeries` for mirrored distributions, scatter points for observed samples, a dashed `HorizontalAnnotation` for the target, and a `RangeAnnotation` label for readable target text.
+Use the fluent `.violin(...)` helper for mirrored distributions, scatter points
+for observed samples, a dashed `HorizontalAnnotation` for the target, and a
+`RangeAnnotation` label for readable target text.
 
 ```swift
-CartesianChartView(
-    series: [resultViolin, bestViolin],
-    xScale: LinearScale(domain: 0...100),
-    yScale: LinearScale(domain: 330...900),
-    yAxes: [
+OZChart(samples)
+    .violin(
+        centerX: 50,
+        sideMapper: side(for:),
+        colorMapper: palette.color,
+        groupLabel: label(for:)
+    )
+    .domain(x: .fixed(0...100), y: .fixed(330...900))
+    .axes(y: [
         YAxisConfig(position: .leading, explicitValues: deltaTicks, title: "ΔT (ms)"),
         YAxisConfig(
             position: .trailing,
@@ -22,8 +28,8 @@ CartesianChartView(
             labelFormatter: { "\(Int($0))" },
             title: "Rhythm (bpm)"
         )
-    ],
-    rangeAnnotations: [
+    ])
+    .annotations(ranges: [
         RangeAnnotation(
             yRange: 496...504,
             label: "Target 120 bpm",
@@ -35,11 +41,10 @@ CartesianChartView(
             labelAnchor: .leading,
             labelYOffset: -16
         )
-    ],
-    horizontalAnnotations: [
+    ], horizontal: [
         HorizontalAnnotation(yValue: 500, color: .yellow)
-    ]
-) { _ in EmptyView() }
+    ])
+    .legend(.bottom)
 ```
 
 Keep the target label above the line and away from dense points by adjusting `labelXPosition`, `labelAnchor`, and `labelYOffset`.
@@ -49,18 +54,22 @@ Keep the target label above the line and away from dense points by adjusting `la
 Use `StackedBarSeries` for segmented achievement time, a striped fill for unavailable or remaining time, value labels as `CustomViewAnnotation`, and a compact tooltip. For dense horizontal bars, prefer row-aware fixed anchors: the callout follows the selected row vertically, but uses a safe x-position inside the plot so text never clips at the axis edge.
 
 ```swift
-StackedBarSeries(
-    data: rows,
-    stackOrder: [.s1, .s2, .s3, .remainder],
-    colorMapper: palette.color,
-    fillStyleMapper: { group in
-        group == .remainder
-            ? .stripes(foreground: .white.opacity(0.14), background: .gray.opacity(0.2))
-            : .gradient(palette.gradient(group))
-    },
-    barHeight: 28,
-    cornerRadius: 4
-)
+OZChart(rows)
+    .stackedBar(
+        stackOrder: [.s1, .s2, .s3, .remainder],
+        colorMapper: palette.color,
+        fillStyleMapper: { group in
+            group == .remainder
+                ? .stripes(foreground: .white.opacity(0.14), background: .gray.opacity(0.2))
+                : .gradient(palette.gradient(group))
+        },
+        groupLabel: label(for:),
+        rowLabel: { row in rowTitle(for: row) },
+        barHeight: 28,
+        cornerRadius: 4
+    )
+    .compactAxes(xPosition: .top, yPosition: .leading)
+    .legend(.bottom)
 ```
 
 For callouts, build the content as normal SwiftUI and apply the preset:
@@ -151,22 +160,32 @@ CustomViewAnnotation(
 
 ## Total Score
 
-Use `DonutSeries` for score composition. `gapAngle` controls arc spacing, `thickness` controls ring weight, `lineCap` controls rounded ends, and each `DonutSegmentStyle` can use `explodedOffset` for separated segments.
+Use `OZDonutChart` for score composition so app code does not need fake
+cartesian domains. `gapAngle` controls arc spacing, `thickness` controls ring
+weight, `lineCap` controls rounded ends, and each `DonutSegmentStyle` can use
+`explodedOffset` for separated segments.
 
 ```swift
-DonutSeries(
-    data: scoreShare,
+OZDonutChart(
+    scoreShare,
     colors: [.cyan, .purple, .yellow],
     segmentStyles: [
         DonutSegmentStyle(fill: .gradient([.cyan, .mint])),
         DonutSegmentStyle(fill: .gradient([.purple, .pink]), explodedOffset: 10),
         DonutSegmentStyle(fill: .gradient([.yellow, .orange]), explodedOffset: 14)
     ],
+    label: "Score",
     segmentLabelMapper: { point in scoreLabel(for: point) },
     thickness: 42,
     gapAngle: .degrees(7),
     lineCap: .round
-)
+) {
+    Text("82%")
+        .font(.title.bold())
+}
+.selection { segments in
+    selectedSegment = segments.first
+}
 ```
 
 `gapAngle`, `thickness`, `lineCap`, and per-segment `explodedOffset` are the
@@ -176,16 +195,21 @@ series label.
 
 ## Points Distribution
 
-Use `StackedAreaSeries` with `.step` interpolation for cumulative score events. This keeps point additions visually discrete and closer to game or training telemetry than a smoothed trend line.
+Use the fluent `.stackedArea(...)` helper with `.step` interpolation for
+cumulative score events. This keeps point additions visually discrete and
+closer to game or training telemetry than a smoothed trend line.
 
 ```swift
-StackedAreaSeries(
-    data: pointEvents,
-    stackOrder: [.basic, .bonus, .streak],
-    colorMapper: palette.color,
-    fillStyleMapper: palette.fill,
-    interpolation: .step
-)
+OZChart(pointEvents)
+    .stackedArea(
+        stackOrder: [.basic, .bonus, .streak],
+        colorMapper: palette.color,
+        fillStyleMapper: palette.fill,
+        groupLabel: label(for:),
+        interpolation: .step
+    )
+    .rendering(.dashboard())
+    .staticChart()
 ```
 
 ## Production Notes

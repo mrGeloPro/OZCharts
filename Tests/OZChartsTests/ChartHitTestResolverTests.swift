@@ -37,6 +37,78 @@ final class ChartHitTestResolverTests: XCTestCase {
         XCTAssertEqual(selected.first?.interactionPosition, CGPoint(x: 20, y: 20))
     }
 
+    func testElementHitTestingCanReturnAllOverlappingElements() {
+        var cycleIDs: [UUID] = []
+        var cycleIndex = 0
+        let low = ChartSelectedElement(
+            elementID: UUID(),
+            kind: .bar,
+            seriesIndex: 0,
+            position: CGPoint(x: 20, y: 20),
+            bounds: CGRect(x: 0, y: 0, width: 40, height: 40)
+        )
+        let high = ChartSelectedElement(
+            elementID: UUID(),
+            kind: .donutSegment,
+            seriesIndex: 1,
+            position: CGPoint(x: 20, y: 20),
+            bounds: CGRect(x: 0, y: 0, width: 40, height: 40)
+        )
+
+        let selected = ChartHitTestResolver.elements(
+            near: CGPoint(x: 20, y: 20),
+            contexts: [
+                ChartElementContext(payload: low, hitShape: .rect(low.bounds), zIndex: 0),
+                ChartElementContext(payload: high, hitShape: .rect(high.bounds), zIndex: 5)
+            ],
+            overlappingSelectionMode: .all,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+
+        XCTAssertEqual(selected.map(\.elementID), [high.elementID, low.elementID])
+        XCTAssertTrue(selected.allSatisfy { $0.interactionPosition == CGPoint(x: 20, y: 20) })
+    }
+
+    func testElementHitTestingCanCycleOverOverlappingElements() {
+        var cycleIDs: [UUID] = []
+        var cycleIndex = 0
+        let first = ChartSelectedElement(
+            elementID: UUID(),
+            kind: .bar,
+            position: CGPoint(x: 20, y: 20),
+            bounds: CGRect(x: 0, y: 0, width: 40, height: 40)
+        )
+        let second = ChartSelectedElement(
+            elementID: UUID(),
+            kind: .stackedBarSegment,
+            position: CGPoint(x: 20, y: 20),
+            bounds: CGRect(x: 0, y: 0, width: 40, height: 40)
+        )
+        let contexts = [
+            ChartElementContext(payload: first, hitShape: .rect(first.bounds), zIndex: 1),
+            ChartElementContext(payload: second, hitShape: .rect(second.bounds), zIndex: 0)
+        ]
+
+        let selectedFirst = ChartHitTestResolver.elements(
+            near: CGPoint(x: 20, y: 20),
+            contexts: contexts,
+            overlappingSelectionMode: .cycle,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+        let selectedSecond = ChartHitTestResolver.elements(
+            near: CGPoint(x: 20, y: 20),
+            contexts: contexts,
+            overlappingSelectionMode: .cycle,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+
+        XCTAssertEqual(selectedFirst.map(\.elementID), [first.elementID])
+        XCTAssertEqual(selectedSecond.map(\.elementID), [second.elementID])
+    }
+
     func testPointHitTestingCanSelectNearestX() {
         var cycleIDs: [UUID] = []
         var cycleIndex = 0

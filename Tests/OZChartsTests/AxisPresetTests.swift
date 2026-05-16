@@ -27,6 +27,21 @@ final class AxisPresetTests: XCTestCase {
         XCTAssertEqual(YAxisConfig.hidden().width, 0)
     }
 
+    func testCompactAxesUseSmallInsets() {
+        XCTAssertLessThanOrEqual(XAxisConfig.compact().height, 24)
+        XCTAssertLessThanOrEqual(YAxisConfig.compact().width, 34)
+    }
+
+    func testStackedBarRowsAxisUsesExplicitRowLabels() {
+        let axis = YAxisConfig.stackedBarRows(values: [0, 1]) { value in
+            value == 0 ? "Today" : "Yesterday"
+        }
+
+        XCTAssertEqual(axis.explicitValues, [0, 1])
+        XCTAssertEqual(axis.labelFormatter(0), "Today")
+        XCTAssertEqual(axis.labelFormatter(1), "Yesterday")
+    }
+
     func testAxisTransformMapsDisplayValues() {
         XCTAssertEqual(AxisTransform.identity(42), 42)
         XCTAssertEqual(AxisTransform.linear(multiplier: 2, offset: 1)(4), 9)

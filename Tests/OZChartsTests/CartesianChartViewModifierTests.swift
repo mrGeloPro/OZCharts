@@ -327,6 +327,61 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertNotNil(chart.body)
     }
 
+    func testOZChartBuilderCompilesAdvancedFluentAPI() {
+        let grouped = [
+            GroupedPoint2D(x: 12, y: 0, group: "A"),
+            GroupedPoint2D(x: 8, y: 0, group: "B"),
+            GroupedPoint2D(x: 6, y: 1, group: "A"),
+            GroupedPoint2D(x: 10, y: 1, group: "B")
+        ]
+
+        let chart = OZChart(grouped)
+            .stackedBar(
+                stackOrder: ["A", "B"],
+                colorMapper: { $0 == "A" ? .blue : .green },
+                groupLabel: { $0 },
+                rowLabel: { $0 == 0 ? "Today" : "Yesterday" }
+            )
+            .stackedArea(
+                stackOrder: ["A", "B"],
+                colorMapper: { $0 == "A" ? .blue : .green },
+                groupLabel: { $0 }
+            )
+            .violin(
+                centerX: 0.5,
+                sideMapper: { $0 == "A" ? .left : .right },
+                colorMapper: { $0 == "A" ? .blue : .green },
+                groupLabel: { $0 }
+            )
+            .legend(.bottom)
+            .compactAxes()
+
+        XCTAssertNotNil(chart.body)
+    }
+
+    func testOZChartBuilderCompilesDonutFluentAPI() {
+        let data = [Point2D(x: 0, y: 35), Point2D(x: 1, y: 65)]
+        let chart = OZChart(data)
+            .donut(colors: [.blue, .green], label: "Score") { point in
+                point.x == 0 ? "Won" : "Remaining"
+            }
+            .legend(.bottom)
+
+        XCTAssertNotNil(chart.body)
+    }
+
+    func testOZDonutChartWrapperCompilesWithoutFakeDomainsAtCallSite() {
+        let data = [Point2D(x: 0, y: 35), Point2D(x: 1, y: 65)]
+        let chart = OZDonutChart(data, colors: [.blue, .green], label: "Score")
+            .center {
+                Text("65%")
+            }
+            .legend(.bottom)
+            .selection { _ in }
+
+        XCTAssertNotNil(chart.body)
+    }
+
     func testOZChartDefaultSeriesIDsAreStableAcrossRebuilds() {
         let data = [Point2D(x: 0, y: 1), Point2D(x: 1, y: 3)]
         let first = OZChart(data)

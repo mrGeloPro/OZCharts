@@ -11,7 +11,7 @@ A high-performance, fully customizable, and mathematically precise charting fram
 
 * **Versatile chart types:** Line, area, vertical bar, scatter, stacked horizontal bar, donut, and mathematically accurate violin charts.
 * **Canvas-first rendering:** Smooth interaction with off-screen culling and synchronous gesture layouts.
-* **Two API levels:** Use `OZChart` for fluent common charts or `CartesianChartView` for advanced product composition.
+* **Two API levels:** Use `OZChart` for fluent line, area, bar, scatter, donut, stacked, and violin charts, or `CartesianChartView` for fully custom composition.
 * **Advanced gestures:** Independent horizontal and vertical scrolling/zooming with conflict handling between pan and pinch.
 * **Hybrid layering:** Combine Canvas-rendered series with collision-aware SwiftUI custom annotations.
 * **Auto domains and presets:** Start quickly with `.auto(...)`, nice ticks, collision-aware labels, `ChartTheme`, and axis presets.
@@ -66,7 +66,7 @@ struct ContentView: View {
 
 ## Fluent API
 
-For common charts, start with `OZChart`:
+For most dashboard and result-screen charts, start with `OZChart`:
 
 ```swift
 OZChart(data)
@@ -88,8 +88,36 @@ OZChart(data)
     .frame(height: 300)
 ```
 
-Use `CartesianChartView` directly for advanced multi-series and product-specific
-composition.
+Advanced product series are available through the same fluent style:
+
+```swift
+OZChart(groupedRows)
+    .stackedBar(
+        stackOrder: [.completed, .missed, .remaining],
+        colorMapper: palette.color,
+        rowLabel: { row in dayLabel(for: row) }
+    )
+    .compactAxes(xPosition: .top, yPosition: .leading)
+    .legend(.bottom)
+    .staticChart()
+```
+
+For score rings that should not expose cartesian domains at the call site, use
+`OZDonutChart`:
+
+```swift
+OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
+    Text("82%")
+        .font(.title.bold())
+}
+.selection { segments in
+    selectedSegment = segments.first
+}
+.frame(height: 220)
+```
+
+Use `CartesianChartView` directly only when a screen needs fully custom
+multi-series composition, custom scale objects, or specialized overlays.
 
 ## Common Patterns
 
@@ -100,6 +128,7 @@ For handoff readiness, use the [Delivery Checklist](Docs/DeliveryChecklist.md).
 For prerelease scope, see [OZCharts 2.1 Prerelease Notes](Docs/Release-2.1.md).
 For the 2.5 release, see [OZCharts 2.5 Release Notes](Docs/Release-2.5.md).
 For the 2.5.2 patch, see [OZCharts 2.5.2 Release Notes](Docs/Release-2.5.2.md).
+For the 2.6 release plan, see [OZCharts 2.6 Release Notes](Docs/Release-2.6.md).
 For API compatibility expectations, see [OZCharts 2.5 API Stability Policy](Docs/APIStability-2.5.md).
 For migration details, see the [OZCharts 2.1 Migration Guide](Docs/Migration-2.1.md).
 For performance expectations, see [Performance Benchmarks](Docs/PerformanceBenchmarks.md).
@@ -432,20 +461,14 @@ LineSeries(data: readings, id: glucoseSeriesID, color: .cyan)
 Add a `label` to supported series and enable the built-in legend:
 
 ```swift
-CartesianChartView(
-    series: [
-        LineSeries(data: current, color: .blue, label: "Current"),
-        ScatterSeries(data: targets, color: .orange, label: "Target")
-    ],
-    xDomain: .auto(),
-    yDomain: .auto()
-) { _ in
-    EmptyView()
-}
-.chartLegend(.bottom)
+OZChart(current)
+    .line(color: .blue, label: "Current")
+    .legend(.bottom)
 ```
 
 Legend positions: `.top`, `.bottom`, `.leading`, `.trailing`, `.hidden`.
+Use `CartesianChartView` when the legend needs to combine independent data
+arrays in one chart.
 
 For full control, provide custom legend content:
 
@@ -459,7 +482,8 @@ For full control, provide custom legend content:
 }
 ```
 
-Grouped series such as stacked bars and violin charts can expose group legend items through `groupLabel`.
+Grouped series such as stacked bars, stacked areas, and violin charts expose
+legend items through `groupLabel`.
 
 ### Accessibility
 
@@ -522,35 +546,41 @@ LineSeries(
 `ChartFillStyle` supports solid colors, linear gradients, and striped fills. Stripes are useful for remainder or unavailable segments in stacked bars.
 
 ```swift
-StackedBarSeries(
-    data: achievementRows,
-    stackOrder: [.star1, .star2, .star3, .remainder],
-    colorMapper: palette.color,
-    fillStyleMapper: { group in
-        group == .remainder
-            ? .stripes(foreground: .white.opacity(0.14), background: .gray.opacity(0.2))
-            : .color(palette.color(group))
-    },
-    valueLabelStyle: ChartValueLabelStyle(position: .outside)
-)
+OZChart(achievementRows)
+    .stackedBar(
+        stackOrder: [.star1, .star2, .star3, .remainder],
+        colorMapper: palette.color,
+        fillStyleMapper: { group in
+            group == .remainder
+                ? .stripes(foreground: .white.opacity(0.14), background: .gray.opacity(0.2))
+                : .color(palette.color(group))
+        },
+        rowLabel: { row in achievementLabel(for: row) },
+        valueLabelStyle: ChartValueLabelStyle(position: .outside)
+    )
+    .legend(.bottom)
 ```
 
 Donut segments can be rounded, separated, gradient-filled, shadowed, and offset:
 
 ```swift
-DonutSeries(
-    data: scoreShare,
+OZDonutChart(
+    scoreShare,
     colors: [.cyan, .purple, .yellow],
     segmentStyles: [
         DonutSegmentStyle(fill: .gradient([.cyan, .mint])),
         DonutSegmentStyle(fill: .gradient([.purple, .pink]), explodedOffset: 10),
         DonutSegmentStyle(fill: .gradient([.yellow, .orange]), explodedOffset: 14)
     ],
+    label: "Score",
     segmentLabelMapper: { point in label(for: point) },
     thickness: 42,
     gapAngle: .degrees(7),
     lineCap: .round
-)
+) {
+    Text("82%")
+        .font(.title.bold())
+}
 ```
 
 Control donut spacing with `gapAngle`, per-segment `explodedOffset`,
@@ -562,13 +592,15 @@ when the chart needs to match a product mockup with separated arcs.
 Use `StackedAreaSeries` when values are incremental and should accumulate visually by group:
 
 ```swift
-StackedAreaSeries(
-    data: pointEvents,
-    stackOrder: [.basic, .bonus, .streak],
-    colorMapper: palette.color,
-    fillStyleMapper: palette.fill,
-    interpolation: .step
-)
+OZChart(pointEvents)
+    .stackedArea(
+        stackOrder: [.basic, .bonus, .streak],
+        colorMapper: palette.color,
+        fillStyleMapper: palette.fill,
+        interpolation: .step
+    )
+    .rendering(.dashboard())
+    .staticChart()
 ```
 
 ### Real-World Event Data

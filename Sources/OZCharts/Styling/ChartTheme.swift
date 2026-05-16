@@ -64,6 +64,21 @@ public struct ChartTheme {
         ]
     )
 
+    public static let dashboard = ChartTheme(
+        foregroundColor: .primary,
+        secondaryForegroundColor: .secondary,
+        gridColor: .gray.opacity(0.16),
+        axisLineColor: .gray.opacity(0.28),
+        tickColor: .gray.opacity(0.38),
+        seriesColors: [
+            Color(red: 0.13, green: 0.69, blue: 0.76),
+            Color(red: 0.39, green: 0.32, blue: 0.86),
+            Color(red: 0.95, green: 0.57, blue: 0.18),
+            Color(red: 0.28, green: 0.72, blue: 0.44),
+            Color(red: 0.86, green: 0.30, blue: 0.45)
+        ]
+    )
+
     public static let `default` = ChartTheme.light
 
     public func xAxis(
@@ -136,6 +151,29 @@ public extension XAxisConfig {
             labelFormatter: { Date(timeIntervalSince1970: $0).formatted(format) }
         )
     }
+
+    static func compact(
+        position: XAxisPosition = .bottom,
+        tickCount: Int = 4,
+        labelFormatter: @escaping (Double) -> String = { String(format: "%.0f", $0) }
+    ) -> XAxisConfig {
+        XAxisConfig(
+            position: position,
+            tickStrategy: .nice,
+            labelCollisionStrategy: .hideOverlapping(minSpacing: 34),
+            gridColor: .gray.opacity(0.14),
+            gridLineWidth: 0.75,
+            tickCount: tickCount,
+            labelFormatter: labelFormatter,
+            font: .caption2,
+            textColor: .secondary,
+            height: 24,
+            showAxisLine: false,
+            tickLength: 3,
+            tickColor: .gray.opacity(0.36),
+            labelSpacing: 3
+        )
+    }
 }
 
 public extension YAxisConfig {
@@ -162,6 +200,50 @@ public extension YAxisConfig {
                 let percent = fractionValues ? value * 100 : value
                 return "\(Int(percent))%"
             }
+        )
+    }
+
+    static func compact(
+        position: YAxisPosition = .leading,
+        tickCount: Int = 4,
+        labelFormatter: @escaping (Double) -> String = { String(format: "%.0f", $0) }
+    ) -> YAxisConfig {
+        YAxisConfig(
+            position: position,
+            tickStrategy: .nice,
+            labelCollisionStrategy: .hideOverlapping(minSpacing: 28),
+            gridColor: .gray.opacity(0.14),
+            gridLineWidth: 0.75,
+            tickCount: tickCount,
+            labelFormatter: labelFormatter,
+            font: .caption2,
+            textColor: .secondary,
+            width: 34,
+            showAxisLine: false,
+            tickLength: 3,
+            tickColor: .gray.opacity(0.36),
+            labelSpacing: 3
+        )
+    }
+
+    static func stackedBarRows(
+        values: [Double],
+        position: YAxisPosition = .leading,
+        width: CGFloat = 88,
+        rowLabel: @escaping (Double) -> String?
+    ) -> YAxisConfig {
+        YAxisConfig(
+            position: position,
+            showGrid: false,
+            explicitValues: values,
+            tickStrategy: .regular,
+            labelFormatter: { rowLabel($0) ?? String(format: "%.0f", $0) },
+            font: .caption,
+            textColor: .secondary,
+            width: width,
+            showAxisLine: false,
+            tickLength: 0,
+            labelSpacing: 6
         )
     }
 }
