@@ -108,7 +108,7 @@ OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
     Text("82%")
         .font(.title.bold())
 }
-.selection(.elementTap)
+.selection(.persistentElement)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }
@@ -388,12 +388,12 @@ Share selection state when multiple charts should move together:
 
 VStack {
     priceChart
-        .chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
+        .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
         .chartSelectionState($sharedSelection)
         .chartCrosshair(.vertical())
 
     volumeChart
-        .chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
+        .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
         .chartSelectionState($sharedSelection)
         .chartCrosshair(.vertical())
 }
@@ -407,7 +407,7 @@ For overlapping points, cycle one selected item at a time and keep the details v
     behavior: .tap,
     overlapping: .cycle,
     hitboxRadius: 24,
-    clearsOnEnd: false
+    dismissalPolicy: .persistent
 )
 .chartTooltipPlacement(.automatic, padding: 12)
 .chartTooltipMaxWidth(220)

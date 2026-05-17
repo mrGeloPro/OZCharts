@@ -20,24 +20,52 @@ YAxisConfig(
 
 ## Stacked Achievement Times
 
-Use fluent ``OZChart/stackedBar(id:stackOrder:colorMapper:fillStyleMapper:groupLabel:rowLabel:valueLabelStyle:barHeight:cornerRadius:segmentGap:animation:zIndex:)`` with grouped points. Each row is a category, each group is a milestone segment, and striped fills can represent unavailable or remaining time.
+Use fluent `stackedBar` with grouped points. Each row is a category, each
+group is a milestone segment, and `StackedBarRemainderStyle` can draw a
+non-legend background segment up to a row target.
 
 ```swift
 OZChart(rows)
     .stackedBar(
-        stackOrder: [.star1, .star2, .star3, .remainder],
+        stackOrder: [.star1, .star2, .star3],
         colorMapper: palette.color,
         fillStyleMapper: palette.fill,
         rowLabel: { row in title(for: row) },
-        valueLabelStyle: ChartValueLabelStyle(position: .outside)
+        rowEndLabel: { row, _ in scoreText(for: row) },
+        layout: .achievement(
+            leftAxisWidth: 92,
+            rightAxisWidth: 58,
+            rowLabelLineLimit: 2,
+            barHeight: 20
+        ),
+        remainder: .target(
+            { row in target(for: row) },
+            signature: "achievement-targets",
+            fillStyle: .stripes(
+                foreground: .white.opacity(0.14),
+                background: .gray.opacity(0.20)
+            )
+        ),
+        separatorStyle: StackedBarSeparatorStyle(color: .black, width: 2)
     )
+    .selection(.persistentElement)
+    .tooltipOptions(.hitPoint())
+    .elementTooltipContext { context in
+        ChartCallout(context: context, style: .productLight) {
+            AchievementTooltip(elements: context.elements)
+        }
+    }
     .legend(.bottom)
 ```
 
-For selected-row callouts, use `ChartAnchoredCalloutLayout.vertical` to keep the
-pointer attached to the tap while the callout card clamps into readable space.
-This is useful when the user taps near the chart edge or near the first/last
-row.
+Closure-driven remainder targets require a stable `signature` so SwiftUI
+refreshes the stacked bar layout at the right time when external target data
+changes.
+
+For lower-level selected-row callouts, `ChartSelectedElement` includes
+`position`, `interactionPosition`, `bounds`, `rowLabel`, `rowIndex`, and
+`totalValue`. Use `ChartAnchoredCalloutLayout.vertical` when a custom overlay
+needs its own arrow geometry.
 
 ```swift
 let layout = ChartAnchoredCalloutLayout.vertical(

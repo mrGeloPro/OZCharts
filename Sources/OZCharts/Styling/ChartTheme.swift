@@ -230,6 +230,8 @@ public extension YAxisConfig {
         values: [Double],
         position: YAxisPosition = .leading,
         width: CGFloat = 88,
+        labelSpacing: CGFloat = 6,
+        labelLineLimit: Int? = nil,
         rowLabel: @escaping (Double) -> String?
     ) -> YAxisConfig {
         YAxisConfig(
@@ -243,7 +245,8 @@ public extension YAxisConfig {
             width: width,
             showAxisLine: false,
             tickLength: 0,
-            labelSpacing: 6
+            labelSpacing: labelSpacing,
+            labelLineLimit: labelLineLimit
         )
     }
 }

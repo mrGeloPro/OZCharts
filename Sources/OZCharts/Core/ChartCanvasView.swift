@@ -185,14 +185,15 @@ private struct ChartTooltipOverlay<Point: ChartDataPoint, Content: View>: View
 
     var body: some View {
         if let anchor = anchorOverride ?? ChartTooltipLayout.anchor(for: points) {
+            let layoutSize = measuredTooltipSize
             content(points)
-                .frame(maxWidth: maxWidth, alignment: .leading)
+                .frame(maxWidth: maxWidth, alignment: .center)
                 .fixedSize(horizontal: maxWidth == nil, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(
                     ChartTooltipLayout.resolve(
                         anchor: anchor,
-                        tooltipSize: tooltipSize,
+                        tooltipSize: layoutSize,
                         canvasSize: canvasSize,
                         placement: placement,
                         offset: offset,
@@ -200,6 +201,13 @@ private struct ChartTooltipOverlay<Point: ChartDataPoint, Content: View>: View
                     ).position
                 )
         }
+    }
+
+    private var measuredTooltipSize: CGSize {
+        guard tooltipSize.width > 0, tooltipSize.height > 0 else {
+            return CGSize(width: maxWidth ?? 180, height: 72)
+        }
+        return tooltipSize
     }
 }
 

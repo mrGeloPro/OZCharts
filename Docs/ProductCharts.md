@@ -183,7 +183,7 @@ OZDonutChart(
     Text("82%")
         .font(.title.bold())
 }
-.selection(.elementTap)
+.selection(.persistentElement)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }

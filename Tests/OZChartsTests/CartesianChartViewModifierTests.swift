@@ -40,7 +40,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartTooltipOptions(
                 ChartTooltipOptions(
                     placement: .leading,
-                    anchor: .gestureLocation,
+                    anchor: .tapLocation,
                     offset: CGPoint(x: 3, y: 4),
                     padding: 10,
                     maxWidth: 220
@@ -69,7 +69,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.selectionMode, .nearestX)
         XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
         XCTAssertEqual(view.tooltipPlacement, .leading)
-        XCTAssertEqual(view.tooltipAnchor, .gestureLocation)
+        XCTAssertEqual(view.tooltipAnchor, .tapLocation)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 3, y: 4))
         XCTAssertEqual(view.tooltipPadding, 10)
         XCTAssertEqual(view.tooltipMaxWidth, 220)
@@ -117,7 +117,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 behavior: .tapAndDrag,
                 overlapping: .cycle,
                 hitboxRadius: 32,
-                clearsOnEnd: false
+                dismissalPolicy: .persistent
             )
             .chartAnnotationSelection(
                 hitboxRadius: 40,
@@ -138,7 +138,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
         XCTAssertEqual(view.overlappingSelectionMode, .cycle)
         XCTAssertEqual(view.hitboxRadius, 32)
-        XCTAssertFalse(view.clearsSelectionOnGestureEnd)
+        XCTAssertFalse(view.selectionDismissalPolicy.contains(.gestureEnd))
         XCTAssertTrue(view.isAnnotationSelectionEnabled)
         XCTAssertEqual(view.annotationHitboxRadius, 40)
         XCTAssertEqual(view.annotationOverlappingSelectionMode, .all)
@@ -168,8 +168,9 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartCrosshair(.both())
             .chartTooltipOffset(x: 4, y: -12)
             .chartTooltipPlacement(.trailing, padding: 14)
-            .chartTooltipAnchor(.gestureLocation)
+            .chartTooltipAnchor(.tapLocation)
             .chartTooltipMaxWidth(180)
+            .chartSelectionDismissalPolicy(.pinned)
             .chartLiveTracking()
             .chartInitialViewport(xWindow: 8, anchor: .trailing)
             .chartViewport(.constant(ChartViewportState(visibleXDomain: 0 ... 8)))
@@ -182,9 +183,10 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.crosshairStyle.mode, .both)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 4, y: -12))
         XCTAssertEqual(view.tooltipPlacement, .trailing)
-        XCTAssertEqual(view.tooltipAnchor, .gestureLocation)
+        XCTAssertEqual(view.tooltipAnchor, .tapLocation)
         XCTAssertEqual(view.tooltipPadding, 14)
         XCTAssertEqual(view.tooltipMaxWidth, 180)
+        XCTAssertEqual(view.selectionDismissalPolicy, .pinned)
         XCTAssertTrue(view.isLiveTrackingEnabled)
         XCTAssertEqual(view.liveTrackingMode, .followLatest())
         XCTAssertEqual(view.initialViewport, .xWindow(length: 8, anchor: .trailing))
@@ -390,7 +392,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .viewportState(.constant(ChartViewportState()))
             .selectionState(.constant(ChartSelectionState()))
             .onSelection { _ in }
-            .tooltipAnchor(.gestureLocation)
+            .tooltipAnchor(.tapLocation)
             .onEmptyTap { _ in }
             .tooltip { points in
                 Text("\(points.count)")
@@ -412,7 +414,17 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 stackOrder: ["A", "B"],
                 colorMapper: { $0 == "A" ? .blue : .green },
                 groupLabel: { $0 },
-                rowLabel: { $0 == 0 ? "Today" : "Yesterday" }
+                rowLabel: { $0 == 0 ? "Today" : "Yesterday" },
+                rowEndLabel: { row, total in "\(Int(row)):\(Int(total))" },
+                layout: .achievement(rowLabelLineLimit: 2),
+                remainder: .target(
+                    { _ in 32 },
+                    signature: "advanced-fluent-target",
+                    fillStyle: .stripes(foreground: .gray.opacity(0.4)),
+                    accessibilityLabel: "Remaining"
+                ),
+                separatorStyle: StackedBarSeparatorStyle(color: .black, width: 1),
+                interactionOptions: .rowsAndSegments
             )
             .stackedArea(
                 stackOrder: ["A", "B"],
@@ -427,8 +439,68 @@ final class CartesianChartViewModifierTests: XCTestCase {
             )
             .legend(.dashboard(position: .bottom, itemLimit: 3))
             .compactAxes()
+            .elementTooltip { elements in
+                Text("\(elements.count)")
+            }
+            .elementTooltipContext { context in
+                Text("\(context.elements.count)")
+            }
+            .tooltipAnchor(.hitPoint)
+            .selection(.pinnedElement)
+            .onStackedBarSelection { _ in }
 
         XCTAssertNotNil(chart.body)
+    }
+
+    func testStackedBarRowEndLabelTotalsOnlyIncludeVisibleStackOrderGroups() {
+        enum Group: Hashable {
+            case first
+            case second
+            case hidden
+        }
+
+        let data = [
+            GroupedPoint2D(x: 2, y: 0, group: Group.first),
+            GroupedPoint2D(x: 3, y: 0, group: Group.second),
+            GroupedPoint2D(x: 99, y: 0, group: Group.hidden)
+        ]
+
+        let chart = OZChart(data)
+            .stackedBar(
+                stackOrder: [.first, .second],
+                colorMapper: { _ in .blue },
+                rowEndLabel: { _, total in "\(Int(total))" }
+            )
+
+        let axes = mirroredYAxes(from: chart)
+
+        XCTAssertEqual(axes?.first?.labelFormatter(0), "5")
+    }
+
+    func testStackedBarRowAxesOnlyIncludeVisibleStackOrderRows() {
+        enum Group: Hashable {
+            case first
+            case hidden
+        }
+
+        let data = [
+            GroupedPoint2D(x: 2, y: 0, group: Group.first),
+            GroupedPoint2D(x: 99, y: 9, group: Group.hidden)
+        ]
+
+        let chart = OZChart(data)
+            .stackedBar(
+                stackOrder: [.first],
+                colorMapper: { _ in .blue },
+                rowLabel: { "row-\(Int($0))" },
+                rowEndLabel: { _, total in "\(Int(total))" }
+            )
+
+        let axes = mirroredYAxes(from: chart)
+
+        XCTAssertEqual(axes?.count, 2)
+        XCTAssertEqual(axes?.first?.explicitValues, [0])
+        XCTAssertEqual(axes?.last?.explicitValues, [0])
     }
 
     func testOZChartBuilderCompilesDonutFluentAPI() {
@@ -449,7 +521,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 Text("65%")
             }
             .legend(.bottom)
-            .selection(.elementTap)
+            .selection(.persistentElement)
             .onSelection { _ in }
             .onSegmentSelection { _ in }
 
@@ -479,5 +551,17 @@ final class CartesianChartViewModifierTests: XCTestCase {
         ) { _ in
             EmptyView()
         }
+    }
+
+    private func mirroredYAxes<Point, TooltipContent>(
+        from chart: OZChart<Point, TooltipContent>
+    ) -> [YAxisConfig]? where Point: ChartDataPoint, Point.XValue == Double, Point.YValue == Double {
+        guard let value = Mirror(reflecting: chart).children.first(where: { $0.label == "yAxes" })?.value else {
+            return nil
+        }
+        if let axes = value as? [YAxisConfig] {
+            return axes
+        }
+        return Mirror(reflecting: value).children.first?.value as? [YAxisConfig]
     }
 }

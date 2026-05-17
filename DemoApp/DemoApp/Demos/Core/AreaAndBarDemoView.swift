@@ -75,7 +75,7 @@ struct AreaAndBarDemoView: View {
                                 .cornerRadius(6)
                         }
                     }
-                    .chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
+                    .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
                     .chartCrosshair(.vertical(color: DemoColors.cyan.opacity(0.75)))
                     .frame(height: 300)
 

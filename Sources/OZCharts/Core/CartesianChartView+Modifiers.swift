@@ -67,7 +67,7 @@ public extension CartesianChartView {
         copy.selectionBehavior = options.behavior
         copy.overlappingSelectionMode = options.overlappingSelectionMode
         copy.hitboxRadius = options.hitboxRadius
-        copy.clearsSelectionOnGestureEnd = options.clearsSelectionOnGestureEnd
+        copy.selectionDismissalPolicy = options.dismissalPolicy
         return copy
     }
 
@@ -82,7 +82,7 @@ public extension CartesianChartView {
         behavior: ChartSelectionBehavior? = nil,
         overlapping: ChartOverlappingSelectionMode? = nil,
         hitboxRadius: CGFloat? = nil,
-        clearsOnEnd: Bool? = nil,
+        dismissalPolicy: ChartSelectionDismissalPolicy? = nil,
         onChange: (([ChartPointContext<Point>]) -> Void)? = nil
     ) -> Self {
         var copy = self
@@ -96,8 +96,8 @@ public extension CartesianChartView {
         if let hitboxRadius {
             copy.hitboxRadius = hitboxRadius
         }
-        if let clearsOnEnd {
-            copy.clearsSelectionOnGestureEnd = clearsOnEnd
+        if let dismissalPolicy {
+            copy.selectionDismissalPolicy = dismissalPolicy
         }
         if let onChange {
             copy.onSelectionChanged = onChange
@@ -160,6 +160,30 @@ public extension CartesianChartView {
         return copy
     }
 
+    func chartElementTooltip(
+        @ViewBuilder content: @escaping ([ChartSelectedElement]) -> some View
+    ) -> Self {
+        var copy = self
+        copy.elementTooltipContent = { AnyView(content($0.elements)) }
+        return copy
+    }
+
+    func chartElementTooltipContext(
+        @ViewBuilder content: @escaping (ChartElementTooltipContext) -> some View
+    ) -> Self {
+        var copy = self
+        copy.elementTooltipContent = { AnyView(content($0)) }
+        return copy
+    }
+
+    func chartElementTooltipIfNeeded(
+        _ content: ((ChartElementTooltipContext) -> AnyView)?
+    ) -> Self {
+        var copy = self
+        copy.elementTooltipContent = content
+        return copy
+    }
+
     func chartTooltipOptions(_ options: ChartTooltipOptions) -> Self {
         var copy = self
         copy.tooltipPlacement = options.placement
@@ -201,6 +225,12 @@ public extension CartesianChartView {
     func chartTooltipAnchor(_ anchor: ChartTooltipAnchor) -> Self {
         var copy = self
         copy.tooltipAnchor = anchor
+        return copy
+    }
+
+    func chartSelectionDismissalPolicy(_ policy: ChartSelectionDismissalPolicy) -> Self {
+        var copy = self
+        copy.selectionDismissalPolicy = policy
         return copy
     }
 

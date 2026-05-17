@@ -63,23 +63,37 @@ final class ChartSelectionTests: XCTestCase {
         XCTAssertEqual(selection.state, state)
     }
 
-    func testElementPressSelectionClearsAtGestureEnd() {
-        XCTAssertEqual(ChartSelectionOptions.elementPress.mode, .none)
-        XCTAssertEqual(ChartSelectionOptions.elementPress.behavior, .tap)
-        XCTAssertEqual(ChartSelectionOptions.elementPress.overlappingSelectionMode, .all)
-        XCTAssertEqual(ChartSelectionOptions.elementPress.hitboxRadius, 24)
-        XCTAssertTrue(ChartSelectionOptions.elementPress.clearsSelectionOnGestureEnd)
+    func testSelectedElementTooltipInteractionAnchorClampsToElementBounds() {
+        let element = ChartSelectedElement(
+            elementID: UUID(),
+            kind: .stackedBarSegment,
+            position: CGPoint(x: 25, y: 20),
+            interactionPosition: CGPoint(x: 90, y: -10),
+            bounds: CGRect(x: 10, y: 12, width: 30, height: 16)
+        )
+
+        XCTAssertEqual(element.tooltipInteractionAnchor.x, 40)
+        XCTAssertEqual(element.tooltipInteractionAnchor.y, 12)
+    }
+
+    func testTransientElementSelectionClearsAtGestureEnd() {
+        XCTAssertEqual(ChartSelectionOptions.transientElement.mode, .none)
+        XCTAssertEqual(ChartSelectionOptions.transientElement.behavior, .tap)
+        XCTAssertEqual(ChartSelectionOptions.transientElement.overlappingSelectionMode, .all)
+        XCTAssertEqual(ChartSelectionOptions.transientElement.hitboxRadius, 24)
+        XCTAssertTrue(ChartSelectionOptions.transientElement.dismissalPolicy.contains(.gestureEnd))
     }
 
     func testSemanticSelectionPresetsDescribeCommonProductBehaviors() {
-        XCTAssertEqual(ChartSelectionOptions.transientElement, .elementPress)
-        XCTAssertEqual(ChartSelectionOptions.persistentElement, .elementTap)
+        XCTAssertTrue(ChartSelectionOptions.transientElement.dismissalPolicy.contains(.gestureEnd))
+        XCTAssertEqual(ChartSelectionOptions.persistentElement.dismissalPolicy, .tapOutside)
+        XCTAssertEqual(ChartSelectionOptions.pinnedElement.dismissalPolicy, .pinned)
         XCTAssertEqual(ChartSelectionOptions.eventThenNearestPoint, .nearestX)
 
         XCTAssertEqual(ChartSelectionOptions.eventOnly.mode, .none)
         XCTAssertEqual(ChartSelectionOptions.eventOnly.behavior, .tap)
         XCTAssertEqual(ChartSelectionOptions.eventOnly.overlappingSelectionMode, .cycle)
         XCTAssertEqual(ChartSelectionOptions.eventOnly.hitboxRadius, 32)
-        XCTAssertTrue(ChartSelectionOptions.eventOnly.clearsSelectionOnGestureEnd)
+        XCTAssertTrue(ChartSelectionOptions.eventOnly.dismissalPolicy.contains(.gestureEnd))
     }
 }

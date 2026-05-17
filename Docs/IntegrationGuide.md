@@ -85,7 +85,7 @@ CartesianChartView(
             .chartCalloutStyle(.productDark)
     }
 }
-.chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
+.chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
 .chartTooltipPlacement(.automatic, padding: 10)
 .chartTooltipMaxWidth(220)
 ```

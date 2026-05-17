@@ -37,15 +37,25 @@ final class RenderingSmokeTests: XCTestCase {
             throw XCTSkip("ImageRenderer requires macOS 13 or newer.")
         }
 
-        let view = VStack(alignment: .leading, spacing: 4) {
-            Text("High score")
-                .font(.caption.bold())
-            Text("Star 1: 1.00min")
-            Text("Star 2: 3.00min (total)")
+        let context = ChartElementTooltipContext(
+            elements: [],
+            anchor: CGPoint(x: 110, y: 120),
+            position: CGPoint(x: 90, y: 80),
+            arrowEdge: .bottom,
+            arrowXOffset: 20,
+            arrowYOffset: 40,
+            wasClamped: false
+        )
+        let view = ChartCallout(context: context, style: .productLight) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("High score")
+                    .font(.caption.bold())
+                Text("Star 1: 1.00min")
+                Text("Star 2: 3.00min (total)")
+            }
+            .font(.caption)
+            .frame(width: 168, alignment: .leading)
         }
-        .font(.caption)
-        .frame(width: 168, alignment: .leading)
-        .chartCalloutStyle(.productLight)
 
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2

@@ -36,7 +36,7 @@ Available fluent series helpers:
 * ``OZChart/scatter(id:color:label:pointSize:symbol:zIndex:)``;
 * ``OZChart/donut(id:colors:segmentStyles:label:segmentLabelMapper:thickness:gapAngle:startAngle:lineCap:animation:zIndex:)``;
 * ``OZChart/stackedArea(id:stackOrder:colorMapper:fillStyleMapper:groupLabel:interpolation:lineWidth:fillOpacity:shadow:animation:zIndex:)``;
-* ``OZChart/stackedBar(id:stackOrder:colorMapper:fillStyleMapper:groupLabel:rowLabel:valueLabelStyle:barHeight:cornerRadius:segmentGap:animation:zIndex:)``;
+* `OZChart.stackedBar(...)` with optional row end labels, achievement layout, remainder fill, separator style, and typed stacked-bar selection;
 * ``OZChart/violin(id:centerX:maxHalfWidth:sideMapper:colorMapper:fillStyleMapper:groupLabel:fillOpacity:strokeWidth:showScatter:scatterSize:scatterOpacity:shadow:bandwidth:sampleCount:animation:zIndex:)``.
 
 When no explicit `id` is provided, `OZChart` assigns deterministic series ids so
@@ -47,12 +47,21 @@ SwiftUI body rebuilds do not create artificial chart data changes.
 ```swift
 OZChart(rows)
     .stackedBar(
-        stackOrder: [.completed, .missed, .remaining],
+        stackOrder: [.completed, .missed],
         colorMapper: palette.color,
         groupLabel: label(for:),
-        rowLabel: { row in dayLabel(for: row) }
+        rowLabel: { row in dayLabel(for: row) },
+        rowEndLabel: { row, _ in totalText(for: row) },
+        layout: .achievement(),
+        remainder: .target(
+            { row in targetValue(for: row) },
+            signature: "dashboard-targets",
+            fillStyle: .stripes(foreground: .secondary.opacity(0.35))
+        )
     )
-    .compactAxes(xPosition: .top, yPosition: .leading)
+    .onStackedBarSelection { selections in
+        selectedSegment = selections.first
+    }
     .legend(.dashboard(position: .bottom, itemLimit: 4))
     .staticChart()
 ```
@@ -119,6 +128,24 @@ tap details, `.eventOnly` when only rendered events should react, and
 `.eventThenNearestPoint` when the chart should prefer events but still fall
 back to a line or scatter point.
 
+Tooltip anchoring and dismissal are also configurable:
+
+```swift
+OZChart(events)
+    .stackedBar(stackOrder: groups, colorMapper: color)
+    .selection(.pinnedElement)
+    .tooltipOptions(.hitPoint())
+    .elementTooltipContext { context in
+        ChartCallout(context: context) {
+            EventDetail(elements: context.elements)
+        }
+    }
+```
+
+Use `.tapLocation` for tap-centered UI, `.elementCenter` for stable
+element-centered labels, and `.hitPoint` when the tooltip arrow should point to
+the actual hit point inside a bar, segment, or marker.
+
 `OZChart` can also decide whether selected annotations or series content wins
 when multiple objects fall inside the same tap area:
 
@@ -128,7 +155,7 @@ OZChart(samples)
     .selection(.eventThenNearestPoint)
     .annotationSelection(fallbackToPointSelection: false)
     .selectionPriority(.annotationsFirst)
-    .tooltipAnchor(.gestureLocation)
+    .tooltipAnchor(.tapLocation)
     .onEmptyTap { location in
         clearDetails(at: location)
     }
@@ -141,7 +168,7 @@ directly:
 CartesianChartView(...)
     .chartAnnotationSelection(fallbackToPointSelection: false)
     .chartSelectionPriority(.annotationsOnly)
-    .chartTooltipAnchor(.gestureLocation)
+    .chartTooltipAnchor(.tapLocation)
     .chartEmptyTap { location in
         clearDetails(at: location)
     }

@@ -150,7 +150,7 @@ private struct AllFeaturesTimelinePanel: View {
         }
         .chartInitialViewport(xWindow: 8, anchor: .trailing)
         .chartViewport($viewport)
-        .chartSelection(.nearestX, behavior: .tapAndDrag, clearsOnEnd: false)
+        .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
         .chartSelectionState($selection)
         .chartAnnotationSelection(hitboxRadius: 30, overlapping: .cycle)
         .chartAnnotationTooltip { annotations in

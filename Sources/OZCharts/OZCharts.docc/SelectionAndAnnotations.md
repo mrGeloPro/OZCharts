@@ -54,6 +54,27 @@ Bars, stacked bar segments, and donut segments expose `ChartSelectedElement` pay
 }
 ```
 
+Choose the selection lifetime explicitly:
+
+```swift
+.selection(.transientElement)          // Clears on gesture end.
+.selection(.persistentElement)         // Clears on the next empty tap or drag.
+.selection(.pinnedElement)             // Stays selected until state changes.
+.selectionDismissal(.tapOutside)       // Custom policies are composable.
+```
+
+For custom callouts, prefer `elementTooltipContext` so the framework owns
+placement, clamping, and arrow direction while the product owns the content:
+
+```swift
+.tooltipOptions(.hitPoint())
+.elementTooltipContext { context in
+    ChartCallout(context: context, style: .productLight) {
+        SegmentTooltip(elements: context.elements)
+    }
+}
+```
+
 ## Domain Annotations
 
 ```swift

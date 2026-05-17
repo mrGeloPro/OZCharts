@@ -10,12 +10,12 @@ import SwiftUI
 
 public struct ChartGestureConfig {
     var isHorizontalScrollEnabled: Bool = true
-    var isVerticalScrollEnabled:   Bool = true
-    var isHorizontalZoomEnabled:   Bool = true
-    var isVerticalZoomEnabled:     Bool = true
-    var hitboxRadius:              CGFloat = 20
-    var selectionBehavior:         ChartSelectionBehavior = .tap
-    var clearsSelectionOnGestureEnd: Bool = true
+    var isVerticalScrollEnabled: Bool = true
+    var isHorizontalZoomEnabled: Bool = true
+    var isVerticalZoomEnabled: Bool = true
+    var hitboxRadius: CGFloat = 20
+    var selectionBehavior: ChartSelectionBehavior = .tap
+    var selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient
 }
 
 public enum ChartGestureEvent {
@@ -56,7 +56,8 @@ public struct ChartGestureHandler: View {
                 if !isZooming {
                     onEvent(.panEnded)
                 }
-                if config.selectionBehavior != .disabled, config.clearsSelectionOnGestureEnd {
+                if config.selectionBehavior != .disabled,
+                   config.selectionDismissalPolicy.contains(.gestureEnd) {
                     onEvent(.highlightCleared)
                 }
             }

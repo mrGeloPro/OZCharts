@@ -152,15 +152,13 @@ public final class ChartStore<
         liveTrackingMode: ChartLiveTrackingMode = .disabled,
         selectionMode: ChartSelectionMode = .pointsInRadius,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
+        selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient,
         series: [AnyChartSeries<Point>]
     ) {
         switch event {
         case let .panChanged(translation):
             viewport.isDragging = true
-            highlightedPoints = []
-            selectedElements = []
-            selectedElementContexts = []
-            resetSelectionCycle()
+            clearSelectionForDragIfNeeded(selectionDismissalPolicy)
             viewport.applyPan(
                 translationWidth: translation.width,
                 translationHeight: translation.height,
@@ -180,10 +178,7 @@ public final class ChartStore<
             )
 
         case let .zoomChanged(magnification):
-            highlightedPoints = []
-            selectedElements = []
-            selectedElementContexts = []
-            resetSelectionCycle()
+            clearSelectionForViewportChangeIfNeeded(selectionDismissalPolicy)
             viewport.applyZoom(
                 magnification: magnification,
                 globalXDomain: baseXScale.domain,
@@ -211,14 +206,18 @@ public final class ChartStore<
                 selectedElements = elementContexts.map(\.payload)
                 highlightedPoints = []
             } else {
-                selectedElementContexts = []
-                selectedElements = []
-                highlightedPoints = selectPoints(
+                let points = selectPoints(
                     near: location,
                     radius: hitboxRadius,
                     mode: selectionMode,
                     overlappingSelectionMode: overlappingSelectionMode
                 )
+                if points.isEmpty, !selectionDismissalPolicy.contains(.tapOutside) {
+                    return
+                }
+                selectedElementContexts = []
+                selectedElements = []
+                highlightedPoints = points
             }
 
         case .highlightCleared:
@@ -340,6 +339,23 @@ public final class ChartStore<
         selectionCycleIndex = 0
     }
 
+    private func clearSelectionForDragIfNeeded(_ policy: ChartSelectionDismissalPolicy) {
+        guard policy.contains(.drag) || policy.contains(.viewportChange) else { return }
+        clearSelection()
+    }
+
+    private func clearSelectionForViewportChangeIfNeeded(_ policy: ChartSelectionDismissalPolicy) {
+        guard policy.contains(.viewportChange) else { return }
+        clearSelection()
+    }
+
+    private func clearSelection() {
+        highlightedPoints = []
+        selectedElements = []
+        selectedElementContexts = []
+        resetSelectionCycle()
+    }
+
     private func clearDataState() {
         layoutTask?.cancel()
         layoutTask = nil
@@ -373,8 +389,10 @@ public final class ChartStore<
 
     public func applyViewportState(
         _ state: ChartViewportState,
-        liveTrackingMode: ChartLiveTrackingMode = .disabled
+        liveTrackingMode: ChartLiveTrackingMode = .disabled,
+        selectionDismissalPolicy: ChartSelectionDismissalPolicy = .none
     ) {
+        clearSelectionForViewportChangeIfNeeded(selectionDismissalPolicy)
         activeXScale = baseXScale
         activeYScale = baseYScale
 
@@ -411,7 +429,10 @@ public final class ChartStore<
         applyViewportToScales()
     }
 
-    public func jumpToLatest() {
+    public func jumpToLatest(
+        selectionDismissalPolicy: ChartSelectionDismissalPolicy = .none
+    ) {
+        clearSelectionForViewportChangeIfNeeded(selectionDismissalPolicy)
         let currentDomain = viewport.visibleXDomain ?? baseXScale.domain
         let windowWidth = max(0, currentDomain.upperBound - currentDomain.lowerBound)
         viewport.jumpToLatest(
@@ -421,12 +442,20 @@ public final class ChartStore<
         applyViewportToScales()
     }
 
+    public func clearSelectionForViewportChange(
+        _ selectionDismissalPolicy: ChartSelectionDismissalPolicy
+    ) {
+        clearSelectionForViewportChangeIfNeeded(selectionDismissalPolicy)
+    }
+
     public func applyProgrammaticZoom(
         magnification: Double,
         minZoomScale: Double,
         zoomX: Bool,
-        zoomY: Bool
+        zoomY: Bool,
+        selectionDismissalPolicy: ChartSelectionDismissalPolicy = .none
     ) {
+        clearSelectionForViewportChangeIfNeeded(selectionDismissalPolicy)
         viewport.applyProgrammaticZoom(
             magnification: magnification,
             globalXDomain: baseXScale.domain,

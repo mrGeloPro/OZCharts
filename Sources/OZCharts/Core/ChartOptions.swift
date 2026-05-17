@@ -10,7 +10,45 @@ import CoreGraphics
 
 public enum ChartTooltipAnchor: Equatable {
     case selectedValue
-    case gestureLocation
+    case tapLocation
+    case elementCenter
+    case hitPoint
+}
+
+public enum ChartTooltipArrowEdge: Equatable, Sendable {
+    case top
+    case bottom
+    case leading
+    case trailing
+    case none
+}
+
+public struct ChartElementTooltipContext {
+    public var elements: [ChartSelectedElement]
+    public var anchor: CGPoint
+    public var position: CGPoint
+    public var arrowEdge: ChartTooltipArrowEdge
+    public var arrowXOffset: CGFloat
+    public var arrowYOffset: CGFloat
+    public var wasClamped: Bool
+
+    public init(
+        elements: [ChartSelectedElement],
+        anchor: CGPoint,
+        position: CGPoint,
+        arrowEdge: ChartTooltipArrowEdge,
+        arrowXOffset: CGFloat,
+        arrowYOffset: CGFloat,
+        wasClamped: Bool
+    ) {
+        self.elements = elements
+        self.anchor = anchor
+        self.position = position
+        self.arrowEdge = arrowEdge
+        self.arrowXOffset = arrowXOffset
+        self.arrowYOffset = arrowYOffset
+        self.wasClamped = wasClamped
+    }
 }
 
 public enum ChartSelectionPriority: Equatable {
@@ -61,62 +99,86 @@ public struct ChartSelectionOptions: Equatable {
     public var behavior: ChartSelectionBehavior
     public var overlappingSelectionMode: ChartOverlappingSelectionMode
     public var hitboxRadius: CGFloat
-    public var clearsSelectionOnGestureEnd: Bool
+    public var dismissalPolicy: ChartSelectionDismissalPolicy
 
     public init(
         mode: ChartSelectionMode = .pointsInRadius,
         behavior: ChartSelectionBehavior = .tap,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
         hitboxRadius: CGFloat = 20,
-        clearsSelectionOnGestureEnd: Bool = true
+        dismissalPolicy: ChartSelectionDismissalPolicy = .transient
     ) {
         self.mode = mode
         self.behavior = behavior
         self.overlappingSelectionMode = overlappingSelectionMode
         self.hitboxRadius = hitboxRadius
-        self.clearsSelectionOnGestureEnd = clearsSelectionOnGestureEnd
+        self.dismissalPolicy = dismissalPolicy
     }
 
     public static let disabled = ChartSelectionOptions(
         mode: .none,
         behavior: .disabled,
         hitboxRadius: 0,
-        clearsSelectionOnGestureEnd: true
+        dismissalPolicy: .transient
     )
 
     public static let nearestX = ChartSelectionOptions(
         mode: .nearestX,
         behavior: .tapAndDrag,
         hitboxRadius: 24,
-        clearsSelectionOnGestureEnd: false
+        dismissalPolicy: .tapOutside
     )
 
-    public static let elementTap = ChartSelectionOptions(
+    public static let transientElement = ChartSelectionOptions(
         mode: .none,
         behavior: .tap,
         overlappingSelectionMode: .all,
         hitboxRadius: 24,
-        clearsSelectionOnGestureEnd: false
+        dismissalPolicy: .transient
     )
 
-    public static let elementPress = ChartSelectionOptions(
+    public static let persistentElement = ChartSelectionOptions(
         mode: .none,
         behavior: .tap,
         overlappingSelectionMode: .all,
         hitboxRadius: 24,
-        clearsSelectionOnGestureEnd: true
+        dismissalPolicy: .tapOutside
     )
 
-    public static let transientElement = elementPress
-    public static let persistentElement = elementTap
+    public static let pinnedElement = ChartSelectionOptions(
+        mode: .none,
+        behavior: .tap,
+        overlappingSelectionMode: .all,
+        hitboxRadius: 24,
+        dismissalPolicy: .pinned
+    )
+
     public static let eventOnly = ChartSelectionOptions(
         mode: .none,
         behavior: .tap,
         overlappingSelectionMode: .cycle,
         hitboxRadius: 32,
-        clearsSelectionOnGestureEnd: true
+        dismissalPolicy: .transient
     )
     public static let eventThenNearestPoint = ChartSelectionOptions.nearestX
+}
+
+public struct ChartSelectionDismissalPolicy: OptionSet, Equatable, Sendable {
+    public let rawValue: Int
+
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    public static let gestureEnd = ChartSelectionDismissalPolicy(rawValue: 1 << 0)
+    public static let tapOutside = ChartSelectionDismissalPolicy(rawValue: 1 << 1)
+    public static let drag = ChartSelectionDismissalPolicy(rawValue: 1 << 2)
+    public static let viewportChange = ChartSelectionDismissalPolicy(rawValue: 1 << 3)
+
+    public static let none: ChartSelectionDismissalPolicy = []
+    public static let transient: ChartSelectionDismissalPolicy = [.gestureEnd, .tapOutside, .drag, .viewportChange]
+    public static let persistent: ChartSelectionDismissalPolicy = [.tapOutside, .drag, .viewportChange]
+    public static let pinned: ChartSelectionDismissalPolicy = []
 }
 
 public struct ChartTooltipOptions: Equatable {
@@ -141,6 +203,51 @@ public struct ChartTooltipOptions: Equatable {
     }
 
     public static let automatic = ChartTooltipOptions()
+
+    public static func tapLocation(
+        placement: ChartTooltipPlacement = .automatic,
+        offset: CGPoint = CGPoint(x: 0, y: -20),
+        padding: CGFloat = 8,
+        maxWidth: CGFloat? = nil
+    ) -> ChartTooltipOptions {
+        ChartTooltipOptions(
+            placement: placement,
+            anchor: .tapLocation,
+            offset: offset,
+            padding: padding,
+            maxWidth: maxWidth
+        )
+    }
+
+    public static func hitPoint(
+        placement: ChartTooltipPlacement = .automatic,
+        offset: CGPoint = CGPoint(x: 0, y: -20),
+        padding: CGFloat = 8,
+        maxWidth: CGFloat? = nil
+    ) -> ChartTooltipOptions {
+        ChartTooltipOptions(
+            placement: placement,
+            anchor: .hitPoint,
+            offset: offset,
+            padding: padding,
+            maxWidth: maxWidth
+        )
+    }
+
+    public static func elementCenter(
+        placement: ChartTooltipPlacement = .automatic,
+        offset: CGPoint = CGPoint(x: 0, y: -20),
+        padding: CGFloat = 8,
+        maxWidth: CGFloat? = nil
+    ) -> ChartTooltipOptions {
+        ChartTooltipOptions(
+            placement: placement,
+            anchor: .elementCenter,
+            offset: offset,
+            padding: padding,
+            maxWidth: maxWidth
+        )
+    }
 }
 
 public struct ChartViewportOptions: Equatable {

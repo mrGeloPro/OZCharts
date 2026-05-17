@@ -69,7 +69,7 @@ For donut-only dashboard cards, prefer:
 OZDonutChart(scoreShare, colors: [.cyan, .purple, .orange], label: "Score") {
     Text("82%")
 }
-.selection(.elementTap)
+.selection(.persistentElement)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }

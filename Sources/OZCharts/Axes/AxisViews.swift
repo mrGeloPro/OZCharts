@@ -82,7 +82,7 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
             Text(config.labelFormatter(displayValue))
                 .font(config.font)
                 .foregroundColor(config.textColor)
-                .lineLimit(1)
+                .lineLimit(config.labelLineLimit)
                 .fixedSize(horizontal: true, vertical: false)
         }
     }
@@ -169,8 +169,9 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
             Text(config.labelFormatter(displayValue))
                 .font(config.font)
                 .foregroundColor(config.textColor)
-                .lineLimit(1)
-                .fixedSize()
+                .multilineTextAlignment(config.position == .leading ? .trailing : .leading)
+                .lineLimit(config.labelLineLimit)
+                .fixedSize(horizontal: true, vertical: true)
         }
     }
 

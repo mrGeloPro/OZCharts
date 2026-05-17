@@ -40,6 +40,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
     private var onElementSelectionChanged: ([ChartSelectedElement]) -> Void
     private var onChartSelectionChanged: (ChartSelection<Point>) -> Void
+    private var elementTooltipContent: ((ChartElementTooltipContext) -> AnyView)?
     private var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void
     private var onEmptyTap: (CGPoint) -> Void
     private var viewportBinding: Binding<ChartViewportState>?
@@ -87,6 +88,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.onSelectionChanged = { _ in }
         self.onElementSelectionChanged = { _ in }
         self.onChartSelectionChanged = { _ in }
+        self.elementTooltipContent = nil
         self.onAnnotationSelectionChanged = { _ in }
         self.onEmptyTap = { _ in }
         self.viewportBinding = nil
@@ -129,6 +131,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         )
         .chartSelectionPriority(selectionPriority)
         .chartTooltipOptions(tooltipOptions)
+        .chartElementTooltipIfNeeded(elementTooltipContent)
         .chartViewportOptions(viewportOptions)
         .chartRenderOptions(renderOptions)
         .chartEmptyTap(onEmptyTap)
@@ -347,6 +350,12 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func selectionDismissal(_ policy: ChartSelectionDismissalPolicy) -> Self {
+        var copy = self
+        copy.selectionOptions.dismissalPolicy = policy
+        return copy
+    }
+
     public func selectionPriority(_ priority: ChartSelectionPriority) -> Self {
         var copy = self
         copy.selectionPriority = priority
@@ -492,6 +501,30 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func elementTooltip<Content: View>(
+        @ViewBuilder _ content: @escaping ([ChartSelectedElement]) -> Content
+    ) -> Self {
+        var copy = self
+        copy.elementTooltipContent = { AnyView(content($0.elements)) }
+        return copy
+    }
+
+    public func elementTooltipContext<Content: View>(
+        @ViewBuilder _ content: @escaping (ChartElementTooltipContext) -> Content
+    ) -> Self {
+        var copy = self
+        copy.elementTooltipContent = { AnyView(content($0)) }
+        return copy
+    }
+
+    public func onStackedBarSelection(
+        _ handler: @escaping ([StackedBarSelection]) -> Void
+    ) -> Self {
+        onSelection { selection in
+            handler(selection.stackedBarSelections)
+        }
+    }
+
     public func onEmptyTap(
         _ handler: @escaping (CGPoint) -> Void
     ) -> Self {
@@ -552,6 +585,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.onSelectionChanged = onSelectionChanged
         copy.onElementSelectionChanged = onElementSelectionChanged
         copy.onChartSelectionChanged = onChartSelectionChanged
+        copy.elementTooltipContent = elementTooltipContent
         copy.onAnnotationSelectionChanged = onAnnotationSelectionChanged
         copy.onEmptyTap = onEmptyTap
         copy.viewportBinding = viewportBinding
@@ -640,6 +674,11 @@ public extension OZChart where Point: GroupedChartDataPoint {
         fillStyleMapper: ((Point.GroupID) -> ChartFillStyle)? = nil,
         groupLabel: ((Point.GroupID) -> String?)? = nil,
         rowLabel: ((Double) -> String?)? = nil,
+        rowEndLabel: ((_ rowValue: Double, _ stackedTotal: Double) -> String?)? = nil,
+        layout: StackedBarLayoutOptions? = nil,
+        remainder: StackedBarRemainderStyle? = nil,
+        separatorStyle: StackedBarSeparatorStyle? = nil,
+        interactionOptions: StackedBarInteractionOptions = .segments,
         valueLabelStyle: ChartValueLabelStyle? = nil,
         barHeight: CGFloat = 28,
         cornerRadius: CGFloat = 4,
@@ -647,6 +686,12 @@ public extension OZChart where Point: GroupedChartDataPoint {
         animation: ChartAnimationStyle = .none,
         zIndex: Int = 0
     ) -> Self {
+        let resolvedLayout = layout ?? StackedBarLayoutOptions(
+            barHeight: barHeight,
+            cornerRadius: cornerRadius,
+            segmentGap: segmentGap
+        )
+
         var copy = addingSeries(
             StackedBarSeries(
                 data: sourceData,
@@ -655,18 +700,52 @@ public extension OZChart where Point: GroupedChartDataPoint {
                 colorMapper: colorMapper,
                 fillStyleMapper: fillStyleMapper,
                 groupLabel: groupLabel,
+                rowLabel: rowLabel,
+                remainderStyle: remainder,
+                separatorStyle: separatorStyle,
+                interactionOptions: interactionOptions,
+                rowHitboxHeight: resolvedLayout.rowHitboxHeight,
                 valueLabelStyle: valueLabelStyle,
-                barHeight: barHeight,
-                cornerRadius: cornerRadius,
-                segmentGap: segmentGap,
+                barHeight: resolvedLayout.barHeight,
+                cornerRadius: resolvedLayout.cornerRadius,
+                segmentGap: resolvedLayout.segmentGap,
                 animation: animation,
                 zIndex: zIndex
             )
         )
 
-        if let rowLabel, copy.yAxes == nil {
-            let rowValues = Array(Set(sourceData.map(\.y))).sorted()
-            copy.yAxes = [.stackedBarRows(values: rowValues, rowLabel: rowLabel)]
+        if rowLabel != nil || rowEndLabel != nil, copy.yAxes == nil {
+            let visibleGroups = Set(stackOrder)
+            let visibleData = sourceData.filter { visibleGroups.contains($0.group) }
+            let rowValues = Array(Set(visibleData.map(\.y))).sorted()
+            var axes: [YAxisConfig] = []
+            if let rowLabel {
+                axes.append(
+                    .stackedBarRows(
+                        values: rowValues,
+                        position: .leading,
+                        width: resolvedLayout.leftAxisWidth,
+                        labelSpacing: resolvedLayout.axisLabelSpacing,
+                        labelLineLimit: resolvedLayout.rowLabelLineLimit,
+                        rowLabel: rowLabel
+                    )
+                )
+            }
+            if let rowEndLabel {
+                let rowTotals = Dictionary(grouping: visibleData, by: \.y)
+                    .mapValues { points in points.map(\.x).reduce(0, +) }
+                axes.append(
+                    .stackedBarRows(
+                        values: rowValues,
+                        position: .trailing,
+                        width: resolvedLayout.rightAxisWidth,
+                        labelSpacing: resolvedLayout.axisLabelSpacing,
+                        labelLineLimit: 1,
+                        rowLabel: { row in rowEndLabel(row, rowTotals[row] ?? 0) }
+                    )
+                )
+            }
+            copy.yAxes = axes
         }
         return copy
     }

@@ -927,4 +927,5 @@ final class ChartStoreTests: XCTestCase {
         )
         return store
     }
+
 }

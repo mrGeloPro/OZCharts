@@ -29,6 +29,28 @@ CartesianChartView(...)
 `onSelectionChanged` and `onElementSelectionChanged` are still available for
 incremental migration, but new screens should use the unified selection payload.
 
+Dismissal is now configured with `dismissalPolicy` instead of the older
+`clearsSelectionOnGestureEnd` flag:
+
+```swift
+OZChart(samples)
+    .selection(.nearestX)
+    .selectionDismissal(.persistent)
+```
+
+For low-level charts, pass `selectionDismissalPolicy` to `CartesianChartView`
+or use `.chartSelectionDismissalPolicy(_:)`.
+
+## Tooltip Anchors
+
+Tooltip anchoring now uses four canonical names:
+
+- `.selectedValue` for point-value tooltips.
+- `.tapLocation` for gesture-centered overlays.
+- `.elementCenter` for stable element-centered labels.
+- `.hitPoint` for arrows that should point to the exact tap inside a bar,
+  segment, or marker.
+
 ## Advanced Series
 
 Prefer fluent `OZChart` helpers for advanced series:
@@ -78,7 +100,7 @@ OZChart(samples)
     .selection(.eventOnly)
     .annotationSelection(fallbackToPointSelection: false)
     .selectionPriority(.annotationsOnly)
-    .tooltipAnchor(.gestureLocation)
+    .tooltipAnchor(.tapLocation)
 ```
 
 Use `.eventThenNearestPoint` or `.nearestX` when empty chart areas should still

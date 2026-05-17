@@ -40,7 +40,7 @@ For donut cards:
 OZDonutChart(slices, colors: colors, label: "Score") {
     Text("82%")
 }
-.selection(.elementTap)
+.selection(.persistentElement)
 .onSelection { selection in
     selectedSegment = selection.primaryElement
 }

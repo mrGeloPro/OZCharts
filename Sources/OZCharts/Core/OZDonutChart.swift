@@ -57,7 +57,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         self.animation = animation
         self.theme = theme
         self.renderOptions = .dashboard(legend: label == nil ? .hidden : .bottom)
-        self.selectionOptions = .elementPress
+        self.selectionOptions = .transientElement
         self.selectedElementHandler = { _ in }
         self.chartSelectionHandler = { _ in }
         self.segmentSelectionHandler = { _ in }
@@ -90,7 +90,7 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
                 selectionMode: selectionOptions.mode,
                 selectionBehavior: selectionOptions.behavior,
                 overlappingSelectionMode: selectionOptions.overlappingSelectionMode,
-                clearsSelectionOnGestureEnd: selectionOptions.clearsSelectionOnGestureEnd,
+                selectionDismissalPolicy: selectionOptions.dismissalPolicy,
                 onElementSelectionChanged: selectedElementHandler
             ) { _ in
                 EmptyView()
@@ -121,15 +121,21 @@ public struct OZDonutChart<Point: ChartDataPoint, CenterContent: View>: View
         return copy
     }
 
-    public func selection(_ options: ChartSelectionOptions = .elementPress) -> Self {
+    public func selection(_ options: ChartSelectionOptions = .transientElement) -> Self {
         var copy = self
         copy.selectionOptions = options
         return copy
     }
 
+    public func selectionDismissal(_ policy: ChartSelectionDismissalPolicy) -> Self {
+        var copy = self
+        copy.selectionOptions.dismissalPolicy = policy
+        return copy
+    }
+
     @available(*, deprecated, message: "Use selection(_:) to configure behavior and onSelection(_:) to read selection.elements instead.")
     public func selection(
-        _ options: ChartSelectionOptions = .elementPress,
+        _ options: ChartSelectionOptions = .transientElement,
         onChange: @escaping ([ChartSelectedElement]) -> Void
     ) -> Self {
         var copy = self

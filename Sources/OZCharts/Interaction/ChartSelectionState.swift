@@ -36,6 +36,8 @@ public enum ChartSelectedElementKind: Equatable {
     case point
     case bar
     case stackedBarSegment
+    case stackedBarRemainder
+    case stackedBarRow
     case donutSegment
     case annotation
     case custom(String)
@@ -54,6 +56,10 @@ public struct ChartSelectedElement: Equatable, Identifiable {
     public var x: Double?
     public var y: Double?
     public var value: Double?
+    public var totalValue: Double?
+    public var rowIndex: Int?
+    public var rowLabel: String?
+    public var isSupplementary: Bool
     public var position: CGPoint
     public var interactionPosition: CGPoint?
     public var bounds: CGRect
@@ -70,6 +76,10 @@ public struct ChartSelectedElement: Equatable, Identifiable {
         x: Double? = nil,
         y: Double? = nil,
         value: Double? = nil,
+        totalValue: Double? = nil,
+        rowIndex: Int? = nil,
+        rowLabel: String? = nil,
+        isSupplementary: Bool = false,
         position: CGPoint,
         interactionPosition: CGPoint? = nil,
         bounds: CGRect
@@ -85,6 +95,10 @@ public struct ChartSelectedElement: Equatable, Identifiable {
         self.x = x
         self.y = y
         self.value = value
+        self.totalValue = totalValue
+        self.rowIndex = rowIndex
+        self.rowLabel = rowLabel
+        self.isSupplementary = isSupplementary
         self.position = position
         self.interactionPosition = interactionPosition
         self.bounds = bounds
@@ -145,5 +159,17 @@ public struct ChartSelection<Point: ChartDataPoint> where Point.XValue == Double
 
     public static var none: ChartSelection<Point> {
         ChartSelection()
+    }
+}
+
+extension ChartSelectedElement {
+    var tooltipInteractionAnchor: CGPoint {
+        guard let interactionPosition else { return position }
+        guard bounds.width > 0, bounds.height > 0 else { return interactionPosition }
+
+        return CGPoint(
+            x: min(max(interactionPosition.x, bounds.minX), bounds.maxX),
+            y: min(max(interactionPosition.y, bounds.minY), bounds.maxY)
+        )
     }
 }

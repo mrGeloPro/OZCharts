@@ -93,6 +93,7 @@ public struct XAxisConfig {
     public var tickColor: Color
     public var tickWidth: CGFloat
     public var labelSpacing: CGFloat
+    public var labelLineLimit: Int?
     public var customLabelBuilder: ((Double) -> AnyView)?
     public var title: String?
     public var titleFont: Font
@@ -121,6 +122,7 @@ public struct XAxisConfig {
         tickColor: Color                        = .gray.opacity(0.5),
         tickWidth: CGFloat                      = 1,
         labelSpacing: CGFloat                   = 4,
+        labelLineLimit: Int?                    = 1,
         customLabelBuilder: ((Double) -> AnyView)? = nil,
         title: String?                          = nil,
         titleFont: Font                         = .caption,
@@ -148,6 +150,7 @@ public struct XAxisConfig {
         self.tickColor          = tickColor
         self.tickWidth          = tickWidth
         self.labelSpacing       = labelSpacing
+        self.labelLineLimit     = labelLineLimit
         self.customLabelBuilder = customLabelBuilder
         self.title              = title
         self.titleFont          = titleFont
@@ -180,6 +183,7 @@ public struct YAxisConfig {
     public var tickColor: Color
     public var tickWidth: CGFloat
     public var labelSpacing: CGFloat
+    public var labelLineLimit: Int?
     public var customLabelBuilder: ((Double) -> AnyView)?
     public var title: String?
     public var titleFont: Font
@@ -208,6 +212,7 @@ public struct YAxisConfig {
         tickColor: Color                        = .gray.opacity(0.5),
         tickWidth: CGFloat                      = 1,
         labelSpacing: CGFloat                   = 4,
+        labelLineLimit: Int?                    = 1,
         customLabelBuilder: ((Double) -> AnyView)? = nil,
         title: String?                          = nil,
         titleFont: Font                         = .caption,
@@ -235,6 +240,7 @@ public struct YAxisConfig {
         self.tickColor          = tickColor
         self.tickWidth          = tickWidth
         self.labelSpacing       = labelSpacing
+        self.labelLineLimit     = labelLineLimit
         self.customLabelBuilder = customLabelBuilder
         self.title              = title
         self.titleFont          = titleFont

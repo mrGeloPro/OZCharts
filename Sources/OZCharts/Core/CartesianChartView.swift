@@ -50,7 +50,7 @@ public struct CartesianChartView<
     public var selectionMode: ChartSelectionMode = .pointsInRadius
     public var selectionBehavior: ChartSelectionBehavior = .tap
     public var overlappingSelectionMode: ChartOverlappingSelectionMode = .all
-    public var clearsSelectionOnGestureEnd: Bool = true
+    public var selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient
     public var isAnnotationSelectionEnabled: Bool = false
     public var annotationHitboxRadius: CGFloat = 24
     public var annotationOverlappingSelectionMode: ChartOverlappingSelectionMode = .cycle
@@ -84,6 +84,7 @@ public struct CartesianChartView<
     var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
     var onElementSelectionChanged: ([ChartSelectedElement]) -> Void = { _ in }
     var onChartSelectionChanged: (ChartSelection<Point>) -> Void = { _ in }
+    var elementTooltipContent: ((ChartElementTooltipContext) -> AnyView)?
     var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
     var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
     var onEmptyTap: (CGPoint) -> Void = { _ in }
@@ -139,7 +140,7 @@ public struct CartesianChartView<
         selectionMode: ChartSelectionMode = .pointsInRadius,
         selectionBehavior: ChartSelectionBehavior = .tap,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
-        clearsSelectionOnGestureEnd: Bool = true,
+        selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient,
         crosshairStyle: ChartCrosshairStyle = .hidden,
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
@@ -176,7 +177,7 @@ public struct CartesianChartView<
         self.selectionMode = selectionMode
         self.selectionBehavior = selectionBehavior
         self.overlappingSelectionMode = overlappingSelectionMode
-        self.clearsSelectionOnGestureEnd = clearsSelectionOnGestureEnd
+        self.selectionDismissalPolicy = selectionDismissalPolicy
         self.crosshairStyle = crosshairStyle
         self.tooltipPlacement = tooltipPlacement
         self.onSelectionChanged = onSelectionChanged
@@ -213,7 +214,7 @@ public struct CartesianChartView<
         selectionMode: ChartSelectionMode = .pointsInRadius,
         selectionBehavior: ChartSelectionBehavior = .tap,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
-        clearsSelectionOnGestureEnd: Bool = true,
+        selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient,
         crosshairStyle: ChartCrosshairStyle = .hidden,
         tooltipPlacement: ChartTooltipPlacement = .automatic,
         onSelectionChanged: @escaping ([ChartPointContext<Point>]) -> Void = { _ in },
@@ -249,7 +250,7 @@ public struct CartesianChartView<
             selectionMode: selectionMode,
             selectionBehavior: selectionBehavior,
             overlappingSelectionMode: overlappingSelectionMode,
-            clearsSelectionOnGestureEnd: clearsSelectionOnGestureEnd,
+            selectionDismissalPolicy: selectionDismissalPolicy,
             crosshairStyle: crosshairStyle,
             tooltipPlacement: tooltipPlacement,
             onSelectionChanged: onSelectionChanged,
@@ -414,7 +415,7 @@ public struct CartesianChartView<
                                 isVerticalZoomEnabled: isVerticalZoomEnabled,
                                 hitboxRadius: hitboxRadius,
                                 selectionBehavior: selectionBehavior,
-                                clearsSelectionOnGestureEnd: clearsSelectionOnGestureEnd
+                                selectionDismissalPolicy: selectionDismissalPolicy
                             ),
                             onEvent: { handleGestureEvent($0) }
                         )
@@ -445,6 +446,21 @@ public struct CartesianChartView<
                                 maxWidth: tooltipMaxWidth,
                                 content: annotationTooltipContent
                             )
+                            .allowsHitTesting(false)
+                        }
+
+                        if !store.selectedElements.isEmpty {
+                            ChartElementTooltipOverlay(
+                                elements: store.selectedElements,
+                                canvasSize: geometry.size,
+                                placement: tooltipPlacement,
+                                anchorOverride: resolvedTooltipAnchorPoint,
+                                offset: tooltipOffset,
+                                padding: tooltipPadding,
+                                maxWidth: tooltipMaxWidth,
+                                content: elementTooltipContent
+                            )
+                            .allowsHitTesting(false)
                         }
 
                         if showsZoomControls {
@@ -584,6 +600,7 @@ public struct CartesianChartView<
             liveTrackingMode: liveTrackingMode,
             selectionMode: selectionMode,
             overlappingSelectionMode: overlappingSelectionMode,
+            selectionDismissalPolicy: selectionDismissalPolicy,
             series: series
         )
     }
@@ -764,7 +781,11 @@ public struct CartesianChartView<
     private func applyBoundViewportState(_ state: ChartViewportState?) {
         guard let state, state != store.viewportState else { return }
         syncBaseScales()
-        store.applyViewportState(state, liveTrackingMode: liveTrackingMode)
+        store.applyViewportState(
+            state,
+            liveTrackingMode: liveTrackingMode,
+            selectionDismissalPolicy: selectionDismissalPolicy
+        )
         store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
         publishViewportState()
     }
@@ -803,16 +824,35 @@ public struct CartesianChartView<
     }
 
     private var resolvedTooltipAnchorPoint: CGPoint? {
-        guard tooltipAnchor == .gestureLocation,
-              !store.highlightedPoints.isEmpty ||
-              !store.selectedElements.isEmpty else { return nil }
-        return lastGestureLocation
+        guard !store.highlightedPoints.isEmpty || !store.selectedElements.isEmpty else { return nil }
+
+        switch tooltipAnchor {
+        case .selectedValue:
+            return nil
+        case .tapLocation:
+            return lastGestureLocation
+        case .elementCenter:
+            guard !store.selectedElements.isEmpty else { return nil }
+            return ChartTooltipLayout.anchor(for: store.selectedElements.map {
+                CGPoint(x: $0.bounds.midX, y: $0.bounds.midY)
+            })
+        case .hitPoint:
+            guard !store.selectedElements.isEmpty else { return nil }
+            return ChartTooltipLayout.anchor(for: store.selectedElements.map {
+                $0.tooltipInteractionAnchor
+            })
+        }
     }
 
     private var resolvedAnnotationTooltipAnchorPoint: CGPoint? {
-        guard tooltipAnchor == .gestureLocation,
-              !highlightedAnnotations.isEmpty else { return nil }
-        return lastGestureLocation
+        guard !highlightedAnnotations.isEmpty else { return nil }
+
+        switch tooltipAnchor {
+        case .tapLocation, .hitPoint:
+            return lastGestureLocation
+        case .selectedValue, .elementCenter:
+            return nil
+        }
     }
 
     private func applyProgrammaticZoom(magnification: Double) {
@@ -821,7 +861,8 @@ public struct CartesianChartView<
             magnification: magnification,
             minZoomScale: minZoomScale,
             zoomX: isHorizontalZoomEnabled,
-            zoomY: isVerticalZoomEnabled
+            zoomY: isVerticalZoomEnabled,
+            selectionDismissalPolicy: selectionDismissalPolicy
         )
         store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
         publishViewportState()
@@ -829,6 +870,7 @@ public struct CartesianChartView<
 
     private func resetViewportFromControls() {
         syncBaseScales()
+        store.clearSelectionForViewportChange(selectionDismissalPolicy)
         store.resetViewport()
         initializeViewportIfNeeded()
         store.queueUpdate(series: series, in: store.canvasSize, animate: false, coalesce: false)
@@ -966,14 +1008,15 @@ private struct ChartAnnotationTooltipOverlay: View {
 
     var body: some View {
         if let anchor = anchorOverride ?? ChartTooltipLayout.anchor(for: annotations.map(\.position)) {
+            let layoutSize = measuredTooltipSize
             resolvedContent
-                .frame(maxWidth: maxWidth, alignment: .leading)
+                .frame(maxWidth: maxWidth, alignment: .center)
                 .fixedSize(horizontal: maxWidth == nil, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(
                     ChartTooltipLayout.resolve(
                         anchor: anchor,
-                        tooltipSize: tooltipSize,
+                        tooltipSize: layoutSize,
                         canvasSize: canvasSize,
                         placement: placement,
                         offset: offset,
@@ -981,6 +1024,13 @@ private struct ChartAnnotationTooltipOverlay: View {
                     ).position
                 )
         }
+    }
+
+    private var measuredTooltipSize: CGSize {
+        guard tooltipSize.width > 0, tooltipSize.height > 0 else {
+            return CGSize(width: maxWidth ?? 180, height: 72)
+        }
+        return tooltipSize
     }
 
     private var resolvedContent: some View {
@@ -1000,6 +1050,115 @@ private struct ChartAnnotationTooltipOverlay: View {
                 .cornerRadius(8)
             }
         }
+    }
+}
+
+private struct ChartElementTooltipOverlay: View {
+    let elements: [ChartSelectedElement]
+    let canvasSize: CGSize
+    let placement: ChartTooltipPlacement
+    let anchorOverride: CGPoint?
+    let offset: CGPoint
+    let padding: CGFloat
+    let maxWidth: CGFloat?
+    let content: ((ChartElementTooltipContext) -> AnyView)?
+
+    @State private var tooltipSize: CGSize = .zero
+
+    var body: some View {
+        if let anchor = resolvedAnchor {
+            let layoutSize = measuredTooltipSize
+            let layout = ChartTooltipLayout.resolve(
+                anchor: anchor,
+                tooltipSize: layoutSize,
+                canvasSize: canvasSize,
+                placement: placement,
+                offset: offset,
+                padding: padding,
+                overflowAllowance: elementTooltipOverflowAllowance(for: layoutSize)
+            )
+            resolvedContent
+                .frame(maxWidth: maxWidth, alignment: .center)
+                .fixedSize(horizontal: maxWidth == nil, vertical: true)
+                .readSize { tooltipSize = $0 }
+                .position(layout.position)
+        }
+    }
+
+    private var resolvedAnchor: CGPoint? {
+        anchorOverride ?? ChartTooltipLayout.anchor(for: elements.map(\.tooltipInteractionAnchor))
+    }
+
+    private var measuredTooltipSize: CGSize {
+        guard tooltipSize.width > 0, tooltipSize.height > 0 else {
+            return CGSize(width: maxWidth ?? 180, height: 72)
+        }
+        return tooltipSize
+    }
+
+    private var resolvedContent: some View {
+        Group {
+            if let content {
+                content(currentContext)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(elements) { element in
+                        Text(element.label ?? element.groupLabel ?? formattedValue(element.value))
+                    }
+                }
+                .font(.caption)
+                .padding(8)
+                .background(Color.black.opacity(0.78))
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+        }
+    }
+
+    private var currentContext: ChartElementTooltipContext {
+        let anchor = anchorOverride ?? ChartTooltipLayout.anchor(for: elements.map(\.tooltipInteractionAnchor)) ?? .zero
+        let layout = ChartTooltipLayout.resolve(
+            anchor: anchor,
+            tooltipSize: measuredTooltipSize,
+            canvasSize: canvasSize,
+            placement: placement,
+            offset: offset,
+            padding: padding,
+            overflowAllowance: elementTooltipOverflowAllowance(for: measuredTooltipSize)
+        )
+        return ChartElementTooltipContext(
+            elements: elements,
+            anchor: layout.anchor,
+            position: layout.position,
+            arrowEdge: arrowEdge(for: layout.attachment),
+            arrowXOffset: layout.anchor.x - layout.position.x,
+            arrowYOffset: layout.anchor.y - layout.position.y,
+            wasClamped: layout.wasClamped
+        )
+    }
+
+    private func arrowEdge(for attachment: ChartTooltipAttachment) -> ChartTooltipArrowEdge {
+        switch attachment {
+        case .top:
+            return .bottom
+        case .bottom:
+            return .top
+        case .leading:
+            return .trailing
+        case .trailing:
+            return .leading
+        case .center, .fixed:
+            return .none
+        }
+    }
+
+    private func elementTooltipOverflowAllowance(for tooltipSize: CGSize) -> CGSize {
+        CGSize(width: max(0, tooltipSize.width / 2), height: 0)
+    }
+
+    private func formattedValue(_ value: Double?) -> String {
+        guard let value else { return "Selected" }
+        return String(format: "%.2f", value)
     }
 }
 
