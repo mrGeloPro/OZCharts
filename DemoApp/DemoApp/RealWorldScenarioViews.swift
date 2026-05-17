@@ -226,7 +226,7 @@ private struct RealWorldScenarioPanel: View {
         }
         .chartInitialViewport(xWindow: viewportWindow, anchor: .leading)
         .chartViewport($viewport)
-        .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
+        .chartSelectionOptions(.scrollSafeNearestX)
         .chartSelectionState($selection)
         .chartZoomControls(scenario.showsZoomControls, step: viewportWindow / 4)
         .chartAnnotationSelection(hitboxRadius: 32, overlapping: .cycle)

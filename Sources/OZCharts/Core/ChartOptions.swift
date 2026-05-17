@@ -23,6 +23,28 @@ public enum ChartTooltipArrowEdge: Equatable, Sendable {
     case none
 }
 
+public enum ChartSelectionActivation: Equatable, Sendable {
+    case immediate
+    case onTapEnd
+}
+
+public enum ChartNearestSelectionPolicy: Equatable, Sendable {
+    case unbounded
+    case withinHitbox
+    case within(CGFloat)
+
+    func maximumDistance(for hitboxRadius: CGFloat) -> CGFloat? {
+        switch self {
+        case .unbounded:
+            nil
+        case .withinHitbox:
+            hitboxRadius
+        case let .within(distance):
+            max(0, distance)
+        }
+    }
+}
+
 public struct ChartElementTooltipContext {
     public var elements: [ChartSelectedElement]
     public var anchor: CGPoint
@@ -100,19 +122,25 @@ public struct ChartSelectionOptions: Equatable {
     public var overlappingSelectionMode: ChartOverlappingSelectionMode
     public var hitboxRadius: CGFloat
     public var dismissalPolicy: ChartSelectionDismissalPolicy
+    public var activation: ChartSelectionActivation
+    public var nearestSelectionPolicy: ChartNearestSelectionPolicy
 
     public init(
         mode: ChartSelectionMode = .pointsInRadius,
         behavior: ChartSelectionBehavior = .tap,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
         hitboxRadius: CGFloat = 20,
-        dismissalPolicy: ChartSelectionDismissalPolicy = .transient
+        dismissalPolicy: ChartSelectionDismissalPolicy = .transient,
+        activation: ChartSelectionActivation = .immediate,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded
     ) {
         self.mode = mode
         self.behavior = behavior
         self.overlappingSelectionMode = overlappingSelectionMode
         self.hitboxRadius = hitboxRadius
         self.dismissalPolicy = dismissalPolicy
+        self.activation = activation
+        self.nearestSelectionPolicy = nearestSelectionPolicy
     }
 
     public static let disabled = ChartSelectionOptions(
@@ -127,6 +155,15 @@ public struct ChartSelectionOptions: Equatable {
         behavior: .tapAndDrag,
         hitboxRadius: 24,
         dismissalPolicy: .tapOutside
+    )
+
+    public static let scrollSafeNearestX = ChartSelectionOptions(
+        mode: .nearestX,
+        behavior: .tapAndDrag,
+        hitboxRadius: 28,
+        dismissalPolicy: .tapOutside,
+        activation: .onTapEnd,
+        nearestSelectionPolicy: .withinHitbox
     )
 
     public static let transientElement = ChartSelectionOptions(

@@ -13,6 +13,8 @@ while keeping `CartesianChartView` available as the low-level escape hatch.
   code no longer needs fake cartesian domains.
 * Unified selection uses one `ChartSelection<Point>` payload for points,
   visual elements, annotations, and linked `ChartSelectionState`.
+* `.scrollSafeNearestX` avoids noisy distant selections on scrollable dashboard
+  charts by waiting for a completed tap and limiting nearest lookup to the hitbox.
 * Dashboard presets and legend options reduce repeated configuration for static,
   compact, dense timeline, and interactive charts.
 * `OZChart.line(...)` and `.area(...)` expose product styling options such as

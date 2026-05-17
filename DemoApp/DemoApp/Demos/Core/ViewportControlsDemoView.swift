@@ -62,7 +62,7 @@ struct ViewportControlsDemoView: View {
                     .chartInitialViewport(xWindow: 8, anchor: .leading)
                     .chartViewport($viewport)
                     .chartZoomControls(step: 2)
-                    .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
+                    .chartSelectionOptions(.scrollSafeNearestX)
                     .chartCrosshair(.vertical(color: DemoColors.cyan.opacity(0.75)))
                     .frame(height: 290)
 

@@ -68,6 +68,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.minZoomScale, 0.2)
         XCTAssertEqual(view.selectionMode, .nearestX)
         XCTAssertEqual(view.selectionBehavior, .tapAndDrag)
+        XCTAssertEqual(view.selectionActivation, .immediate)
+        XCTAssertEqual(view.nearestSelectionPolicy, .unbounded)
         XCTAssertEqual(view.tooltipPlacement, .leading)
         XCTAssertEqual(view.tooltipAnchor, .tapLocation)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 3, y: 4))
@@ -117,7 +119,9 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 behavior: .tapAndDrag,
                 overlapping: .cycle,
                 hitboxRadius: 32,
-                dismissalPolicy: .persistent
+                dismissalPolicy: .persistent,
+                activation: .onTapEnd,
+                nearestSelectionPolicy: .withinHitbox
             )
             .chartAnnotationSelection(
                 hitboxRadius: 40,
@@ -139,6 +143,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.overlappingSelectionMode, .cycle)
         XCTAssertEqual(view.hitboxRadius, 32)
         XCTAssertFalse(view.selectionDismissalPolicy.contains(.gestureEnd))
+        XCTAssertEqual(view.selectionActivation, .onTapEnd)
+        XCTAssertEqual(view.nearestSelectionPolicy, .withinHitbox)
         XCTAssertTrue(view.isAnnotationSelectionEnabled)
         XCTAssertEqual(view.annotationHitboxRadius, 40)
         XCTAssertEqual(view.annotationOverlappingSelectionMode, .all)

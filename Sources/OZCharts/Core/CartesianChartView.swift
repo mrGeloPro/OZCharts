@@ -49,6 +49,8 @@ public struct CartesianChartView<
     public var hitboxRadius: CGFloat = 20
     public var selectionMode: ChartSelectionMode = .pointsInRadius
     public var selectionBehavior: ChartSelectionBehavior = .tap
+    public var selectionActivation: ChartSelectionActivation = .immediate
+    public var nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded
     public var overlappingSelectionMode: ChartOverlappingSelectionMode = .all
     public var selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient
     public var isAnnotationSelectionEnabled: Bool = false
@@ -139,6 +141,8 @@ public struct CartesianChartView<
         selectionState: Binding<ChartSelectionState>? = nil,
         selectionMode: ChartSelectionMode = .pointsInRadius,
         selectionBehavior: ChartSelectionBehavior = .tap,
+        selectionActivation: ChartSelectionActivation = .immediate,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
         selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient,
         crosshairStyle: ChartCrosshairStyle = .hidden,
@@ -176,6 +180,8 @@ public struct CartesianChartView<
         self.selectionStateBinding = selectionState
         self.selectionMode = selectionMode
         self.selectionBehavior = selectionBehavior
+        self.selectionActivation = selectionActivation
+        self.nearestSelectionPolicy = nearestSelectionPolicy
         self.overlappingSelectionMode = overlappingSelectionMode
         self.selectionDismissalPolicy = selectionDismissalPolicy
         self.crosshairStyle = crosshairStyle
@@ -213,6 +219,8 @@ public struct CartesianChartView<
         selectionState: Binding<ChartSelectionState>? = nil,
         selectionMode: ChartSelectionMode = .pointsInRadius,
         selectionBehavior: ChartSelectionBehavior = .tap,
+        selectionActivation: ChartSelectionActivation = .immediate,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
         selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient,
         crosshairStyle: ChartCrosshairStyle = .hidden,
@@ -249,6 +257,8 @@ public struct CartesianChartView<
             selectionState: selectionState,
             selectionMode: selectionMode,
             selectionBehavior: selectionBehavior,
+            selectionActivation: selectionActivation,
+            nearestSelectionPolicy: nearestSelectionPolicy,
             overlappingSelectionMode: overlappingSelectionMode,
             selectionDismissalPolicy: selectionDismissalPolicy,
             crosshairStyle: crosshairStyle,
@@ -415,7 +425,8 @@ public struct CartesianChartView<
                                 isVerticalZoomEnabled: isVerticalZoomEnabled,
                                 hitboxRadius: hitboxRadius,
                                 selectionBehavior: selectionBehavior,
-                                selectionDismissalPolicy: selectionDismissalPolicy
+                                selectionDismissalPolicy: selectionDismissalPolicy,
+                                selectionActivation: selectionActivation
                             ),
                             onEvent: { handleGestureEvent($0) }
                         )
@@ -601,6 +612,7 @@ public struct CartesianChartView<
             selectionMode: selectionMode,
             overlappingSelectionMode: overlappingSelectionMode,
             selectionDismissalPolicy: selectionDismissalPolicy,
+            nearestSelectionPolicy: nearestSelectionPolicy,
             series: series
         )
     }

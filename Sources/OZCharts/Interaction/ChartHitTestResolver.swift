@@ -92,6 +92,7 @@ enum ChartHitTestResolver {
         radius: CGFloat,
         mode: ChartSelectionMode,
         overlappingSelectionMode: ChartOverlappingSelectionMode,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded,
         cycleIDs: inout [UUID],
         cycleIndex: inout Int
     ) -> [ChartPointContext<Point>] where Point.XValue == Double, Point.YValue == Double {
@@ -104,6 +105,7 @@ enum ChartHitTestResolver {
             radius: radius,
             mode: mode,
             overlappingSelectionMode: overlappingSelectionMode,
+            nearestSelectionPolicy: nearestSelectionPolicy,
             cycleIDs: &cycleIDs,
             cycleIndex: &cycleIndex
         )
@@ -115,11 +117,13 @@ enum ChartHitTestResolver {
         radius: CGFloat,
         mode: ChartSelectionMode,
         overlappingSelectionMode: ChartOverlappingSelectionMode,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded,
         cycleIDs: inout [UUID],
         cycleIndex: inout Int
     ) -> [ChartPointContext<Point>] where Point.XValue == Double, Point.YValue == Double {
         guard !index.isEmpty else { return [] }
 
+        let maximumNearestDistance = nearestSelectionPolicy.maximumDistance(for: radius)
         let selected: [ChartPointContext<Point>] = switch mode {
         case .none:
             []
@@ -131,10 +135,19 @@ enum ChartHitTestResolver {
             )
 
         case .nearestPoint:
-            index.nearestPoint(near: location).map { [$0] } ?? []
+            if let nearest = index.nearestPoint(near: location),
+               nearestPoint(nearest, isWithin: maximumNearestDistance, of: location) {
+                [nearest]
+            } else {
+                []
+            }
 
         case .nearestX:
-            index.nearestXPoints(near: location)
+            nearestXSelection(
+                near: location,
+                index: index,
+                maximumDistance: maximumNearestDistance
+            )
         }
 
         return resolveOverlappingSelection(
@@ -143,6 +156,37 @@ enum ChartHitTestResolver {
             cycleIDs: &cycleIDs,
             cycleIndex: &cycleIndex
         )
+    }
+
+    private static func nearestPoint<Point: ChartDataPoint>(
+        _ point: ChartPointContext<Point>,
+        isWithin maximumDistance: CGFloat?,
+        of location: CGPoint
+    ) -> Bool where Point.XValue == Double, Point.YValue == Double {
+        guard let maximumDistance else { return true }
+
+        let dx = point.position.x - location.x
+        let dy = point.position.y - location.y
+        return hypot(dx, dy) <= maximumDistance
+    }
+
+    private static func nearestXSelection<Point: ChartDataPoint>(
+        near location: CGPoint,
+        index: ChartPointInteractionIndex<Point>,
+        maximumDistance: CGFloat?
+    ) -> [ChartPointContext<Point>] where Point.XValue == Double, Point.YValue == Double {
+        let points = index.nearestXPoints(near: location)
+        guard nearestXPoints(points, areWithin: maximumDistance, of: location) else { return [] }
+        return points
+    }
+
+    private static func nearestXPoints<Point: ChartDataPoint>(
+        _ points: [ChartPointContext<Point>],
+        areWithin maximumDistance: CGFloat?,
+        of location: CGPoint
+    ) -> Bool where Point.XValue == Double, Point.YValue == Double {
+        guard let maximumDistance else { return true }
+        return points.contains { abs($0.position.x - location.x) <= maximumDistance }
     }
 
     private static func resolveOverlappingSelection<Point: ChartDataPoint>(

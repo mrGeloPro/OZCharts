@@ -153,6 +153,7 @@ public final class ChartStore<
         selectionMode: ChartSelectionMode = .pointsInRadius,
         overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
         selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded,
         series: [AnyChartSeries<Point>]
     ) {
         switch event {
@@ -210,7 +211,8 @@ public final class ChartStore<
                     near: location,
                     radius: hitboxRadius,
                     mode: selectionMode,
-                    overlappingSelectionMode: overlappingSelectionMode
+                    overlappingSelectionMode: overlappingSelectionMode,
+                    nearestSelectionPolicy: nearestSelectionPolicy
                 )
                 if points.isEmpty, !selectionDismissalPolicy.contains(.tapOutside) {
                     return
@@ -254,7 +256,8 @@ public final class ChartStore<
         near location: CGPoint,
         radius: CGFloat,
         mode: ChartSelectionMode,
-        overlappingSelectionMode: ChartOverlappingSelectionMode = .all
+        overlappingSelectionMode: ChartOverlappingSelectionMode = .all,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy = .unbounded
     ) -> [ChartPointContext<Point>] {
         ChartHitTestResolver.points(
             near: location,
@@ -262,6 +265,7 @@ public final class ChartStore<
             radius: radius,
             mode: mode,
             overlappingSelectionMode: overlappingSelectionMode,
+            nearestSelectionPolicy: nearestSelectionPolicy,
             cycleIDs: &selectionCycleIDs,
             cycleIndex: &selectionCycleIndex
         )

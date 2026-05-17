@@ -104,8 +104,10 @@ OZChart(samples)
 ```
 
 Use `.eventThenNearestPoint` or `.nearestX` when empty chart areas should still
-resolve to the nearest point. Use `.chartEmptyTap` when empty areas should clear
-external UI instead of selecting nearby data.
+resolve to the nearest point. Use `.scrollSafeNearestX` when scrollable
+dashboards should ignore distant nearest values and wait for a completed tap.
+Use `.chartEmptyTap` when empty areas should clear external UI instead of
+selecting nearby data.
 
 ## Dashboard Presets
 

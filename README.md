@@ -283,6 +283,10 @@ Available modes:
 * `.nearestX` selects all points sharing the nearest x-value.
 * `.none` disables selection and tooltips.
 
+For scrollable dashboard charts, prefer `.scrollSafeNearestX`. It waits for a
+completed tap and limits nearest selection to the hitbox, so a scroll gesture
+does not briefly show a distant tooltip.
+
 ### Crosshair
 
 Enable a built-in crosshair when selected points should be visually anchored to the plot:
@@ -388,12 +392,12 @@ Share selection state when multiple charts should move together:
 
 VStack {
     priceChart
-        .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
+        .chartSelectionOptions(.scrollSafeNearestX)
         .chartSelectionState($sharedSelection)
         .chartCrosshair(.vertical())
 
     volumeChart
-        .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
+        .chartSelectionOptions(.scrollSafeNearestX)
         .chartSelectionState($sharedSelection)
         .chartCrosshair(.vertical())
 }

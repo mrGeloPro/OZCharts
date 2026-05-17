@@ -134,6 +134,54 @@ final class ChartHitTestResolverTests: XCTestCase {
         XCTAssertEqual(selected.map(\.originalPoint.x), [2])
     }
 
+    func testNearestXCanBeLimitedToHitboxDistance() {
+        var cycleIDs: [UUID] = []
+        var cycleIndex = 0
+        let first = ChartPointContext(
+            originalPoint: Point2D(x: 1, y: 10),
+            position: CGPoint(x: 10, y: 20)
+        )
+        let second = ChartPointContext(
+            originalPoint: Point2D(x: 2, y: 20),
+            position: CGPoint(x: 80, y: 60)
+        )
+
+        let selected = ChartHitTestResolver.points(
+            near: CGPoint(x: 45, y: 1),
+            contexts: [first, second],
+            radius: 20,
+            mode: .nearestX,
+            overlappingSelectionMode: .all,
+            nearestSelectionPolicy: .withinHitbox,
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+
+        XCTAssertTrue(selected.isEmpty)
+    }
+
+    func testNearestPointCanBeLimitedToCustomDistance() {
+        var cycleIDs: [UUID] = []
+        var cycleIndex = 0
+        let point = ChartPointContext(
+            originalPoint: Point2D(x: 1, y: 10),
+            position: CGPoint(x: 80, y: 80)
+        )
+
+        let selected = ChartHitTestResolver.points(
+            near: CGPoint(x: 50, y: 50),
+            contexts: [point],
+            radius: 20,
+            mode: .nearestPoint,
+            overlappingSelectionMode: .all,
+            nearestSelectionPolicy: .within(12),
+            cycleIDs: &cycleIDs,
+            cycleIndex: &cycleIndex
+        )
+
+        XCTAssertTrue(selected.isEmpty)
+    }
+
     func testPointInteractionIndexSelectsRadiusMatchesInOriginalOrder() {
         let first = ChartPointContext(
             originalPoint: Point2D(x: 1, y: 10),

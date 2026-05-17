@@ -89,7 +89,7 @@ struct LinkedChartsDemoView: View {
                         .cornerRadius(6)
                 }
             }
-            .chartSelection(.nearestX, behavior: .tapAndDrag, dismissalPolicy: .persistent)
+            .chartSelectionOptions(.scrollSafeNearestX)
             .chartSelectionState($selection)
             .chartCrosshair(.vertical(color: tint.opacity(0.75)))
             .frame(height: 220)

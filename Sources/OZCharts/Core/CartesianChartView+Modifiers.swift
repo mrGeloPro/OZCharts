@@ -65,6 +65,8 @@ public extension CartesianChartView {
         var copy = self
         copy.selectionMode = options.mode
         copy.selectionBehavior = options.behavior
+        copy.selectionActivation = options.activation
+        copy.nearestSelectionPolicy = options.nearestSelectionPolicy
         copy.overlappingSelectionMode = options.overlappingSelectionMode
         copy.hitboxRadius = options.hitboxRadius
         copy.selectionDismissalPolicy = options.dismissalPolicy
@@ -83,6 +85,8 @@ public extension CartesianChartView {
         overlapping: ChartOverlappingSelectionMode? = nil,
         hitboxRadius: CGFloat? = nil,
         dismissalPolicy: ChartSelectionDismissalPolicy? = nil,
+        activation: ChartSelectionActivation? = nil,
+        nearestSelectionPolicy: ChartNearestSelectionPolicy? = nil,
         onChange: (([ChartPointContext<Point>]) -> Void)? = nil
     ) -> Self {
         var copy = self
@@ -98,6 +102,12 @@ public extension CartesianChartView {
         }
         if let dismissalPolicy {
             copy.selectionDismissalPolicy = dismissalPolicy
+        }
+        if let activation {
+            copy.selectionActivation = activation
+        }
+        if let nearestSelectionPolicy {
+            copy.nearestSelectionPolicy = nearestSelectionPolicy
         }
         if let onChange {
             copy.onSelectionChanged = onChange

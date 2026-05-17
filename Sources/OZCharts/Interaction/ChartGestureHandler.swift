@@ -16,6 +16,7 @@ public struct ChartGestureConfig {
     var hitboxRadius: CGFloat = 20
     var selectionBehavior: ChartSelectionBehavior = .tap
     var selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient
+    var selectionActivation: ChartSelectionActivation = .immediate
 }
 
 public enum ChartGestureEvent {
@@ -48,16 +49,26 @@ public struct ChartGestureHandler: View {
                     onEvent(.panChanged(translation: value.translation))
                 } else if isMoving && config.selectionBehavior.allowsDragSelection {
                     onEvent(.highlight(location: value.location))
-                } else if !isMoving && config.selectionBehavior.allowsTapSelection {
+                } else if !isMoving,
+                          config.selectionActivation == .immediate,
+                          config.selectionBehavior.allowsTapSelection {
                     onEvent(.highlight(location: value.location))
                 }
             }
-            .onEnded { _ in
+            .onEnded { value in
+                let isMoving = abs(value.translation.width) > 5 || abs(value.translation.height) > 5
+                if !isZooming,
+                   !isMoving,
+                   config.selectionActivation == .onTapEnd,
+                   config.selectionBehavior.allowsTapSelection {
+                    onEvent(.highlight(location: value.location))
+                }
                 if !isZooming {
                     onEvent(.panEnded)
                 }
                 if config.selectionBehavior != .disabled,
-                   config.selectionDismissalPolicy.contains(.gestureEnd) {
+                   config.selectionDismissalPolicy.contains(.gestureEnd),
+                   config.selectionActivation == .immediate {
                     onEvent(.highlightCleared)
                 }
             }

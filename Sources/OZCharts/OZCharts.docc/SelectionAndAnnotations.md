@@ -34,7 +34,7 @@ unified payload.
 ## Point Selection
 
 ```swift
-.chartSelection(.nearestX, behavior: .tapAndDrag, hitboxRadius: 28)
+.chartSelectionOptions(.scrollSafeNearestX)
 .chartSelectionState($sharedSelection)
 .chartCrosshair(.vertical())
 .chartTooltipPlacement(.automatic, padding: 12)
@@ -42,6 +42,9 @@ unified payload.
 ```
 
 Use `ChartSelectionState` to link charts or drive an external detail panel.
+Use `.nearestX` when empty space should always resolve to the closest x-value;
+use `.scrollSafeNearestX` on scrollable dashboard screens where distant
+selection during a scroll gesture would feel noisy.
 
 ## Element Selection
 
