@@ -99,6 +99,62 @@ final class ChartStoreSelectionDismissalTests: XCTestCase {
     }
 
     @MainActor
+    func testScrollSafeNearestSelectionClearsOnPan() {
+        let series = LineSeries(
+            data: [
+                Point2D(x: 0, y: 0),
+                Point2D(x: 5, y: 5),
+                Point2D(x: 10, y: 10)
+            ],
+            color: .blue
+        ).eraseToAnyChartSeries()
+        let store = ChartStore<Point2D, LinearScale, LinearScale>(
+            xScale: LinearScale(domain: 0 ... 10),
+            yScale: LinearScale(domain: 0 ... 10)
+        )
+        store.queueUpdate(
+            series: [series],
+            in: CGSize(width: 100, height: 100),
+            animate: false,
+            coalesce: false
+        )
+        let options = ChartSelectionOptions.scrollSafeNearestX
+
+        store.handleGestureEvent(
+            .highlight(location: CGPoint(x: 50, y: 50)),
+            isHorizontalScrollEnabled: true,
+            isVerticalScrollEnabled: true,
+            isHorizontalZoomEnabled: true,
+            isVerticalZoomEnabled: true,
+            minZoomScale: 0.1,
+            hitboxRadius: options.hitboxRadius,
+            selectionMode: options.mode,
+            selectionDismissalPolicy: options.dismissalPolicy,
+            nearestSelectionPolicy: options.nearestSelectionPolicy,
+            series: [series]
+        )
+
+        XCTAssertFalse(store.highlightedPoints.isEmpty)
+
+        store.handleGestureEvent(
+            .panChanged(translation: CGSize(width: 16, height: 0)),
+            isHorizontalScrollEnabled: true,
+            isVerticalScrollEnabled: true,
+            isHorizontalZoomEnabled: true,
+            isVerticalZoomEnabled: true,
+            minZoomScale: 0.1,
+            hitboxRadius: options.hitboxRadius,
+            selectionMode: options.mode,
+            selectionDismissalPolicy: options.dismissalPolicy,
+            nearestSelectionPolicy: options.nearestSelectionPolicy,
+            series: [series]
+        )
+
+        XCTAssertTrue(store.highlightedPoints.isEmpty)
+        XCTAssertTrue(store.selectedElements.isEmpty)
+    }
+
+    @MainActor
     private func makeSelectableBarStore(
         pointID: UUID
     ) -> (ChartStore<Point2D, LinearScale, LinearScale>, AnyChartSeries<Point2D>) {

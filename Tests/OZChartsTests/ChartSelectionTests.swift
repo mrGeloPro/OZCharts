@@ -91,6 +91,9 @@ final class ChartSelectionTests: XCTestCase {
         XCTAssertEqual(ChartSelectionOptions.eventThenNearestPoint, .nearestX)
         XCTAssertEqual(ChartSelectionOptions.scrollSafeNearestX.mode, .nearestX)
         XCTAssertEqual(ChartSelectionOptions.scrollSafeNearestX.behavior, .tapAndDrag)
+        XCTAssertTrue(ChartSelectionOptions.scrollSafeNearestX.dismissalPolicy.contains(.tapOutside))
+        XCTAssertTrue(ChartSelectionOptions.scrollSafeNearestX.dismissalPolicy.contains(.drag))
+        XCTAssertTrue(ChartSelectionOptions.scrollSafeNearestX.dismissalPolicy.contains(.viewportChange))
         XCTAssertEqual(ChartSelectionOptions.scrollSafeNearestX.activation, .onTapEnd)
         XCTAssertEqual(ChartSelectionOptions.scrollSafeNearestX.nearestSelectionPolicy, .withinHitbox)
 

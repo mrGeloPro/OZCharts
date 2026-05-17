@@ -161,7 +161,7 @@ public struct ChartSelectionOptions: Equatable {
         mode: .nearestX,
         behavior: .tapAndDrag,
         hitboxRadius: 28,
-        dismissalPolicy: .tapOutside,
+        dismissalPolicy: .persistent,
         activation: .onTapEnd,
         nearestSelectionPolicy: .withinHitbox
     )
