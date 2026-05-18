@@ -74,6 +74,72 @@ final class ChartLayoutEngineTests: XCTestCase {
         XCTAssertLessThan(layout.plotArea.height, 112)
     }
 
+    func testMeasuredInsetsKeepLabelSpacingWhenTicksAreHidden() {
+        let tight = ChartLayoutEngine.measuredInsets(
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "10" },
+                    height: 1,
+                    tickLength: 40,
+                    labelSpacing: 2
+                )
+            ],
+            yAxes: []
+        )
+        let padded = ChartLayoutEngine.measuredInsets(
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "10" },
+                    height: 1,
+                    tickLength: 40,
+                    labelSpacing: 18
+                )
+            ],
+            yAxes: []
+        )
+
+        XCTAssertGreaterThan(padded.bottom, tight.bottom + 12)
+    }
+
+    func testMeasuredInsetsIgnoreTickLengthWhenTicksAreHidden() {
+        let hiddenTicks = ChartLayoutEngine.measuredInsets(
+            xAxes: [],
+            yAxes: [
+                YAxisConfig(
+                    position: .leading,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "100" },
+                    width: 1,
+                    tickLength: 40,
+                    labelSpacing: 8
+                )
+            ]
+        )
+        let visibleTicks = ChartLayoutEngine.measuredInsets(
+            xAxes: [],
+            yAxes: [
+                YAxisConfig(
+                    position: .leading,
+                    showTicks: true,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "100" },
+                    width: 1,
+                    tickLength: 40,
+                    labelSpacing: 8
+                )
+            ]
+        )
+
+        XCTAssertGreaterThan(visibleTicks.leading, hiddenTicks.leading + 30)
+    }
+
     func testPlotAreaNeverBecomesNegative() {
         let plotArea = ChartLayoutEngine.plotArea(
             in: CGSize(width: 80, height: 60),

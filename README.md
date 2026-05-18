@@ -162,6 +162,9 @@ let cleanAxis = XAxisConfig(
 )
 ```
 
+`labelSpacing` controls the label's distance from the axis/plot edge even when
+`showTicks` is `false`; visible ticks add their own `tickLength` before that gap.
+
 Use `axisTransform` when chart geometry should stay in the source domain, but an axis should display derived units. This is useful for secondary axes such as ΔT in milliseconds on the left and rhythm in bpm on the right:
 
 ```swift

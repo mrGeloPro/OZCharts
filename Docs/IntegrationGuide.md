@@ -204,6 +204,10 @@ print(layout.plotArea)
 
 Use this when building custom chart wrappers that need to align external controls, legends, or overlays with the chart plot area.
 
+`labelSpacing` is independent from tick visibility: when `showTicks` is `false`,
+it still controls the label's distance from the axis line / plot edge. When ticks
+are visible, `tickLength` is added before that label gap.
+
 ## Axis Display Transforms
 
 Use `AxisTransform` when an axis should render labels in a derived unit while the chart still uses the original domain values.

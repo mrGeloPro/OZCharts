@@ -36,13 +36,15 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
                     }
 
                     ForEach(visibleTicks) { tick in
-                        VStack(spacing: config.labelSpacing) {
+                        VStack(spacing: 0) {
                             if config.position == .top {
                                 Spacer()
                                 labelView(for: tick.value)
+                                labelAxisGap
                                 if config.showTicks { tickRect }
                             } else {
                                 if config.showTicks { tickRect }
+                                labelAxisGap
                                 labelView(for: tick.value)
                                 Spacer()
                             }
@@ -92,6 +94,10 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
             .frame(width: config.tickWidth, height: config.tickLength)
             .foregroundColor(config.tickColor)
     }
+
+    private var labelAxisGap: some View {
+        Color.clear.frame(height: config.labelSpacing)
+    }
 }
 
 // MARK: - YAxisView
@@ -122,13 +128,15 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
                     }
 
                     ForEach(visibleTicks) { tick in
-                        HStack(spacing: config.labelSpacing) {
+                        HStack(spacing: 0) {
                             if config.position == .leading {
                                 Spacer()
                                 labelView(for: tick.value)
+                                labelAxisGap
                                 if config.showTicks { tickRect }
                             } else {
                                 if config.showTicks { tickRect }
+                                labelAxisGap
                                 labelView(for: tick.value)
                                 Spacer()
                             }
@@ -177,7 +185,11 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
 
     private var tickRect: some View {
         Rectangle()
-            .frame(width: config.tickWidth, height: config.tickLength)
+            .frame(width: config.tickLength, height: config.tickWidth)
             .foregroundColor(config.tickColor)
+    }
+
+    private var labelAxisGap: some View {
+        Color.clear.frame(width: config.labelSpacing)
     }
 }

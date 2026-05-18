@@ -107,7 +107,7 @@ public enum ChartLayoutEngine {
         .map(\.height)
         .max() ?? 0
         let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
-        let measured = axis.tickLength + axis.labelSpacing + labelHeight + titleHeight
+        let measured = axis.visibleTickLength + axis.labelSpacing + labelHeight + titleHeight
         return max(axis.height, measured.rounded(.up))
     }
 
@@ -126,7 +126,7 @@ public enum ChartLayoutEngine {
         .map(\.width)
         .max() ?? 0
         let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
-        let measured = axis.tickLength + axis.labelSpacing + labelWidth + titleHeight
+        let measured = axis.visibleTickLength + axis.labelSpacing + labelWidth + titleHeight
         return max(axis.width, measured.rounded(.up))
     }
 
@@ -149,6 +149,18 @@ public enum ChartLayoutEngine {
         return (0 ..< resolvedCount).map { index in
             Double(index) / Double(max(1, resolvedCount - 1)) * 1000
         }
+    }
+}
+
+private extension XAxisConfig {
+    var visibleTickLength: CGFloat {
+        showTicks ? tickLength : 0
+    }
+}
+
+private extension YAxisConfig {
+    var visibleTickLength: CGFloat {
+        showTicks ? tickLength : 0
     }
 }
 
