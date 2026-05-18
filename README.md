@@ -165,6 +165,16 @@ let cleanAxis = XAxisConfig(
 `labelSpacing` controls the label's distance from the axis/plot edge even when
 `showTicks` is `false`; visible ticks add their own `tickLength` before that gap.
 
+Use a plot border when a chart needs a true frame around the plot area. This is
+drawn on the canvas boundary, so the corners join cleanly without adding a
+separate top axis or annotation line:
+
+```swift
+OZChart(points)
+    .line(color: .blue)
+    .plotBorder(edges: .all, color: .white.opacity(0.35), lineWidth: 1)
+```
+
 Use `axisTransform` when chart geometry should stay in the source domain, but an axis should display derived units. This is useful for secondary axes such as ΔT in milliseconds on the left and rhythm in bpm on the right:
 
 ```swift

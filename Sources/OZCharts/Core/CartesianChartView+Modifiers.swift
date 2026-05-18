@@ -328,6 +328,7 @@ public extension CartesianChartView {
         copy.legendOptions = options.legendOptions
         copy.selectedElementStyle = options.selectedElementStyle
         copy.canvasRenderOrder = options.canvasRenderOrder
+        copy.plotBorderStyle = options.plotBorderStyle
         return copy
     }
 
@@ -369,6 +370,28 @@ public extension CartesianChartView {
         var copy = self
         copy.canvasRenderOrder = order
         return copy
+    }
+
+    func chartPlotBorder(_ style: ChartPlotBorderStyle) -> Self {
+        var copy = self
+        copy.plotBorderStyle = style
+        return copy
+    }
+
+    func chartPlotBorder(
+        edges: ChartPlotBorderEdges = .all,
+        color: Color = .gray.opacity(0.45),
+        lineWidth: CGFloat = 1,
+        dash: [CGFloat] = []
+    ) -> Self {
+        chartPlotBorder(
+            ChartPlotBorderStyle(
+                edges: edges,
+                color: color,
+                lineWidth: lineWidth,
+                dash: dash
+            )
+        )
     }
 
     func chartEmptyState(

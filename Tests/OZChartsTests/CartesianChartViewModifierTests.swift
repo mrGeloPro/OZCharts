@@ -59,7 +59,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
                     legendPosition: .bottom,
                     legendSpacing: 6,
                     selectedElementStyle: ChartSelectedElementStyle(lineWidth: 3),
-                    canvasRenderOrder: [.coreChart]
+                    canvasRenderOrder: [.coreChart],
+                    plotBorderStyle: .visible(edges: [.top, .bottom], lineWidth: 2)
                 )
             )
 
@@ -84,6 +85,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.legendOptions.rowSpacing, 8)
         XCTAssertEqual(view.selectedElementStyle.lineWidth, 3)
         XCTAssertEqual(view.canvasRenderOrder, [.coreChart])
+        XCTAssertEqual(view.plotBorderStyle.edges, [.top, .bottom])
+        XCTAssertEqual(view.plotBorderStyle.lineWidth, 2)
     }
 
     func testLegendOptionsModifierUpdatesLegendConfiguration() {
@@ -185,6 +188,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartLegend(.trailing, spacing: 8)
             .chartSelectedElementStyle(ChartSelectedElementStyle(lineWidth: 4, cornerRadius: 9))
             .chartCanvasRenderOrder([.coreChart, .grid])
+            .chartPlotBorder(edges: [.top, .leading], lineWidth: 2)
 
         XCTAssertEqual(view.crosshairStyle.mode, .both)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 4, y: -12))
@@ -205,6 +209,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.selectedElementStyle.lineWidth, 4)
         XCTAssertEqual(view.selectedElementStyle.cornerRadius, 9)
         XCTAssertEqual(view.canvasRenderOrder, [.coreChart, .grid])
+        XCTAssertEqual(view.plotBorderStyle.edges, [.top, .leading])
+        XCTAssertEqual(view.plotBorderStyle.lineWidth, 2)
     }
 
     func testCustomLegendModifierInstallsBuilder() {
@@ -399,6 +405,7 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .selectionState(.constant(ChartSelectionState()))
             .onSelection { _ in }
             .tooltipAnchor(.tapLocation)
+            .plotBorder(edges: .all, color: .gray, lineWidth: 1)
             .onEmptyTap { _ in }
             .tooltip { points in
                 Text("\(points.count)")

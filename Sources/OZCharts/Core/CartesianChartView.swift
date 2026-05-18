@@ -78,6 +78,7 @@ public struct CartesianChartView<
     }
     public var selectedElementStyle: ChartSelectedElementStyle = .product
     public var canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
+    public var plotBorderStyle: ChartPlotBorderStyle = .hidden
     public var emptyState: (() -> AnyView)?
     var customLegendContent: (([ChartLegendItem]) -> AnyView)?
     var accessibilityDescriptor: ChartAccessibilityDescriptor<Point>?
@@ -408,6 +409,7 @@ public struct CartesianChartView<
                             highlightedPoints: store.highlightedPoints,
                             selectedElementContexts: store.selectedElementContexts,
                             selectedElementStyle: selectedElementStyle,
+                            plotBorderStyle: plotBorderStyle,
                             crosshairStyle: crosshairStyle,
                             tooltipPlacement: tooltipPlacement,
                             tooltipAnchorPoint: resolvedTooltipAnchorPoint,

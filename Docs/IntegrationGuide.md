@@ -208,6 +208,10 @@ Use this when building custom chart wrappers that need to align external control
 it still controls the label's distance from the axis line / plot edge. When ticks
 are visible, `tickLength` is added before that label gap.
 
+Use `.plotBorder(edges:color:lineWidth:)` when the design calls for a complete
+plot-area frame. It draws on the canvas boundary itself, so top/bottom/leading/
+trailing edges meet cleanly without adding fake axes or annotation lines.
+
 ## Axis Display Transforms
 
 Use `AxisTransform` when an axis should render labels in a derived unit while the chart still uses the original domain values.

@@ -102,6 +102,7 @@ struct AccuracyDemoView: View {
                             isHorizontalZoomEnabled: false,
                             isVerticalZoomEnabled: true
                         ))
+                        .plotBorder(edges: .all, color: .white.opacity(0.28), lineWidth: 1)
                         .frame(height: 390)
 
                     DemoLegend(items: [

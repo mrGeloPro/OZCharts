@@ -320,26 +320,31 @@ public struct ChartRenderOptions {
     }
     public var selectedElementStyle: ChartSelectedElementStyle
     public var canvasRenderOrder: [CanvasLayer]
+    public var plotBorderStyle: ChartPlotBorderStyle
 
     public init(
         legendPosition: ChartLegendPosition = .hidden,
         legendSpacing: CGFloat = 12,
         selectedElementStyle: ChartSelectedElementStyle = .product,
-        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        plotBorderStyle: ChartPlotBorderStyle = .hidden
     ) {
         self.legendOptions = ChartLegendOptions(position: legendPosition, itemSpacing: legendSpacing)
         self.selectedElementStyle = selectedElementStyle
         self.canvasRenderOrder = canvasRenderOrder
+        self.plotBorderStyle = plotBorderStyle
     }
 
     public init(
         legend: ChartLegendOptions,
         selectedElementStyle: ChartSelectedElementStyle = .product,
-        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
+        canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart],
+        plotBorderStyle: ChartPlotBorderStyle = .hidden
     ) {
         self.legendOptions = legend
         self.selectedElementStyle = selectedElementStyle
         self.canvasRenderOrder = canvasRenderOrder
+        self.plotBorderStyle = plotBorderStyle
     }
 
     public static let automatic = ChartRenderOptions()

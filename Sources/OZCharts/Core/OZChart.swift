@@ -404,6 +404,28 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func plotBorder(_ style: ChartPlotBorderStyle) -> Self {
+        var copy = self
+        copy.renderOptions.plotBorderStyle = style
+        return copy
+    }
+
+    public func plotBorder(
+        edges: ChartPlotBorderEdges = .all,
+        color: Color = .gray.opacity(0.45),
+        lineWidth: CGFloat = 1,
+        dash: [CGFloat] = []
+    ) -> Self {
+        plotBorder(
+            ChartPlotBorderStyle(
+                edges: edges,
+                color: color,
+                lineWidth: lineWidth,
+                dash: dash
+            )
+        )
+    }
+
     public func presentation(_ preset: ChartPresentationPreset) -> Self {
         var copy = self
         if let theme = preset.theme {

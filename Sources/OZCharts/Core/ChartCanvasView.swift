@@ -48,6 +48,7 @@ struct ChartCanvasView<
     let highlightedPoints: [ChartPointContext<Point>]
     let selectedElementContexts: [ChartElementContext]
     let selectedElementStyle: ChartSelectedElementStyle
+    let plotBorderStyle: ChartPlotBorderStyle
     let crosshairStyle: ChartCrosshairStyle
     let tooltipPlacement: ChartTooltipPlacement
     let tooltipAnchorPoint: CGPoint?
@@ -124,6 +125,12 @@ struct ChartCanvasView<
                             }
                         }
                     }
+
+                    ChartPlotBorderRenderer.draw(
+                        into: &context,
+                        size: size,
+                        style: plotBorderStyle
+                    )
 
                     AnnotationRenderer.drawCrosshair(
                         into: &context,
