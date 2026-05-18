@@ -41,7 +41,6 @@ far-away content when a user starts a scroll:
 
 ```swift
 OZChart(samples)
-    .interaction(.horizontal)
     .selection(.scrollSafeNearestX)
     .onSelection { selection in
         let anchor = selection.primaryAnchor

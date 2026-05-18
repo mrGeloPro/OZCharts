@@ -124,7 +124,7 @@ public struct ChartPresentationPreset {
     ) -> ChartPresentationPreset {
         ChartPresentationPreset(
             theme: theme,
-            interaction: .horizontal,
+            interaction: .automatic,
             selection: selection,
             tooltip: tooltip,
             viewport: ChartViewportOptions(showsZoomControls: false),

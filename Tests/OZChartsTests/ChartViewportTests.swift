@@ -103,7 +103,7 @@ final class ChartViewportTests: XCTestCase {
         var viewport = ChartViewport()
         viewport.visibleXDomain = 20...60
 
-        viewport.applyPan(
+        let didPan = viewport.applyPan(
             translationWidth: -25,
             translationHeight: 0,
             canvasSize: CGSize(width: 100, height: 100),
@@ -113,6 +113,7 @@ final class ChartViewportTests: XCTestCase {
             scrollY: false
         )
 
+        XCTAssertTrue(didPan)
         XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 30, accuracy: 0.0001)
         XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 70, accuracy: 0.0001)
 
@@ -120,6 +121,54 @@ final class ChartViewportTests: XCTestCase {
 
         XCTAssertNil(viewport.dragStartXDomain)
         XCTAssertFalse(viewport.isDragging)
+    }
+
+    func testPanAtFullDomainIsNoOp() {
+        var viewport = ChartViewport()
+        viewport.visibleXDomain = 0...24
+        viewport.visibleYDomain = 50...250
+
+        let didPan = viewport.applyPan(
+            translationWidth: 30,
+            translationHeight: -40,
+            canvasSize: CGSize(width: 300, height: 220),
+            globalXDomain: 0...24,
+            globalYDomain: 50...250,
+            scrollX: true,
+            scrollY: true
+        )
+
+        XCTAssertFalse(didPan)
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 24, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleYDomain?.lowerBound ?? -1, 50, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleYDomain?.upperBound ?? -1, 250, accuracy: 0.0001)
+        XCTAssertNil(viewport.dragStartXDomain)
+        XCTAssertNil(viewport.dragStartYDomain)
+    }
+
+    func testPanOnlyMovesZoomedAxisWhenOtherAxisIsAtFullDomain() {
+        var viewport = ChartViewport()
+        viewport.visibleXDomain = 0...24
+        viewport.visibleYDomain = 90...180
+
+        let didPan = viewport.applyPan(
+            translationWidth: 30,
+            translationHeight: -22,
+            canvasSize: CGSize(width: 300, height: 220),
+            globalXDomain: 0...24,
+            globalYDomain: 50...250,
+            scrollX: true,
+            scrollY: true
+        )
+
+        XCTAssertTrue(didPan)
+        XCTAssertEqual(viewport.visibleXDomain?.lowerBound ?? -1, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleXDomain?.upperBound ?? -1, 24, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleYDomain?.lowerBound ?? -1, 81, accuracy: 0.0001)
+        XCTAssertEqual(viewport.visibleYDomain?.upperBound ?? -1, 171, accuracy: 0.0001)
+        XCTAssertNil(viewport.dragStartXDomain)
+        XCTAssertNotNil(viewport.dragStartYDomain)
     }
 
     func testPanClampsToGlobalDomain() {

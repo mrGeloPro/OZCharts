@@ -37,9 +37,7 @@ final class ChartPresentationPresetTests: XCTestCase {
             plotBorder: .visible(edges: [.top, .bottom])
         )
 
-        XCTAssertEqual(preset.interaction, .horizontal)
-        XCTAssertFalse(preset.interaction.isVerticalScrollEnabled)
-        XCTAssertFalse(preset.interaction.isVerticalZoomEnabled)
+        XCTAssertEqual(preset.interaction, .automatic)
         XCTAssertEqual(preset.selection, .scrollSafeNearestX)
         XCTAssertEqual(preset.tooltip.anchor, .hitPoint)
         XCTAssertFalse(preset.viewport.showsZoomControls)

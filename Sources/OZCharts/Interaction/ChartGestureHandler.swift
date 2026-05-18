@@ -17,22 +17,6 @@ public struct ChartGestureConfig {
     var selectionBehavior: ChartSelectionBehavior = .tap
     var selectionDismissalPolicy: ChartSelectionDismissalPolicy = .transient
     var selectionActivation: ChartSelectionActivation = .immediate
-
-    func allowsPan(for translation: CGSize) -> Bool {
-        let horizontalDistance = abs(translation.width)
-        let verticalDistance = abs(translation.height)
-
-        switch (isHorizontalScrollEnabled, isVerticalScrollEnabled) {
-        case (true, true):
-            return true
-        case (true, false):
-            return horizontalDistance >= verticalDistance
-        case (false, true):
-            return verticalDistance >= horizontalDistance
-        case (false, false):
-            return false
-        }
-    }
 }
 
 public enum ChartGestureEvent {
@@ -61,7 +45,7 @@ public struct ChartGestureHandler: View {
                 guard !isZooming else { return }
 
                 let isMoving = abs(value.translation.width) > 5 || abs(value.translation.height) > 5
-                if isMoving && config.allowsPan(for: value.translation) {
+                if isMoving && (config.isHorizontalScrollEnabled || config.isVerticalScrollEnabled) {
                     onEvent(.panChanged(translation: value.translation))
                 } else if isMoving && config.selectionBehavior.allowsDragSelection {
                     onEvent(.highlight(location: value.location))

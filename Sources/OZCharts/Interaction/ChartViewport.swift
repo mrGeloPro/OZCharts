@@ -55,6 +55,7 @@ public struct ChartViewport {
         }
     }
 
+    @discardableResult
     mutating func applyPan(
         translationWidth: CGFloat,
         translationHeight: CGFloat,
@@ -63,29 +64,39 @@ public struct ChartViewport {
         globalYDomain: ClosedRange<Double>,
         scrollX: Bool,
         scrollY: Bool
-    ) {
-        guard !isZooming else { return }
+    ) -> Bool {
+        guard !isZooming else { return false }
+
+        var didChange = false
 
         if scrollX {
-            guard canvasSize.width > 0 else { return }
+            guard canvasSize.width > 0 else { return didChange }
             let currentX = visibleXDomain ?? globalXDomain
-            if dragStartXDomain == nil { dragStartXDomain = currentX }
-            if let start = dragStartXDomain {
+            if !coversDomain(currentX, globalXDomain) {
+                if dragStartXDomain == nil { dragStartXDomain = currentX }
+            }
+            if let start = dragStartXDomain, !coversDomain(start, globalXDomain) {
                 let range  = start.upperBound - start.lowerBound
                 let shift  = -(translationWidth / canvasSize.width) * range
-                visibleXDomain = clamp(start.lowerBound + shift ... start.upperBound + shift, within: globalXDomain)
+                let nextDomain = clamp(start.lowerBound + shift ... start.upperBound + shift, within: globalXDomain)
+                didChange = assignVisibleXDomain(nextDomain) || didChange
             }
         }
         if scrollY {
-            guard canvasSize.height > 0 else { return }
+            guard canvasSize.height > 0 else { return didChange }
             let currentY = visibleYDomain ?? globalYDomain
-            if dragStartYDomain == nil { dragStartYDomain = currentY }
-            if let start = dragStartYDomain {
+            if !coversDomain(currentY, globalYDomain) {
+                if dragStartYDomain == nil { dragStartYDomain = currentY }
+            }
+            if let start = dragStartYDomain, !coversDomain(start, globalYDomain) {
                 let range  = start.upperBound - start.lowerBound
                 let shift  = (translationHeight / canvasSize.height) * range
-                visibleYDomain = clamp(start.lowerBound + shift ... start.upperBound + shift, within: globalYDomain)
+                let nextDomain = clamp(start.lowerBound + shift ... start.upperBound + shift, within: globalYDomain)
+                didChange = assignVisibleYDomain(nextDomain) || didChange
             }
         }
+
+        return didChange
     }
 
     mutating func endPan(
@@ -325,6 +336,42 @@ public struct ChartViewport {
         }
 
         return clamp(range, within: global)
+    }
+
+    private func coversDomain(
+        _ range: ClosedRange<Double>,
+        _ global: ClosedRange<Double>
+    ) -> Bool {
+        let tolerance = max(global.upperBound - global.lowerBound, 1) * 1e-9
+        return range.lowerBound <= global.lowerBound + tolerance &&
+            range.upperBound >= global.upperBound - tolerance
+    }
+
+    @discardableResult
+    private mutating func assignVisibleXDomain(_ nextDomain: ClosedRange<Double>) -> Bool {
+        guard !domainsEqual(visibleXDomain, nextDomain) else { return false }
+        visibleXDomain = nextDomain
+        return true
+    }
+
+    @discardableResult
+    private mutating func assignVisibleYDomain(_ nextDomain: ClosedRange<Double>) -> Bool {
+        guard !domainsEqual(visibleYDomain, nextDomain) else { return false }
+        visibleYDomain = nextDomain
+        return true
+    }
+
+    private func domainsEqual(
+        _ lhs: ClosedRange<Double>?,
+        _ rhs: ClosedRange<Double>
+    ) -> Bool {
+        guard let lhs else { return false }
+
+        let lhsWidth = lhs.upperBound - lhs.lowerBound
+        let rhsWidth = rhs.upperBound - rhs.lowerBound
+        let tolerance = max(max(lhsWidth, rhsWidth), 1) * 1e-9
+        return abs(lhs.lowerBound - rhs.lowerBound) <= tolerance &&
+            abs(lhs.upperBound - rhs.upperBound) <= tolerance
     }
 
     private mutating func updateLiveTrackingStatusAfterInteraction(

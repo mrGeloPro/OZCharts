@@ -11,9 +11,6 @@
 * Added `ChartPresentationPreset.productCard(...)` for product-card defaults
   around theme, selection, tooltip, legend, zoom controls, and optional plot
   border.
-* Added `ChartInteractionOptions.horizontal` and made product-card charts use
-  horizontal-only pan/zoom by default so vertical page scrolling is not captured
-  by dashboard cards.
 * Added `labelReservedSize` and `labelAlignment` to `XAxisConfig` and
   `YAxisConfig` for pixel-level axis label layout without custom wrappers.
 * Added `StackedBarInteractionOptions.achievement` and
@@ -26,8 +23,8 @@
   `domain-empty-or-invalid`, and `series-outside-domain`.
 * Added DocC and README troubleshooting guidance for Xcode package caches,
   axis layout tuning, selection/tooltip tuning, and diagnostics.
-* Fixed chart gestures so horizontal-only charts ignore mostly vertical drags
-  instead of treating page scroll attempts as chart panning.
+* Fixed full-range panning so dragging a chart at 100% zoom does not rebuild
+  scales or visually shift axes when there is no remaining scrollable domain.
 
 ### Added
 

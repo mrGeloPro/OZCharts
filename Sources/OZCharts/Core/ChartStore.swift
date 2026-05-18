@@ -160,7 +160,7 @@ public final class ChartStore<
         case let .panChanged(translation):
             viewport.isDragging = true
             clearSelectionForDragIfNeeded(selectionDismissalPolicy)
-            viewport.applyPan(
+            let didPan = viewport.applyPan(
                 translationWidth: translation.width,
                 translationHeight: translation.height,
                 canvasSize: canvasSize,
@@ -169,6 +169,7 @@ public final class ChartStore<
                 scrollX: isHorizontalScrollEnabled,
                 scrollY: isVerticalScrollEnabled
             )
+            guard didPan else { return }
             applyViewportToScales()
             queueUpdate(series: series, in: canvasSize, animate: false, coalesce: false)
 

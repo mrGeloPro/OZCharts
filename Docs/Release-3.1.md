@@ -10,8 +10,6 @@ diagnostics, and achievement-style bars easier to use in real app screens.
   one normalized selection anchor for custom SwiftUI popovers.
 * `ChartPresentationPreset.productCard(...)` captures common dashboard/result
   card defaults without hiding lower-level options.
-* `ChartInteractionOptions.horizontal` keeps product cards friendly inside
-  vertical `ScrollView`s by ignoring mostly vertical drags.
 * `XAxisConfig` and `YAxisConfig` now support `labelReservedSize` and
   `labelAlignment` for pixel-perfect axis labels.
 * Achievement stacked bars now have convenience APIs for row/segment
@@ -91,5 +89,4 @@ Also manually smoke-test:
 * Star Achievement selection, tooltip placement, and scrolling behavior.
 * Accuracy Overview axis labels, plot border, and violin/secondary-axis layout.
 * Real-world scenario charts with scroll-safe selection and diagnostics enabled.
-* Product cards inside vertical scroll containers after zooming back to the full
-  range.
+* Product cards after zooming back to the full range and dragging in both axes.
