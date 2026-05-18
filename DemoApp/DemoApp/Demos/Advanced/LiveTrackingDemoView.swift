@@ -31,6 +31,12 @@ struct LiveTrackingDemoView: View {
                         ],
                         xScale: LinearScale(domain: fullDomain),
                         yScale: LinearScale(domain: 0...100),
+                        xAxes: [
+                            XAxisConfig(showTicks: false)
+                        ],
+                        yAxes: [
+                            YAxisConfig(showTicks: false)
+                        ],
                         isLiveTrackingEnabled: true,
                         liveTrackingMode: .followLatest(
                             pauseOnUserInteraction: true,

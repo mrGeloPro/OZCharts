@@ -37,6 +37,64 @@ public struct AreaStyle {
     }
 }
 
+// MARK: - LineSeriesStyle
+
+public struct LineSeriesStyle {
+    public var color: Color
+    public var lineWidth: CGFloat
+    public var dash: [CGFloat]
+    public var dashPhase: CGFloat
+    public var lineCap: CGLineCap
+    public var interpolation: LineInterpolation
+    public var strokeStyle: ChartFillStyle?
+    public var shadow: ChartShadowStyle?
+    public var showsFill: Bool
+    public var fillColor: Color?
+    public var fillStyle: ChartFillStyle?
+    public var fillOpacity: Double
+    public var fillBaseline: Double?
+
+    public init(
+        color: Color,
+        lineWidth: CGFloat = 2,
+        dash: [CGFloat] = [],
+        dashPhase: CGFloat = 0,
+        lineCap: CGLineCap = .round,
+        interpolation: LineInterpolation = .linear,
+        strokeStyle: ChartFillStyle? = nil,
+        shadow: ChartShadowStyle? = nil,
+        showsFill: Bool = false,
+        fillColor: Color? = nil,
+        fillStyle: ChartFillStyle? = nil,
+        fillOpacity: Double = 0.2,
+        fillBaseline: Double? = nil
+    ) {
+        self.color = color
+        self.lineWidth = lineWidth
+        self.dash = dash
+        self.dashPhase = dashPhase
+        self.lineCap = lineCap
+        self.interpolation = interpolation
+        self.strokeStyle = strokeStyle
+        self.shadow = shadow
+        self.showsFill = showsFill
+        self.fillColor = fillColor
+        self.fillStyle = fillStyle
+        self.fillOpacity = fillOpacity
+        self.fillBaseline = fillBaseline
+    }
+
+    public var area: AreaStyle? {
+        guard showsFill else { return nil }
+        return AreaStyle(
+            fillColor: fillColor,
+            fillStyle: fillStyle,
+            fillOpacity: fillOpacity,
+            baseline: fillBaseline
+        )
+    }
+}
+
 // MARK: - LineSeries
 
 public struct LineSeries<P: ChartDataPoint>: ChartSeriesProtocol
@@ -95,6 +153,34 @@ public struct LineSeries<P: ChartDataPoint>: ChartSeriesProtocol
         self.downsampling = downsampling
         self.animation = animation
         self.zIndex = zIndex
+    }
+
+    public init(
+        data: [P],
+        id: UUID = UUID(),
+        label: String? = nil,
+        style: LineSeriesStyle,
+        downsampling: ChartDownsampling = .none,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
+    ) {
+        self.init(
+            data: data,
+            id: id,
+            color: style.color,
+            label: label,
+            lineWidth: style.lineWidth,
+            dash: style.dash,
+            dashPhase: style.dashPhase,
+            lineCap: style.lineCap,
+            interpolation: style.interpolation,
+            strokeStyle: style.strokeStyle,
+            shadow: style.shadow,
+            area: style.area,
+            downsampling: downsampling,
+            animation: animation,
+            zIndex: zIndex
+        )
     }
 
     public var legendItem: ChartLegendItem? {

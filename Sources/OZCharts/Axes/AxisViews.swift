@@ -78,15 +78,18 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
     @ViewBuilder
     private func labelView(for value: Double) -> some View {
         let displayValue = config.axisTransform(value)
-        if let custom = config.customLabelBuilder?(displayValue) {
-            custom
-        } else {
-            Text(config.labelFormatter(displayValue))
-                .font(config.font)
-                .foregroundColor(config.textColor)
-                .lineLimit(config.labelLineLimit)
-                .fixedSize(horizontal: true, vertical: false)
+        Group {
+            if let custom = config.customLabelBuilder?(displayValue) {
+                custom
+            } else {
+                Text(config.labelFormatter(displayValue))
+                    .font(config.font)
+                    .foregroundColor(config.textColor)
+                    .lineLimit(config.labelLineLimit)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
         }
+        .padding(config.labelInsets)
     }
 
     private var tickRect: some View {
@@ -171,16 +174,19 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
     @ViewBuilder
     private func labelView(for value: Double) -> some View {
         let displayValue = config.axisTransform(value)
-        if let custom = config.customLabelBuilder?(displayValue) {
-            custom
-        } else {
-            Text(config.labelFormatter(displayValue))
-                .font(config.font)
-                .foregroundColor(config.textColor)
-                .multilineTextAlignment(config.position == .leading ? .trailing : .leading)
-                .lineLimit(config.labelLineLimit)
-                .fixedSize(horizontal: true, vertical: true)
+        Group {
+            if let custom = config.customLabelBuilder?(displayValue) {
+                custom
+            } else {
+                Text(config.labelFormatter(displayValue))
+                    .font(config.font)
+                    .foregroundColor(config.textColor)
+                    .multilineTextAlignment(config.position == .leading ? .trailing : .leading)
+                    .lineLimit(config.labelLineLimit)
+                    .fixedSize(horizontal: true, vertical: true)
+            }
         }
+        .padding(config.labelInsets)
     }
 
     private var tickRect: some View {

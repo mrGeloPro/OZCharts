@@ -12,6 +12,31 @@ import XCTest
 @testable import OZCharts
 
 final class LineSeriesTests: XCTestCase {
+    func testLineSeriesStyleKeepsFillDisabledByDefault() {
+        let style = LineSeriesStyle(color: .blue)
+        let series = LineSeries<Point2D>(data: [], style: style)
+
+        XCTAssertEqual(series.lineWidth, 2)
+        XCTAssertNil(series.area)
+    }
+
+    func testLineSeriesStyleMapsFillConfigurationToAreaStyle() {
+        let style = LineSeriesStyle(
+            color: .orange,
+            interpolation: .monotone,
+            showsFill: true,
+            fillColor: .orange,
+            fillOpacity: 0.35,
+            fillBaseline: 42
+        )
+        let series = LineSeries<Point2D>(data: [], style: style)
+
+        XCTAssertEqual(series.interpolation, .monotone)
+        XCTAssertNotNil(series.area)
+        XCTAssertEqual(series.area?.fillOpacity, 0.35)
+        XCTAssertEqual(series.area?.baseline, 42)
+    }
+
     func testLinearInterpolationKeepsOriginalPoints() {
         let series = LineSeries<Point2D>(data: [], color: .blue, interpolation: .linear)
         let points = [

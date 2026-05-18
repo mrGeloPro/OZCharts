@@ -31,6 +31,7 @@ OZChart(samples)
 Available fluent series helpers:
 
 * ``OZChart/line(id:color:label:lineWidth:dash:dashPhase:lineCap:interpolation:strokeStyle:shadow:area:downsampling:animation:zIndex:)``;
+* ``OZChart/line(id:style:label:downsampling:animation:zIndex:)`` for reusable ``LineSeriesStyle`` declarations with optional fill;
 * ``OZChart/area(id:color:fillColor:fillStyle:label:fillOpacity:baseline:lineWidth:interpolation:strokeStyle:shadow:downsampling:animation:zIndex:)``;
 * ``OZChart/bar(id:color:label:barWidth:cornerRadius:baseline:zIndex:)``;
 * ``OZChart/scatter(id:color:label:pointSize:symbol:zIndex:)``;
@@ -41,6 +42,23 @@ Available fluent series helpers:
 
 When no explicit `id` is provided, `OZChart` assigns deterministic series ids so
 SwiftUI body rebuilds do not create artificial chart data changes.
+
+For product screens where a line sometimes includes an area fill and sometimes
+does not, keep the series call stable and switch the style:
+
+```swift
+OZChart(samples)
+    .line(
+        style: LineSeriesStyle(
+            color: .cyan,
+            lineWidth: 3,
+            interpolation: .monotone,
+            showsFill: showsArea,
+            fillOpacity: 0.18
+        ),
+        label: "Current"
+    )
+```
 
 ## Advanced Dashboard Series
 

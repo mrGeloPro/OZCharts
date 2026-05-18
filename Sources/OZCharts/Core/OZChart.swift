@@ -175,6 +175,27 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         )
     }
 
+    public func line(
+        id: UUID? = nil,
+        style: LineSeriesStyle,
+        label: String? = nil,
+        downsampling: ChartDownsampling = .none,
+        animation: ChartAnimationStyle = .none,
+        zIndex: Int = 0
+    ) -> Self {
+        addingSeries(
+            LineSeries(
+                data: sourceData,
+                id: id ?? defaultSeriesID(kind: .line),
+                label: label,
+                style: style,
+                downsampling: downsampling,
+                animation: animation,
+                zIndex: zIndex
+            )
+        )
+    }
+
     public func area(
         id: UUID? = nil,
         color: Color,

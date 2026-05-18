@@ -7,6 +7,7 @@
 //
 
 import CoreGraphics
+import SwiftUI
 @testable import OZCharts
 import XCTest
 
@@ -138,6 +139,105 @@ final class ChartLayoutEngineTests: XCTestCase {
         )
 
         XCTAssertGreaterThan(visibleTicks.leading, hiddenTicks.leading + 30)
+    }
+
+    func testMeasuredInsetsIncludeXAxisLabelInsets() {
+        let tight = ChartLayoutEngine.measuredInsets(
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "10" },
+                    height: 1
+                )
+            ],
+            yAxes: []
+        )
+        let padded = ChartLayoutEngine.measuredInsets(
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "10" },
+                    height: 1,
+                    labelInsets: EdgeInsets(top: 8, leading: 0, bottom: 10, trailing: 0)
+                )
+            ],
+            yAxes: []
+        )
+
+        XCTAssertGreaterThan(padded.bottom, tight.bottom + 16)
+    }
+
+    func testMeasuredInsetsIncludeYAxisLabelInsets() {
+        let tight = ChartLayoutEngine.measuredInsets(
+            xAxes: [],
+            yAxes: [
+                YAxisConfig(
+                    position: .leading,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "100" },
+                    width: 1
+                )
+            ]
+        )
+        let padded = ChartLayoutEngine.measuredInsets(
+            xAxes: [],
+            yAxes: [
+                YAxisConfig(
+                    position: .leading,
+                    showTicks: false,
+                    explicitValues: [0],
+                    labelFormatter: { _ in "100" },
+                    width: 1,
+                    labelInsets: EdgeInsets(top: 0, leading: 7, bottom: 0, trailing: 9)
+                )
+            ]
+        )
+
+        XCTAssertGreaterThan(padded.leading, tight.leading + 14)
+    }
+
+    func testMeasuredInsetsIgnoreTickSpacingWhenAxisProducesNoTicks() {
+        let measured = ChartLayoutEngine.measuredInsets(
+            xAxes: [
+                XAxisConfig(
+                    position: .bottom,
+                    tickCount: 0,
+                    labelFormatter: { _ in "" },
+                    height: 1,
+                    tickLength: 40,
+                    labelSpacing: 24,
+                    labelInsets: EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0),
+                    title: "Axis"
+                )
+            ],
+            yAxes: []
+        )
+
+        XCTAssertLessThan(measured.bottom, 40)
+        XCTAssertGreaterThan(measured.bottom, 1)
+    }
+
+    func testMeasuredInsetsMatchPerAxisMeasuredDimensions() {
+        let xAxes = [
+            XAxisConfig(position: .top, explicitValues: [0], labelFormatter: { _ in "Top" }, height: 1),
+            XAxisConfig(position: .bottom, explicitValues: [0], labelFormatter: { _ in "Bottom" }, height: 1)
+        ]
+        let yAxes = [
+            YAxisConfig(position: .leading, explicitValues: [0], labelFormatter: { _ in "Leading" }, width: 1),
+            YAxisConfig(position: .trailing, explicitValues: [0], labelFormatter: { _ in "Trailing" }, width: 1)
+        ]
+
+        let measured = ChartLayoutEngine.measuredInsets(xAxes: xAxes, yAxes: yAxes)
+
+        XCTAssertEqual(measured.top, ChartLayoutEngine.measuredHeight(for: xAxes[0], labelSampleLimit: 12))
+        XCTAssertEqual(measured.bottom, ChartLayoutEngine.measuredHeight(for: xAxes[1], labelSampleLimit: 12))
+        XCTAssertEqual(measured.leading, ChartLayoutEngine.measuredWidth(for: yAxes[0], labelSampleLimit: 12))
+        XCTAssertEqual(measured.trailing, ChartLayoutEngine.measuredWidth(for: yAxes[1], labelSampleLimit: 12))
     }
 
     func testPlotAreaNeverBecomesNegative() {

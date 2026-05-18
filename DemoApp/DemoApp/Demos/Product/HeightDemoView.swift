@@ -26,14 +26,15 @@ struct HeightDemoView: View {
                     OZChart(mockData)
                         .line(
                             id: DemoSeriesID.productLine,
-                            color: DemoColors.purple,
-                            lineWidth: 4,
-                            interpolation: .monotone,
-                            strokeStyle: .gradient([DemoColors.purple, DemoColors.pink], startPoint: .leading, endPoint: .trailing),
-                            shadow: ChartShadowStyle(color: DemoColors.purple.opacity(0.36), radius: 8),
-                            area: AreaStyle(
+                            style: LineSeriesStyle(
+                                color: DemoColors.purple,
+                                lineWidth: 4,
+                                interpolation: .monotone,
+                                strokeStyle: .gradient([DemoColors.purple, DemoColors.pink], startPoint: .leading, endPoint: .trailing),
+                                shadow: ChartShadowStyle(color: DemoColors.purple.opacity(0.36), radius: 8),
+                                showsFill: true,
                                 fillStyle: .gradient([DemoColors.purple.opacity(0.34), DemoColors.purple.opacity(0.02)]),
-                                baseline: 0
+                                fillBaseline: 0
                             )
                         )
                         .domain(x: .fixed(1...20), y: .fixed(0...10))

@@ -284,7 +284,7 @@ public struct CartesianChartView<
             } else {
                 let insets = ChartLayoutEngine.measuredInsets(xAxes: xAxes, yAxes: yAxes)
 
-                chartWithLegend(topH: insets.top, bottomH: insets.bottom)
+                chartWithLegend(layoutInsets: insets)
             }
         }
         .task(id: seriesChangeSignature) {
@@ -327,56 +327,56 @@ public struct CartesianChartView<
     }
 
     @ViewBuilder
-    private func chartWithLegend(topH: CGFloat, bottomH: CGFloat) -> some View {
+    private func chartWithLegend(layoutInsets: ChartInsets) -> some View {
         switch legendPosition {
         case .hidden:
-            chartContent(topH: topH, bottomH: bottomH)
+            chartContent(layoutInsets: layoutInsets)
 
         case .top:
             VStack(alignment: .leading, spacing: legendSpacing) {
                 legendView
-                chartContent(topH: topH, bottomH: bottomH)
+                chartContent(layoutInsets: layoutInsets)
             }
 
         case .bottom:
             VStack(alignment: .leading, spacing: legendSpacing) {
-                chartContent(topH: topH, bottomH: bottomH)
+                chartContent(layoutInsets: layoutInsets)
                 legendView
             }
 
         case .leading:
             HStack(alignment: .top, spacing: legendSpacing) {
                 legendView
-                chartContent(topH: topH, bottomH: bottomH)
+                chartContent(layoutInsets: layoutInsets)
             }
 
         case .trailing:
             HStack(alignment: .top, spacing: legendSpacing) {
-                chartContent(topH: topH, bottomH: bottomH)
+                chartContent(layoutInsets: layoutInsets)
                 legendView
             }
         }
     }
 
-    private func chartContent(topH: CGFloat, bottomH: CGFloat) -> some View {
+    private func chartContent(layoutInsets: ChartInsets) -> some View {
         HStack(spacing: 0) {
             // Leading Y axes
             HStack(spacing: 0) {
                 ForEach(yAxes.indices, id: \.self) { i in
                     if yAxes[i].position == .leading {
                         YAxisView(scale: store.activeYScale, config: yAxes[i])
-                            .frame(width: yAxes[i].width)
+                            .frame(width: measuredWidth(for: yAxes[i]))
                     }
                 }
             }
-            .padding(.top, topH).padding(.bottom, bottomH)
+            .padding(.top, layoutInsets.top).padding(.bottom, layoutInsets.bottom)
 
             VStack(spacing: 0) {
                 // Top X axes
                 ForEach(xAxes.indices, id: \.self) { i in
                     if xAxes[i].position == .top {
                         XAxisView(scale: store.activeXScale, config: xAxes[i])
-                            .frame(height: xAxes[i].height)
+                            .frame(height: measuredHeight(for: xAxes[i]))
                     }
                 }
 
@@ -522,7 +522,7 @@ public struct CartesianChartView<
                 ForEach(xAxes.indices, id: \.self) { i in
                     if xAxes[i].position == .bottom {
                         XAxisView(scale: store.activeXScale, config: xAxes[i])
-                            .frame(height: xAxes[i].height)
+                            .frame(height: measuredHeight(for: xAxes[i]))
                     }
                 }
             }
@@ -532,12 +532,20 @@ public struct CartesianChartView<
                 ForEach(yAxes.indices, id: \.self) { i in
                     if yAxes[i].position == .trailing {
                         YAxisView(scale: store.activeYScale, config: yAxes[i])
-                            .frame(width: yAxes[i].width)
+                            .frame(width: measuredWidth(for: yAxes[i]))
                     }
                 }
             }
-            .padding(.top, topH).padding(.bottom, bottomH)
+            .padding(.top, layoutInsets.top).padding(.bottom, layoutInsets.bottom)
         }
+    }
+
+    private func measuredHeight(for axis: XAxisConfig) -> CGFloat {
+        ChartLayoutEngine.measuredHeight(for: axis, labelSampleLimit: 12)
+    }
+
+    private func measuredWidth(for axis: YAxisConfig) -> CGFloat {
+        ChartLayoutEngine.measuredWidth(for: axis, labelSampleLimit: 12)
     }
 
     // MARK: - Gesture handling

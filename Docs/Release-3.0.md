@@ -19,6 +19,10 @@ while keeping `CartesianChartView` available as the low-level escape hatch.
   compact, dense timeline, and interactive charts.
 * `OZChart.line(...)` and `.area(...)` expose product styling options such as
   gradient strokes, shadows, area fills, baselines, dash styling, and line caps.
+* `LineSeriesStyle` lets apps keep one line-series declaration and toggle area
+  fill through `showsFill`.
+* `XAxisConfig` and `YAxisConfig` expose `labelInsets` for explicit axis-label
+  padding that works independently from tick visibility.
 
 ## Migration Priorities
 

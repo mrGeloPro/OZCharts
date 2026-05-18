@@ -158,12 +158,31 @@ let hiddenAxis = XAxisConfig.hidden()
 let cleanAxis = XAxisConfig(
     tickStrategy: .nice,
     labelCollisionStrategy: .hideOverlapping(minSpacing: 44),
+    labelInsets: EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6),
     tickCount: 6
 )
 ```
 
 `labelSpacing` controls the label's distance from the axis/plot edge even when
 `showTicks` is `false`; visible ticks add their own `tickLength` before that gap.
+Use `labelInsets` for extra padding around the label content itself when a
+pixel-perfect layout needs more room without changing tick geometry.
+
+Use `LineSeriesStyle` when the same chart family sometimes needs a fill and
+sometimes should render as a plain line:
+
+```swift
+let style = LineSeriesStyle(
+    color: .cyan,
+    lineWidth: 3,
+    interpolation: .monotone,
+    showsFill: showsArea,
+    fillOpacity: 0.18
+)
+
+OZChart(samples)
+    .line(style: style, label: "Height")
+```
 
 Use a plot border when a chart needs a true frame around the plot area. This is
 drawn on the canvas boundary, so the corners join cleanly without adding a

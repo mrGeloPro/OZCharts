@@ -208,6 +208,19 @@ Use this when building custom chart wrappers that need to align external control
 it still controls the label's distance from the axis line / plot edge. When ticks
 are visible, `tickLength` is added before that label gap.
 
+Use `labelInsets` when a design needs additional padding around the label
+content itself, such as horizontal bar charts where row labels need breathing
+room without fake ticks.
+
+```swift
+YAxisConfig(
+    position: .leading,
+    showTicks: false,
+    labelSpacing: 12,
+    labelInsets: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 8)
+)
+```
+
 Use `.plotBorder(edges:color:lineWidth:)` when the design calls for a complete
 plot-area frame. It draws on the canvas boundary itself, so top/bottom/leading/
 trailing edges meet cleanly without adding fake axes or annotation lines.

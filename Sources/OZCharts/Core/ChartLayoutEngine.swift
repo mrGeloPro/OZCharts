@@ -7,6 +7,7 @@
 //
 
 import CoreGraphics
+import SwiftUI
 
 public struct ChartInsets {
     public let top: CGFloat
@@ -92,41 +93,45 @@ public enum ChartLayoutEngine {
         return ChartPlotLayout(containerSize: size, insets: resolvedInsets)
     }
 
-    private static func measuredHeight(
+    static func measuredHeight(
         for axis: XAxisConfig,
         labelSampleLimit: Int
     ) -> CGFloat {
         guard axis.height > 0 else { return 0 }
-        let labelHeight = sampleLabelSizes(
+        let labelSizes = sampleLabelSizes(
             explicitValues: axis.explicitValues,
             tickCount: axis.tickCount,
             axisTransform: axis.axisTransform,
             formatter: axis.labelFormatter,
             labelSampleLimit: labelSampleLimit
         )
-        .map(\.height)
-        .max() ?? 0
+        let hasLabels = !labelSizes.isEmpty
+        let labelHeight = labelSizes.map(\.height).max() ?? 0
         let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
-        let measured = axis.visibleTickLength + axis.labelSpacing + labelHeight + titleHeight
+        let labelInsets = hasLabels ? axis.labelInsets.vertical : 0
+        let tickAndLabelGap = hasLabels ? axis.visibleTickLength + axis.labelSpacing : 0
+        let measured = tickAndLabelGap + labelHeight + labelInsets + titleHeight
         return max(axis.height, measured.rounded(.up))
     }
 
-    private static func measuredWidth(
+    static func measuredWidth(
         for axis: YAxisConfig,
         labelSampleLimit: Int
     ) -> CGFloat {
         guard axis.width > 0 else { return 0 }
-        let labelWidth = sampleLabelSizes(
+        let labelSizes = sampleLabelSizes(
             explicitValues: axis.explicitValues,
             tickCount: axis.tickCount,
             axisTransform: axis.axisTransform,
             formatter: axis.labelFormatter,
             labelSampleLimit: labelSampleLimit
         )
-        .map(\.width)
-        .max() ?? 0
+        let hasLabels = !labelSizes.isEmpty
+        let labelWidth = labelSizes.map(\.width).max() ?? 0
         let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
-        let measured = axis.visibleTickLength + axis.labelSpacing + labelWidth + titleHeight
+        let labelInsets = hasLabels ? axis.labelInsets.horizontal : 0
+        let tickAndLabelGap = hasLabels ? axis.visibleTickLength + axis.labelSpacing : 0
+        let measured = tickAndLabelGap + labelWidth + labelInsets + titleHeight
         return max(axis.width, measured.rounded(.up))
     }
 
@@ -137,7 +142,14 @@ public enum ChartLayoutEngine {
         formatter: (Double) -> String,
         labelSampleLimit: Int
     ) -> [CGSize] {
-        let values = explicitValues ?? regularSampleValues(count: tickCount)
+        let values: [Double]
+        if let explicitValues {
+            values = explicitValues
+        } else if tickCount > 1 {
+            values = regularSampleValues(count: tickCount)
+        } else {
+            values = []
+        }
         return values
             .prefix(max(1, labelSampleLimit))
             .map { formatter(axisTransform($0)) }
@@ -161,6 +173,16 @@ private extension XAxisConfig {
 private extension YAxisConfig {
     var visibleTickLength: CGFloat {
         showTicks ? tickLength : 0
+    }
+}
+
+private extension EdgeInsets {
+    var horizontal: CGFloat {
+        leading + trailing
+    }
+
+    var vertical: CGFloat {
+        top + bottom
     }
 }
 

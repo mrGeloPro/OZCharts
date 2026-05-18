@@ -93,6 +93,7 @@ public struct XAxisConfig {
     public var tickColor: Color
     public var tickWidth: CGFloat
     public var labelSpacing: CGFloat
+    public var labelInsets: EdgeInsets
     public var labelLineLimit: Int?
     public var customLabelBuilder: ((Double) -> AnyView)?
     public var title: String?
@@ -122,6 +123,7 @@ public struct XAxisConfig {
         tickColor: Color                        = .gray.opacity(0.5),
         tickWidth: CGFloat                      = 1,
         labelSpacing: CGFloat                   = 4,
+        labelInsets: EdgeInsets                 = EdgeInsets(),
         labelLineLimit: Int?                    = 1,
         customLabelBuilder: ((Double) -> AnyView)? = nil,
         title: String?                          = nil,
@@ -150,6 +152,7 @@ public struct XAxisConfig {
         self.tickColor          = tickColor
         self.tickWidth          = tickWidth
         self.labelSpacing       = labelSpacing
+        self.labelInsets        = labelInsets
         self.labelLineLimit     = labelLineLimit
         self.customLabelBuilder = customLabelBuilder
         self.title              = title
@@ -183,6 +186,7 @@ public struct YAxisConfig {
     public var tickColor: Color
     public var tickWidth: CGFloat
     public var labelSpacing: CGFloat
+    public var labelInsets: EdgeInsets
     public var labelLineLimit: Int?
     public var customLabelBuilder: ((Double) -> AnyView)?
     public var title: String?
@@ -212,6 +216,7 @@ public struct YAxisConfig {
         tickColor: Color                        = .gray.opacity(0.5),
         tickWidth: CGFloat                      = 1,
         labelSpacing: CGFloat                   = 4,
+        labelInsets: EdgeInsets                 = EdgeInsets(),
         labelLineLimit: Int?                    = 1,
         customLabelBuilder: ((Double) -> AnyView)? = nil,
         title: String?                          = nil,
@@ -240,6 +245,7 @@ public struct YAxisConfig {
         self.tickColor          = tickColor
         self.tickWidth          = tickWidth
         self.labelSpacing       = labelSpacing
+        self.labelInsets        = labelInsets
         self.labelLineLimit     = labelLineLimit
         self.customLabelBuilder = customLabelBuilder
         self.title              = title

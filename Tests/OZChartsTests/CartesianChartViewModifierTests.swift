@@ -381,6 +381,15 @@ final class CartesianChartViewModifierTests: XCTestCase {
                 area: AreaStyle(fillStyle: .gradient([.blue.opacity(0.2), .clear]), baseline: 0),
                 downsampling: .automatic()
             )
+            .line(
+                style: LineSeriesStyle(
+                    color: .cyan,
+                    interpolation: .monotone,
+                    showsFill: true,
+                    fillOpacity: 0.18
+                ),
+                label: "Styled"
+            )
             .area(
                 color: .green,
                 fillStyle: .gradient([.green.opacity(0.2), .clear]),
