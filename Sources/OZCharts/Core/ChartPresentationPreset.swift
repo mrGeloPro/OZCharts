@@ -111,6 +111,31 @@ public struct ChartPresentationPreset {
         )
     }
 
+    public static func productCard(
+        theme: ChartTheme = .dashboard,
+        legend: ChartLegendPosition = .bottom,
+        selection: ChartSelectionOptions = .scrollSafeNearestX,
+        tooltip: ChartTooltipOptions = .hitPoint(
+            offset: CGPoint(x: 0, y: -16),
+            padding: 10,
+            maxWidth: 240
+        ),
+        plotBorder: ChartPlotBorderStyle = .hidden
+    ) -> ChartPresentationPreset {
+        ChartPresentationPreset(
+            theme: theme,
+            interaction: .horizontal,
+            selection: selection,
+            tooltip: tooltip,
+            viewport: ChartViewportOptions(showsZoomControls: false),
+            rendering: ChartRenderOptions(
+                legend: ChartLegendOptions.dashboard(position: legend),
+                selectedElementStyle: .product,
+                plotBorderStyle: plotBorder
+            )
+        )
+    }
+
     public static func denseEventTimeline(
         theme: ChartTheme = .dashboard,
         xPosition: XAxisPosition = .top,

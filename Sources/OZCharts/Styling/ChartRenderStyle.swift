@@ -46,6 +46,22 @@ public enum ChartFillStyle {
         .linearGradient(colors: colors, startPoint: startPoint, endPoint: endPoint)
     }
 
+    public static func achievementRemainder(
+        foreground: Color = .gray.opacity(0.35),
+        background: Color = .gray.opacity(0.16),
+        lineWidth: CGFloat = 2,
+        spacing: CGFloat = 8,
+        angle: Angle = .degrees(45)
+    ) -> ChartFillStyle {
+        .stripes(
+            foreground: foreground,
+            background: background,
+            lineWidth: lineWidth,
+            spacing: spacing,
+            angle: angle
+        )
+    }
+
     func shading(in rect: CGRect) -> GraphicsContext.Shading {
         switch self {
         case .color(let color):

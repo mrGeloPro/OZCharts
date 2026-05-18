@@ -32,6 +32,21 @@ final class ChartPresentationPresetTests: XCTestCase {
         XCTAssertNil(preset.yAxes)
     }
 
+    func testProductCardPresetKeepsScrollSafeSelectionAndHitPointTooltip() {
+        let preset = ChartPresentationPreset.productCard(
+            plotBorder: .visible(edges: [.top, .bottom])
+        )
+
+        XCTAssertEqual(preset.interaction, .horizontal)
+        XCTAssertFalse(preset.interaction.isVerticalScrollEnabled)
+        XCTAssertFalse(preset.interaction.isVerticalZoomEnabled)
+        XCTAssertEqual(preset.selection, .scrollSafeNearestX)
+        XCTAssertEqual(preset.tooltip.anchor, .hitPoint)
+        XCTAssertFalse(preset.viewport.showsZoomControls)
+        XCTAssertEqual(preset.rendering.legendPosition, .bottom)
+        XCTAssertEqual(preset.rendering.plotBorderStyle.edges, [.top, .bottom])
+    }
+
     func testDenseEventTimelineKeepsAxisPlacementExplicit() {
         let preset = ChartPresentationPreset.denseEventTimeline(
             xPosition: .bottom,

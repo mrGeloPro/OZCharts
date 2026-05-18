@@ -61,6 +61,54 @@ final class ChartSelectionTests: XCTestCase {
         XCTAssertEqual(selection.primaryElement?.elementID, element.elementID)
         XCTAssertEqual(selection.primaryAnnotation?.id, annotation.id)
         XCTAssertEqual(selection.state, state)
+        XCTAssertEqual(selection.primaryAnchor?.kind, .element)
+        XCTAssertEqual(selection.primaryAnchor?.bounds, element.bounds)
+        XCTAssertEqual(selection.primaryPosition, element.position)
+    }
+
+    func testSelectionAnchorFallsBackToPointPayload() {
+        let seriesID = UUID()
+        let point = ChartPointContext(
+            originalPoint: Point2D(x: 4, y: 12),
+            position: CGPoint(x: 44, y: 88)
+        )
+        let selection = ChartSelection(
+            points: [point],
+            state: ChartSelectionState(
+                selectedPoints: [
+                    ChartSelectedPoint(
+                        pointID: point.id,
+                        seriesID: seriesID,
+                        seriesIndex: 2,
+                        x: 4,
+                        y: 12
+                    )
+                ]
+            )
+        )
+
+        XCTAssertEqual(selection.primaryAnchor?.kind, .point)
+        XCTAssertEqual(selection.primaryAnchor?.seriesID, seriesID)
+        XCTAssertEqual(selection.primaryAnchor?.seriesIndex, 2)
+        XCTAssertEqual(selection.primaryAnchor?.position, CGPoint(x: 44, y: 88))
+        XCTAssertEqual(selection.primaryAnchor?.value, 12)
+    }
+
+    func testSelectionAnchorFallsBackToAnnotationBounds() {
+        let annotation = ChartAnnotationContext(
+            id: UUID(),
+            kind: .point,
+            x: 1,
+            y: 2,
+            position: CGPoint(x: 20, y: 30),
+            label: "Dose",
+            hitboxRadius: 8
+        )
+        let selection = ChartSelection<Point2D>(annotations: [annotation])
+
+        XCTAssertEqual(selection.primaryAnchor?.kind, .annotation)
+        XCTAssertEqual(selection.primaryAnchor?.label, "Dose")
+        XCTAssertEqual(selection.primaryBounds, CGRect(x: 12, y: 22, width: 16, height: 16))
     }
 
     func testSelectedElementTooltipInteractionAnchorClampsToElementBounds() {

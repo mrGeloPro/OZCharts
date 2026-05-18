@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### 3.1 Product Ergonomics
+
+* Added `ChartSelectionAnchor` plus `ChartSelection.primaryAnchor`,
+  `primaryPosition`, and `primaryBounds` for product popovers that need one
+  normalized anchor across points, stacked-bar segments, donut segments, and
+  annotations.
+* Added `ChartPresentationPreset.productCard(...)` for product-card defaults
+  around theme, selection, tooltip, legend, zoom controls, and optional plot
+  border.
+* Added `ChartInteractionOptions.horizontal` and made product-card charts use
+  horizontal-only pan/zoom by default so vertical page scrolling is not captured
+  by dashboard cards.
+* Added `labelReservedSize` and `labelAlignment` to `XAxisConfig` and
+  `YAxisConfig` for pixel-level axis label layout without custom wrappers.
+* Added `StackedBarInteractionOptions.achievement` and
+  `StackedBarRemainderStyle.achievementTarget(...)` for achievement-style
+  horizontal stacked bars.
+* Added `ChartFillStyle.achievementRemainder(...)` for native hatched
+  remainder segments.
+* Added runtime/product diagnostics for `axis-layout-warning`,
+  `plot-area-too-small`, `selection-missed-hitbox`, `tooltip-clamped`,
+  `domain-empty-or-invalid`, and `series-outside-domain`.
+* Added DocC and README troubleshooting guidance for Xcode package caches,
+  axis layout tuning, selection/tooltip tuning, and diagnostics.
+* Fixed chart gestures so horizontal-only charts ignore mostly vertical drags
+  instead of treating page scroll attempts as chart panning.
+
 ### Added
 
 * `ChartSelection<Point>` and unified selection callbacks as the first 3.0 API-shaping step.

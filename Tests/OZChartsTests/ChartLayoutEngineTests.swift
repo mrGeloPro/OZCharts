@@ -201,6 +201,32 @@ final class ChartLayoutEngineTests: XCTestCase {
         XCTAssertGreaterThan(padded.leading, tight.leading + 14)
     }
 
+    func testMeasuredInsetsHonorReservedLabelSize() {
+        let xAxis = XAxisConfig(
+            position: .bottom,
+            showTicks: false,
+            explicitValues: [0],
+            labelFormatter: { _ in "10" },
+            height: 1,
+            labelReservedSize: CGSize(width: 80, height: 42),
+            labelAlignment: .bottom
+        )
+        let yAxis = YAxisConfig(
+            position: .leading,
+            showTicks: false,
+            explicitValues: [0],
+            labelFormatter: { _ in "10" },
+            width: 1,
+            labelReservedSize: CGSize(width: 72, height: 18),
+            labelAlignment: .trailing
+        )
+
+        let measured = ChartLayoutEngine.measuredInsets(xAxes: [xAxis], yAxes: [yAxis])
+
+        XCTAssertGreaterThanOrEqual(measured.bottom, 42)
+        XCTAssertGreaterThanOrEqual(measured.leading, 72)
+    }
+
     func testMeasuredInsetsIgnoreTickSpacingWhenAxisProducesNoTicks() {
         let measured = ChartLayoutEngine.measuredInsets(
             xAxes: [

@@ -134,11 +134,16 @@ OZChart(samples)
     .onSelection { selection in
         selectedSample = selection.primaryPoint?.originalPoint
         selectedElement = selection.primaryElement
+        selectedAnchor = selection.primaryAnchor
     }
     .tooltipOptions(.automatic)
     .viewport(.automatic)
     .rendering(.automatic)
 ```
+
+`primaryAnchor` is useful when product code owns the popover. It normalizes
+point, element, and annotation selection into one payload with a screen
+position, optional bounds, series id, row metadata, segment metadata, and value.
 
 Selection can be tuned per screen without changing chart data. Use
 `.transientElement` for press-only overlays, `.persistentElement` for sticky

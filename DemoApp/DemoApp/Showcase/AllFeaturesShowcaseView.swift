@@ -149,6 +149,7 @@ private struct AllFeaturesTimelinePanel: View {
             TimelinePointTooltip(points: points)
         }
         .chartInitialViewport(xWindow: 8, anchor: .trailing)
+        .chartGestures(verticalScroll: false, verticalZoom: false)
         .chartViewport($viewport)
         .chartSelectionOptions(.scrollSafeNearestX)
         .chartSelectionState($selection)

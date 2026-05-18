@@ -95,6 +95,8 @@ public struct XAxisConfig {
     public var labelSpacing: CGFloat
     public var labelInsets: EdgeInsets
     public var labelLineLimit: Int?
+    public var labelReservedSize: CGSize?
+    public var labelAlignment: Alignment
     public var customLabelBuilder: ((Double) -> AnyView)?
     public var title: String?
     public var titleFont: Font
@@ -128,7 +130,9 @@ public struct XAxisConfig {
         customLabelBuilder: ((Double) -> AnyView)? = nil,
         title: String?                          = nil,
         titleFont: Font                         = .caption,
-        titleColor: Color                       = .gray
+        titleColor: Color                       = .gray,
+        labelReservedSize: CGSize?              = nil,
+        labelAlignment: Alignment               = .center
     ) {
         self.position           = position
         self.showGrid           = showGrid
@@ -154,6 +158,8 @@ public struct XAxisConfig {
         self.labelSpacing       = labelSpacing
         self.labelInsets        = labelInsets
         self.labelLineLimit     = labelLineLimit
+        self.labelReservedSize  = labelReservedSize
+        self.labelAlignment     = labelAlignment
         self.customLabelBuilder = customLabelBuilder
         self.title              = title
         self.titleFont          = titleFont
@@ -188,6 +194,8 @@ public struct YAxisConfig {
     public var labelSpacing: CGFloat
     public var labelInsets: EdgeInsets
     public var labelLineLimit: Int?
+    public var labelReservedSize: CGSize?
+    public var labelAlignment: Alignment
     public var customLabelBuilder: ((Double) -> AnyView)?
     public var title: String?
     public var titleFont: Font
@@ -221,7 +229,9 @@ public struct YAxisConfig {
         customLabelBuilder: ((Double) -> AnyView)? = nil,
         title: String?                          = nil,
         titleFont: Font                         = .caption,
-        titleColor: Color                       = .gray
+        titleColor: Color                       = .gray,
+        labelReservedSize: CGSize?              = nil,
+        labelAlignment: Alignment               = .center
     ) {
         self.position           = position
         self.showGrid           = showGrid
@@ -247,6 +257,8 @@ public struct YAxisConfig {
         self.labelSpacing       = labelSpacing
         self.labelInsets        = labelInsets
         self.labelLineLimit     = labelLineLimit
+        self.labelReservedSize  = labelReservedSize
+        self.labelAlignment     = labelAlignment
         self.customLabelBuilder = customLabelBuilder
         self.title              = title
         self.titleFont          = titleFont

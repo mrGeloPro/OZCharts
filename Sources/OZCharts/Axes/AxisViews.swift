@@ -90,6 +90,11 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
             }
         }
         .padding(config.labelInsets)
+        .frame(
+            width: config.labelReservedSize?.width,
+            height: config.labelReservedSize?.height,
+            alignment: config.labelAlignment
+        )
     }
 
     private var tickRect: some View {
@@ -187,6 +192,11 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
             }
         }
         .padding(config.labelInsets)
+        .frame(
+            width: config.labelReservedSize?.width,
+            height: config.labelReservedSize?.height,
+            alignment: config.labelAlignment
+        )
     }
 
     private var tickRect: some View {

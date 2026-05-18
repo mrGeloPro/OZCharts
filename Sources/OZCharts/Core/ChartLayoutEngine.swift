@@ -106,7 +106,7 @@ public enum ChartLayoutEngine {
             labelSampleLimit: labelSampleLimit
         )
         let hasLabels = !labelSizes.isEmpty
-        let labelHeight = labelSizes.map(\.height).max() ?? 0
+        let labelHeight = axis.labelReservedSize?.height ?? labelSizes.map(\.height).max() ?? 0
         let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
         let labelInsets = hasLabels ? axis.labelInsets.vertical : 0
         let tickAndLabelGap = hasLabels ? axis.visibleTickLength + axis.labelSpacing : 0
@@ -127,7 +127,7 @@ public enum ChartLayoutEngine {
             labelSampleLimit: labelSampleLimit
         )
         let hasLabels = !labelSizes.isEmpty
-        let labelWidth = labelSizes.map(\.width).max() ?? 0
+        let labelWidth = axis.labelReservedSize?.width ?? labelSizes.map(\.width).max() ?? 0
         let titleHeight = axis.title.map { ChartTextMetrics.estimatedSize(for: $0).height } ?? 0
         let labelInsets = hasLabels ? axis.labelInsets.horizontal : 0
         let tickAndLabelGap = hasLabels ? axis.visibleTickLength + axis.labelSpacing : 0

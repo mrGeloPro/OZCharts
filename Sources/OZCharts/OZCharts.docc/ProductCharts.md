@@ -38,17 +38,11 @@ OZChart(rows)
             rowLabelLineLimit: 2,
             barHeight: 20
         ),
-        remainder: .target(
-            { row in target(for: row) },
-            signature: "achievement-targets",
-            fillStyle: .stripes(
-                foreground: .white.opacity(0.14),
-                background: .gray.opacity(0.20)
-            )
-        ),
-        separatorStyle: StackedBarSeparatorStyle(color: .black, width: 2)
+        remainder: .achievementTarget(90),
+        separatorStyle: StackedBarSeparatorStyle(color: .black, width: 2),
+        interactionOptions: .achievement
     )
-    .selection(.persistentElement)
+    .presentation(.productCard(selection: .persistentElement))
     .tooltipOptions(.hitPoint())
     .elementTooltipContext { context in
         ChartCallout(context: context, style: .productLight) {
@@ -62,10 +56,11 @@ Closure-driven remainder targets require a stable `signature` so SwiftUI
 refreshes the stacked bar layout at the right time when external target data
 changes.
 
-For lower-level selected-row callouts, `ChartSelectedElement` includes
-`position`, `interactionPosition`, `bounds`, `rowLabel`, `rowIndex`, and
-`totalValue`. Use `ChartAnchoredCalloutLayout.vertical` when a custom overlay
-needs its own arrow geometry.
+For lower-level selected-row callouts, `ChartSelection.primaryAnchor` and
+`ChartSelectedElement` include screen `position`, `interactionPosition`,
+`bounds`, `rowLabel`, `rowIndex`, and `totalValue`. Use
+`ChartAnchoredCalloutLayout.vertical` when a custom overlay needs its own arrow
+geometry.
 
 ```swift
 let layout = ChartAnchoredCalloutLayout.vertical(
@@ -75,6 +70,27 @@ let layout = ChartAnchoredCalloutLayout.vertical(
     preferredSide: .below
 )
 ```
+
+## Pixel-perfect Axis Labels
+
+Use `labelInsets` for internal padding around each label and
+`labelReservedSize` when Figma reserves a fixed label slot.
+
+```swift
+YAxisConfig(
+    position: .leading,
+    showTicks: false,
+    explicitValues: [0, 25, 50, 75, 100],
+    width: 76,
+    labelSpacing: 12,
+    labelInsets: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 8),
+    labelReservedSize: CGSize(width: 56, height: 20),
+    labelAlignment: .trailing
+)
+```
+
+`labelSpacing` applies even when ticks are hidden, so designs can hide tick
+marks without labels sticking to the plot area.
 
 ## Donut Score
 

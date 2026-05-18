@@ -691,6 +691,33 @@ The package includes a DocC catalog in `Sources/OZCharts/OZCharts.docc`.
 Open the package in Xcode and build documentation to browse the public API,
 live chart guidance, selection and annotations, and product-chart recipes.
 
+## Troubleshooting
+
+If a newly added API does not appear in Xcode after updating the package, the
+most common cause is stale SwiftPM or module cache state rather than a missing
+symbol. Try these steps in order:
+
+1. In Xcode, choose **File > Packages > Reset Package Caches**.
+2. Choose **File > Packages > Resolve Package Versions**.
+3. Choose **Product > Clean Build Folder**.
+4. If the issue persists, close Xcode and delete the app's DerivedData folder.
+
+For layout or interaction issues in product screens, attach a diagnostics
+handler while tuning the chart:
+
+```swift
+OZChart(data)
+    .diagnostics { diagnostics in
+        diagnostics.forEach { diagnostic in
+            print(diagnostic.code, diagnostic.severity, diagnostic.message)
+        }
+    }
+```
+
+Useful integration diagnostics include `axis-layout-warning`,
+`plot-area-too-small`, `selection-missed-hitbox`, `tooltip-clamped`,
+`domain-empty-or-invalid`, and `series-outside-domain`.
+
 ## Code Style
 
 The repository includes SwiftFormat and SwiftLint configs for consistent handoff

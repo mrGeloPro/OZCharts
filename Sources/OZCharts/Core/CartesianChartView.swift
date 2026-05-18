@@ -101,6 +101,7 @@ public struct CartesianChartView<
     @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
     @State private var customAnnotationSizes: [UUID: CGSize] = [:]
     @State private var lastReportedDiagnostics: [ChartDiagnostic] = []
+    @State private var runtimeDiagnostics: [ChartDiagnostic] = []
     @State private var handledSeriesChangeSignature: [ChartSeriesChangeSignature]?
 
     var seriesChangeSignature: [ChartSeriesChangeSignature] {
@@ -457,7 +458,8 @@ public struct CartesianChartView<
                                 offset: tooltipOffset,
                                 padding: tooltipPadding,
                                 maxWidth: tooltipMaxWidth,
-                                content: annotationTooltipContent
+                                content: annotationTooltipContent,
+                                onDiagnosticsChanged: publishTooltipDiagnostics
                             )
                             .allowsHitTesting(false)
                         }
@@ -471,7 +473,8 @@ public struct CartesianChartView<
                                 offset: tooltipOffset,
                                 padding: tooltipPadding,
                                 maxWidth: tooltipMaxWidth,
-                                content: elementTooltipContent
+                                content: elementTooltipContent,
+                                onDiagnosticsChanged: publishTooltipDiagnostics
                             )
                             .allowsHitTesting(false)
                         }
@@ -493,7 +496,7 @@ public struct CartesianChartView<
                     .onAppear {
                         syncBaseScales()
                         store.canvasSize = geometry.size
-                        publishDiagnostics(canvasSize: geometry.size)
+                        publishDiagnostics(plotAreaSize: geometry.size, layoutInsets: layoutInsets)
                         restoreBoundViewportOrInitialize()
                         publishViewportState()
                         handledSeriesChangeSignature = seriesChangeSignature
@@ -507,7 +510,7 @@ public struct CartesianChartView<
                     }
                     .onChange(of: geometry.size) { newSize in
                         store.canvasSize = newSize
-                        publishDiagnostics(canvasSize: newSize)
+                        publishDiagnostics(plotAreaSize: newSize, layoutInsets: layoutInsets)
                         store.queueUpdate(
                             series: series,
                             in: newSize,
@@ -630,6 +633,9 @@ public struct CartesianChartView<
     private func notifySelectionChange(for event: ChartGestureEvent) {
         switch event {
         case .highlight, .highlightCleared, .panChanged, .zoomChanged:
+            if !currentSelection.isEmpty {
+                clearRuntimeDiagnostics(codes: [ChartDiagnosticCode.selectionMissedHitbox])
+            }
             onSelectionChanged(store.highlightedPoints)
             onElementSelectionChanged(store.selectedElements)
             onChartSelectionChanged(currentSelection)
@@ -645,6 +651,9 @@ public struct CartesianChartView<
               highlightedAnnotations.isEmpty else { return }
 
         onEmptyTap(location)
+        publishRuntimeDiagnostics([
+            ChartDiagnostics.selectionMissedHitbox(location: location, hitboxRadius: hitboxRadius)
+        ])
     }
 
     private func clearAnnotationSelection() {
@@ -656,12 +665,20 @@ public struct CartesianChartView<
         onChartSelectionChanged(currentSelection)
     }
 
-    private func publishDiagnostics(canvasSize: CGSize? = nil) {
+    private func publishDiagnostics(
+        plotAreaSize: CGSize? = nil,
+        layoutInsets: ChartInsets? = nil
+    ) {
+        let canvasSize = totalCanvasSize(plotAreaSize: plotAreaSize, layoutInsets: layoutInsets)
         let diagnostics = ChartDiagnostics.validate(
             series: series,
             canvasSize: canvasSize,
+            plotAreaSize: plotAreaSize,
+            layoutInsets: layoutInsets,
+            xDomain: store.baseXScale.domain,
+            yDomain: store.baseYScale.domain,
             allowsEmptySeries: emptyState != nil
-        )
+        ) + runtimeDiagnostics
         if diagnostics != lastReportedDiagnostics {
             ChartDiagnostics.reportDebugDiagnostics(diagnostics)
             lastReportedDiagnostics = diagnostics
@@ -739,7 +756,7 @@ public struct CartesianChartView<
 
     private func handleSeriesChange() {
         syncBaseScales()
-        publishDiagnostics(canvasSize: store.canvasSize)
+        publishDiagnostics(plotAreaSize: store.canvasSize)
         store.handleDataChange(
             series: series,
             isLiveTrackingEnabled: isLiveTrackingEnabled,
@@ -1003,6 +1020,41 @@ public struct CartesianChartView<
     }
 }
 
+private extension CartesianChartView {
+    func totalCanvasSize(
+        plotAreaSize: CGSize?,
+        layoutInsets: ChartInsets?
+    ) -> CGSize? {
+        guard let plotAreaSize else { return nil }
+        guard let layoutInsets else { return plotAreaSize }
+        return CGSize(
+            width: plotAreaSize.width + layoutInsets.leading + layoutInsets.trailing,
+            height: plotAreaSize.height + layoutInsets.top + layoutInsets.bottom
+        )
+    }
+
+    func publishRuntimeDiagnostics(_ diagnostics: [ChartDiagnostic]) {
+        runtimeDiagnostics = diagnostics
+        publishDiagnostics(plotAreaSize: store.canvasSize)
+    }
+
+    func publishTooltipDiagnostics(_ diagnostics: [ChartDiagnostic]) {
+        let nonTooltipDiagnostics = runtimeDiagnostics.filter {
+            $0.code != ChartDiagnosticCode.tooltipClamped
+        }
+        runtimeDiagnostics = nonTooltipDiagnostics + diagnostics
+        publishDiagnostics(plotAreaSize: store.canvasSize)
+    }
+
+    func clearRuntimeDiagnostics(codes: Set<String>) {
+        let filtered = runtimeDiagnostics.filter { !codes.contains($0.code) }
+        guard filtered != runtimeDiagnostics else { return }
+
+        runtimeDiagnostics = filtered
+        publishDiagnostics(plotAreaSize: store.canvasSize)
+    }
+}
+
 struct ChartSeriesChangeSignature: Equatable {
     let seriesID: UUID
     let zIndex: Int
@@ -1025,26 +1077,28 @@ private struct ChartAnnotationTooltipOverlay: View {
     let padding: CGFloat
     let maxWidth: CGFloat?
     let content: (([ChartAnnotationContext]) -> AnyView)?
+    let onDiagnosticsChanged: ([ChartDiagnostic]) -> Void
 
     @State private var tooltipSize: CGSize = .zero
 
     var body: some View {
         if let anchor = anchorOverride ?? ChartTooltipLayout.anchor(for: annotations.map(\.position)) {
             let layoutSize = measuredTooltipSize
+            let layout = ChartTooltipLayout.resolve(
+                anchor: anchor,
+                tooltipSize: layoutSize,
+                canvasSize: canvasSize,
+                placement: placement,
+                offset: offset,
+                padding: padding
+            )
             resolvedContent
                 .frame(maxWidth: maxWidth, alignment: .center)
                 .fixedSize(horizontal: maxWidth == nil, vertical: true)
                 .readSize { tooltipSize = $0 }
-                .position(
-                    ChartTooltipLayout.resolve(
-                        anchor: anchor,
-                        tooltipSize: layoutSize,
-                        canvasSize: canvasSize,
-                        placement: placement,
-                        offset: offset,
-                        padding: padding
-                    ).position
-                )
+                .position(layout.position)
+                .onAppear { publishTooltipDiagnostic(for: layout) }
+                .onChange(of: layout.wasClamped) { _ in publishTooltipDiagnostic(for: layout) }
         }
     }
 
@@ -1073,6 +1127,14 @@ private struct ChartAnnotationTooltipOverlay: View {
             }
         }
     }
+
+    private func publishTooltipDiagnostic(for layout: ChartTooltipLayoutResult) {
+        onDiagnosticsChanged(
+            layout.wasClamped
+                ? [ChartDiagnostics.tooltipClamped(anchor: layout.anchor, position: layout.position)]
+                : []
+        )
+    }
 }
 
 private struct ChartElementTooltipOverlay: View {
@@ -1084,6 +1146,7 @@ private struct ChartElementTooltipOverlay: View {
     let padding: CGFloat
     let maxWidth: CGFloat?
     let content: ((ChartElementTooltipContext) -> AnyView)?
+    let onDiagnosticsChanged: ([ChartDiagnostic]) -> Void
 
     @State private var tooltipSize: CGSize = .zero
 
@@ -1104,6 +1167,8 @@ private struct ChartElementTooltipOverlay: View {
                 .fixedSize(horizontal: maxWidth == nil, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(layout.position)
+                .onAppear { publishTooltipDiagnostic(for: layout) }
+                .onChange(of: layout.wasClamped) { _ in publishTooltipDiagnostic(for: layout) }
         }
     }
 
@@ -1156,6 +1221,14 @@ private struct ChartElementTooltipOverlay: View {
             arrowXOffset: layout.anchor.x - layout.position.x,
             arrowYOffset: layout.anchor.y - layout.position.y,
             wasClamped: layout.wasClamped
+        )
+    }
+
+    private func publishTooltipDiagnostic(for layout: ChartTooltipLayoutResult) {
+        onDiagnosticsChanged(
+            layout.wasClamped
+                ? [ChartDiagnostics.tooltipClamped(anchor: layout.anchor, position: layout.position)]
+                : []
         )
     }
 

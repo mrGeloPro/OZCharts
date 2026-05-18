@@ -123,6 +123,61 @@ public struct ChartSelectionState: Equatable {
     public static let none = ChartSelectionState()
 }
 
+public enum ChartSelectionAnchorKind: Equatable {
+    case point
+    case element
+    case annotation
+}
+
+public struct ChartSelectionAnchor: Equatable {
+    public var kind: ChartSelectionAnchorKind
+    public var position: CGPoint
+    public var interactionPosition: CGPoint?
+    public var bounds: CGRect?
+    public var seriesID: UUID?
+    public var seriesIndex: Int?
+    public var pointID: UUID?
+    public var segmentIndex: Int?
+    public var rowIndex: Int?
+    public var rowLabel: String?
+    public var label: String?
+    public var x: Double?
+    public var y: Double?
+    public var value: Double?
+
+    public init(
+        kind: ChartSelectionAnchorKind,
+        position: CGPoint,
+        interactionPosition: CGPoint? = nil,
+        bounds: CGRect? = nil,
+        seriesID: UUID? = nil,
+        seriesIndex: Int? = nil,
+        pointID: UUID? = nil,
+        segmentIndex: Int? = nil,
+        rowIndex: Int? = nil,
+        rowLabel: String? = nil,
+        label: String? = nil,
+        x: Double? = nil,
+        y: Double? = nil,
+        value: Double? = nil
+    ) {
+        self.kind = kind
+        self.position = position
+        self.interactionPosition = interactionPosition
+        self.bounds = bounds
+        self.seriesID = seriesID
+        self.seriesIndex = seriesIndex
+        self.pointID = pointID
+        self.segmentIndex = segmentIndex
+        self.rowIndex = rowIndex
+        self.rowLabel = rowLabel
+        self.label = label
+        self.x = x
+        self.y = y
+        self.value = value
+    }
+}
+
 public struct ChartSelection<Point: ChartDataPoint> where Point.XValue == Double, Point.YValue == Double {
     public var points: [ChartPointContext<Point>]
     public var elements: [ChartSelectedElement]
@@ -157,8 +212,87 @@ public struct ChartSelection<Point: ChartDataPoint> where Point.XValue == Double
         annotations.first
     }
 
+    public var primaryAnchor: ChartSelectionAnchor? {
+        if let element = primaryElement {
+            return ChartSelectionAnchor(element: element)
+        }
+        if let point = primaryPoint {
+            return ChartSelectionAnchor(point: point, payload: state.selectedPoints.first)
+        }
+        if let annotation = primaryAnnotation {
+            return ChartSelectionAnchor(annotation: annotation)
+        }
+        return nil
+    }
+
+    public var primaryPosition: CGPoint? {
+        primaryAnchor?.position
+    }
+
+    public var primaryBounds: CGRect? {
+        primaryAnchor?.bounds
+    }
+
     public static var none: ChartSelection<Point> {
         ChartSelection()
+    }
+}
+
+public extension ChartSelectionAnchor {
+    init(element: ChartSelectedElement) {
+        self.init(
+            kind: .element,
+            position: element.tooltipInteractionAnchor,
+            interactionPosition: element.interactionPosition,
+            bounds: element.bounds,
+            seriesID: element.seriesID,
+            seriesIndex: element.seriesIndex,
+            pointID: element.pointID,
+            segmentIndex: element.segmentIndex,
+            rowIndex: element.rowIndex,
+            rowLabel: element.rowLabel,
+            label: element.label ?? element.groupLabel,
+            x: element.x,
+            y: element.y,
+            value: element.value
+        )
+    }
+
+    init<Point: ChartDataPoint>(
+        point: ChartPointContext<Point>,
+        payload: ChartSelectedPoint? = nil
+    ) where Point.XValue == Double, Point.YValue == Double {
+        self.init(
+            kind: .point,
+            position: point.position,
+            seriesID: payload?.seriesID,
+            seriesIndex: payload?.seriesIndex,
+            pointID: point.id,
+            x: point.originalPoint.x,
+            y: point.originalPoint.y,
+            value: point.originalPoint.y
+        )
+    }
+
+    init(annotation: ChartAnnotationContext) {
+        let bounds = annotation.hitboxRadius.map { radius in
+            CGRect(
+                x: annotation.position.x - radius,
+                y: annotation.position.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            )
+        }
+        self.init(
+            kind: .annotation,
+            position: annotation.position,
+            bounds: bounds,
+            pointID: annotation.id,
+            label: annotation.label,
+            x: annotation.x,
+            y: annotation.y,
+            value: annotation.y
+        )
     }
 }
 

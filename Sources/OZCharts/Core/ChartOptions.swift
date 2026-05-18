@@ -102,6 +102,12 @@ public struct ChartInteractionOptions: Equatable {
     }
 
     public static let automatic = ChartInteractionOptions()
+    public static let horizontal = ChartInteractionOptions(
+        isHorizontalScrollEnabled: true,
+        isVerticalScrollEnabled: false,
+        isHorizontalZoomEnabled: true,
+        isVerticalZoomEnabled: false
+    )
     public static let `static` = ChartInteractionOptions(
         isHorizontalScrollEnabled: false,
         isVerticalScrollEnabled: false,

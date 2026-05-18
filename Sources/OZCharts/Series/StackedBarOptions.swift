@@ -92,6 +92,11 @@ public struct StackedBarInteractionOptions {
     public static let segments = StackedBarInteractionOptions()
     public static let rows = StackedBarInteractionOptions(selectsSegments: false, selectsRows: true)
     public static let rowsAndSegments = StackedBarInteractionOptions(selectsSegments: true, selectsRows: true)
+    public static let achievement = StackedBarInteractionOptions(
+        selectsSegments: true,
+        selectsRows: true,
+        selectsRemainder: false
+    )
 }
 
 public struct StackedBarRemainderStyle {
@@ -137,6 +142,30 @@ public struct StackedBarRemainderStyle {
             isSelectable: isSelectable,
             accessibilityLabel: accessibilityLabel,
             signature: "target:\(target)"
+        )
+    }
+
+    public static func achievementTarget(
+        _ target: Double,
+        foreground: Color = .gray.opacity(0.35),
+        background: Color = .gray.opacity(0.16),
+        lineWidth: CGFloat = 2,
+        spacing: CGFloat = 8,
+        angle: Angle = .degrees(45),
+        isSelectable: Bool = false,
+        accessibilityLabel: String? = "Remaining to target"
+    ) -> StackedBarRemainderStyle {
+        .target(
+            target,
+            fillStyle: .achievementRemainder(
+                foreground: foreground,
+                background: background,
+                lineWidth: lineWidth,
+                spacing: spacing,
+                angle: angle
+            ),
+            isSelectable: isSelectable,
+            accessibilityLabel: accessibilityLabel
         )
     }
 

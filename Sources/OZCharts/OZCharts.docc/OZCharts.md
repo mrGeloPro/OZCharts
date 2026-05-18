@@ -27,6 +27,7 @@ Use OZCharts when a product needs more control than a standard chart view can pr
 - <doc:ProductCharts>
 - <doc:MigrationGuide>
 - <doc:Diagnostics>
+- <doc:Troubleshooting>
 - <doc:APIStability>
 
 ### Core Views

@@ -94,6 +94,83 @@ final class ChartDiagnosticsTests: XCTestCase {
 
         XCTAssertTrue(diagnostics.containsDiagnostic(code: "small-canvas", severity: .warning))
     }
+
+    func testPlotAreaTooSmallReportsWarning() {
+        let series = LineSeries(
+            data: [Point2D(x: 0, y: 1)],
+            color: .blue
+        ).eraseToAnyChartSeries()
+
+        let diagnostics = ChartDiagnostics.validate(
+            series: [series],
+            plotAreaSize: CGSize(width: 16, height: 120)
+        )
+
+        XCTAssertTrue(diagnostics.containsDiagnostic(code: "plot-area-too-small", severity: .warning))
+    }
+
+    func testInvalidDomainReportsError() {
+        let series = LineSeries(
+            data: [Point2D(x: 0, y: 1)],
+            color: .blue
+        ).eraseToAnyChartSeries()
+
+        let diagnostics = ChartDiagnostics.validate(
+            series: [series],
+            xDomain: 10 ... 10,
+            yDomain: 0 ... 1
+        )
+
+        XCTAssertTrue(diagnostics.containsDiagnostic(code: "domain-empty-or-invalid", severity: .error))
+    }
+
+    func testSeriesOutsideDomainReportsWarning() {
+        let series = LineSeries(
+            data: [
+                Point2D(x: 0, y: 1),
+                Point2D(x: 20, y: 2),
+                Point2D(x: 1, y: 99)
+            ],
+            color: .blue
+        ).eraseToAnyChartSeries()
+
+        let diagnostics = ChartDiagnostics.validate(
+            series: [series],
+            xDomain: 0 ... 10,
+            yDomain: 0 ... 10
+        )
+
+        XCTAssertTrue(diagnostics.containsDiagnostic(code: "series-outside-domain", severity: .warning))
+    }
+
+    func testAxisLayoutRiskReportsWarning() {
+        let series = LineSeries(
+            data: [Point2D(x: 0, y: 1)],
+            color: .blue
+        ).eraseToAnyChartSeries()
+
+        let diagnostics = ChartDiagnostics.validate(
+            series: [series],
+            plotAreaSize: CGSize(width: 100, height: 180),
+            layoutInsets: ChartInsets(top: 10, leading: 90, bottom: 10, trailing: 0)
+        )
+
+        XCTAssertTrue(diagnostics.containsDiagnostic(code: "axis-layout-warning", severity: .warning))
+    }
+
+    func testRuntimeDiagnosticFactoriesUseStableCodes() {
+        let missedSelection = ChartDiagnostics.selectionMissedHitbox(
+            location: CGPoint(x: 12, y: 24),
+            hitboxRadius: 20
+        )
+        let clampedTooltip = ChartDiagnostics.tooltipClamped(
+            anchor: CGPoint(x: 2, y: 4),
+            position: CGPoint(x: 10, y: 12)
+        )
+
+        XCTAssertEqual(missedSelection.code, "selection-missed-hitbox")
+        XCTAssertEqual(clampedTooltip.code, "tooltip-clamped")
+    }
 }
 
 private extension [ChartDiagnostic] {

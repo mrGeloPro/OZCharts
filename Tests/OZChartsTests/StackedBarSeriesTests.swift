@@ -113,6 +113,18 @@ final class StackedBarSeriesTests: XCTestCase {
         XCTAssertEqual(layouts[0].targetValue, 8, accuracy: 0.0001)
     }
 
+    func testAchievementConveniencesPreferRowsAndSegmentsWithoutSelectableRemainder() {
+        let interaction = StackedBarInteractionOptions.achievement
+        let remainder = StackedBarRemainderStyle.achievementTarget(8)
+
+        XCTAssertTrue(interaction.selectsSegments)
+        XCTAssertTrue(interaction.selectsRows)
+        XCTAssertFalse(interaction.selectsRemainder)
+        XCTAssertEqual(remainder.targetValue(0, 4), 8)
+        XCTAssertFalse(remainder.isSelectable)
+        XCTAssertEqual(remainder.accessibilityLabel, "Remaining to target")
+    }
+
     func testSelectionElementsIncludeRowsSegmentsAndRemainderPayloads() {
         let series = StackedBarSeries<GroupedPoint2D<Group>>(
             data: [],
