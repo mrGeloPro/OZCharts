@@ -163,6 +163,42 @@ final class ChartTooltipLayoutTests: XCTestCase {
         XCTAssertFalse(result.wasClamped)
     }
 
+    func testPlacementCanKeepElementTooltipAnchoredNearRightEdgeWithOverflowAllowance() {
+        let result = ChartTooltipLayout.resolve(
+            anchor: CGPoint(x: 220, y: 100),
+            tooltipSize: CGSize(width: 200, height: 60),
+            canvasSize: CGSize(width: 240, height: 180),
+            placement: .top,
+            offset: .zero,
+            padding: 8,
+            overflowAllowance: CGSize(width: 100, height: 0)
+        )
+
+        XCTAssertEqual(result.position.x, 220)
+        XCTAssertEqual(result.position.y, 70)
+        XCTAssertFalse(result.wasClamped)
+    }
+
+    func testResolvedMaxWidthFallsBackToVisibleCanvasWidth() {
+        let maxWidth = ChartTooltipLayout.resolvedMaxWidth(
+            configuredMaxWidth: nil,
+            canvasWidth: 240,
+            padding: 8
+        )
+
+        XCTAssertEqual(maxWidth, 224)
+    }
+
+    func testResolvedMaxWidthCapsConfiguredWidthToVisibleCanvasWidth() {
+        let maxWidth = ChartTooltipLayout.resolvedMaxWidth(
+            configuredMaxWidth: 300,
+            canvasWidth: 240,
+            padding: 8
+        )
+
+        XCTAssertEqual(maxWidth, 224)
+    }
+
     func testAutomaticPlacementCanMoveHorizontallyWithOverflowAllowance() {
         let leadingResult = ChartTooltipLayout.resolve(
             anchor: CGPoint(x: 24, y: 120),

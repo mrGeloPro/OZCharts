@@ -87,6 +87,8 @@ xcodebuild -project DemoApp/DemoApp.xcodeproj -scheme DemoApp -configuration Deb
 Also manually smoke-test:
 
 * Star Achievement selection, tooltip placement, and scrolling behavior.
+* Star Achievement/product callouts near the right edge with long localized
+  labels so tooltips clamp, wrap, and stay above right-side labels.
 * Accuracy Overview axis labels, plot border, and violin/secondary-axis layout.
 * Real-world scenario charts with scroll-safe selection and diagnostics enabled.
 * Product cards after zooming back to the full range and dragging in both axes.

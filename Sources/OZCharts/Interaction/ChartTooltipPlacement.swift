@@ -66,6 +66,22 @@ struct ChartTooltipLayout {
         ).position
     }
 
+    static func resolvedMaxWidth(
+        configuredMaxWidth: CGFloat?,
+        canvasWidth: CGFloat,
+        padding: CGFloat
+    ) -> CGFloat? {
+        guard canvasWidth.isFinite, canvasWidth > 0 else { return configuredMaxWidth }
+
+        let availableWidth = max(0, canvasWidth - padding * 2)
+        guard availableWidth > 0 else { return configuredMaxWidth }
+
+        if let configuredMaxWidth {
+            return min(configuredMaxWidth, availableWidth)
+        }
+        return availableWidth
+    }
+
     static func resolve(
         anchor: CGPoint,
         tooltipSize: CGSize,

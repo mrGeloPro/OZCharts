@@ -529,6 +529,7 @@ public struct CartesianChartView<
                     }
                 }
             }
+            .zIndex(1)
 
             // Trailing Y axes
             HStack(spacing: 0) {
@@ -1093,8 +1094,8 @@ private struct ChartAnnotationTooltipOverlay: View {
                 padding: padding
             )
             resolvedContent
-                .frame(maxWidth: maxWidth, alignment: .center)
-                .fixedSize(horizontal: maxWidth == nil, vertical: true)
+                .frame(maxWidth: resolvedMaxWidth, alignment: .center)
+                .fixedSize(horizontal: false, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(layout.position)
                 .onAppear { publishTooltipDiagnostic(for: layout) }
@@ -1104,9 +1105,17 @@ private struct ChartAnnotationTooltipOverlay: View {
 
     private var measuredTooltipSize: CGSize {
         guard tooltipSize.width > 0, tooltipSize.height > 0 else {
-            return CGSize(width: maxWidth ?? 180, height: 72)
+            return CGSize(width: resolvedMaxWidth ?? 180, height: 72)
         }
         return tooltipSize
+    }
+
+    private var resolvedMaxWidth: CGFloat? {
+        ChartTooltipLayout.resolvedMaxWidth(
+            configuredMaxWidth: maxWidth,
+            canvasWidth: canvasSize.width,
+            padding: padding
+        )
     }
 
     private var resolvedContent: some View {
@@ -1163,8 +1172,8 @@ private struct ChartElementTooltipOverlay: View {
                 overflowAllowance: elementTooltipOverflowAllowance(for: layoutSize)
             )
             resolvedContent
-                .frame(maxWidth: maxWidth, alignment: .center)
-                .fixedSize(horizontal: maxWidth == nil, vertical: true)
+                .frame(maxWidth: resolvedMaxWidth, alignment: .center)
+                .fixedSize(horizontal: false, vertical: true)
                 .readSize { tooltipSize = $0 }
                 .position(layout.position)
                 .onAppear { publishTooltipDiagnostic(for: layout) }
@@ -1178,9 +1187,17 @@ private struct ChartElementTooltipOverlay: View {
 
     private var measuredTooltipSize: CGSize {
         guard tooltipSize.width > 0, tooltipSize.height > 0 else {
-            return CGSize(width: maxWidth ?? 180, height: 72)
+            return CGSize(width: resolvedMaxWidth ?? 180, height: 72)
         }
         return tooltipSize
+    }
+
+    private var resolvedMaxWidth: CGFloat? {
+        ChartTooltipLayout.resolvedMaxWidth(
+            configuredMaxWidth: maxWidth,
+            canvasWidth: canvasSize.width,
+            padding: padding
+        )
     }
 
     private var resolvedContent: some View {

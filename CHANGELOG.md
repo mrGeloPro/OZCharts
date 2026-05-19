@@ -27,6 +27,8 @@
   scales or visually shift axes when there is no remaining scrollable domain.
 * Fixed axis labels and grid lines for explicit ticks so values outside the
   zoomed plot range no longer render outside the chart area.
+* Fixed element tooltips so product callouts are constrained to the visible
+  chart overlay and render above adjacent axis/value-label layers.
 
 ### Added
 
