@@ -68,4 +68,18 @@ final class ChartTickBuilderTests: XCTestCase {
 
         XCTAssertEqual(filtered.map(\.value), [0, 2].map(Double.init))
     }
+
+    func testVisibleTickFilterRemovesPositionsOutsideAxisLength() {
+        let ticks = [
+            ScaleTick(value: Double(330), position: CGFloat(-25), label: "330"),
+            ScaleTick(value: Double(400), position: CGFloat(0), label: "400"),
+            ScaleTick(value: Double(600), position: CGFloat(120), label: "600"),
+            ScaleTick(value: Double(900), position: CGFloat(240), label: "900"),
+            ScaleTick(value: Double(1000), position: CGFloat(265), label: "1000")
+        ]
+
+        let filtered = ChartTickBuilder.visibleTicks(ticks, length: 240)
+
+        XCTAssertEqual(filtered.map(\.value), [400, 600, 900].map(Double.init))
+    }
 }

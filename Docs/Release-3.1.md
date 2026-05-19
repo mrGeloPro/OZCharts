@@ -90,3 +90,5 @@ Also manually smoke-test:
 * Accuracy Overview axis labels, plot border, and violin/secondary-axis layout.
 * Real-world scenario charts with scroll-safe selection and diagnostics enabled.
 * Product cards after zooming back to the full range and dragging in both axes.
+* Explicit axis labels while zoomed, especially secondary axes with transformed
+  labels.

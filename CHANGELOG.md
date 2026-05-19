@@ -25,6 +25,8 @@
   axis layout tuning, selection/tooltip tuning, and diagnostics.
 * Fixed full-range panning so dragging a chart at 100% zoom does not rebuild
   scales or visually shift axes when there is no remaining scrollable domain.
+* Fixed axis labels and grid lines for explicit ticks so values outside the
+  zoomed plot range no longer render outside the chart area.
 
 ### Added
 

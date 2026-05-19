@@ -26,7 +26,8 @@ public struct GridRenderer {
                 tickCount: axis.tickCount,
                 strategy: axis.tickStrategy,
                 formatter: { _ in "" }
-            ).map(\.position)
+            )
+            .visiblePositions(length: size.width)
 
             for xPos in positions {
                 var path = Path()
@@ -47,7 +48,8 @@ public struct GridRenderer {
                 tickCount: axis.tickCount,
                 strategy: axis.tickStrategy,
                 formatter: { _ in "" }
-            ).map(\.position)
+            )
+            .visiblePositions(length: size.height)
 
             for yTick in positions {
                 let yPos = size.height - yTick
@@ -61,5 +63,11 @@ public struct GridRenderer {
                 )
             }
         }
+    }
+}
+
+private extension [ScaleTick<Double, CGFloat>] {
+    func visiblePositions(length: CGFloat) -> [CGFloat] {
+        ChartTickBuilder.visibleTicks(self, length: length).map(\.position)
     }
 }

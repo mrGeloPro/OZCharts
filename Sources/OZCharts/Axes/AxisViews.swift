@@ -35,7 +35,7 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
                             .frame(maxHeight: .infinity, alignment: config.position == .top ? .bottom : .top)
                     }
 
-                    ForEach(visibleTicks) { tick in
+                    ForEach(visibleTicks(length: geometry.size.width)) { tick in
                         VStack(spacing: 0) {
                             if config.position == .top {
                                 Spacer()
@@ -68,9 +68,9 @@ public struct XAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
         }
     }
 
-    private var visibleTicks: [ScaleTick<Double, CGFloat>] {
+    private func visibleTicks(length: CGFloat) -> [ScaleTick<Double, CGFloat>] {
         ChartTickBuilder.filteredTicks(
-            ticks,
+            ChartTickBuilder.visibleTicks(ticks, length: length),
             strategy: config.labelCollisionStrategy
         )
     }
@@ -135,7 +135,7 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
                             .frame(maxWidth: .infinity, alignment: config.position == .leading ? .trailing : .leading)
                     }
 
-                    ForEach(visibleTicks) { tick in
+                    ForEach(visibleTicks(length: geometry.size.height)) { tick in
                         HStack(spacing: 0) {
                             if config.position == .leading {
                                 Spacer()
@@ -169,9 +169,9 @@ public struct YAxisView<S: Scale>: View where S.InputType == Double, S.OutputTyp
         }
     }
 
-    private var visibleTicks: [ScaleTick<Double, CGFloat>] {
+    private func visibleTicks(length: CGFloat) -> [ScaleTick<Double, CGFloat>] {
         ChartTickBuilder.filteredTicks(
-            ticks,
+            ChartTickBuilder.visibleTicks(ticks, length: length),
             strategy: config.labelCollisionStrategy
         )
     }

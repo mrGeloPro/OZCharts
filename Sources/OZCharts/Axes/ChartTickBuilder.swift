@@ -77,6 +77,20 @@ enum ChartTickBuilder {
         }
     }
 
+    static func visibleTicks(
+        _ ticks: [ScaleTick<Double, CGFloat>],
+        length: CGFloat
+    ) -> [ScaleTick<Double, CGFloat>] {
+        guard length.isFinite, length > 0 else { return [] }
+
+        let tolerance = max(length, 1) * 1e-6
+        return ticks.filter { tick in
+            tick.position.isFinite &&
+                tick.position >= -tolerance &&
+                tick.position <= length + tolerance
+        }
+    }
+
     private static func niceTicks(
         domain: ClosedRange<Double>,
         tickCount: Int,
