@@ -360,7 +360,12 @@ public struct CartesianChartView<
     }
 
     private func chartContent(layoutInsets: ChartInsets) -> some View {
-        HStack(spacing: 0) {
+        let tooltipOverflowAllowance = ChartTooltipOverflowAllowance(
+            leading: measuredYAxisWidth(position: .leading),
+            trailing: measuredYAxisWidth(position: .trailing)
+        )
+
+        return HStack(spacing: 0) {
             // Leading Y axes
             HStack(spacing: 0) {
                 ForEach(yAxes.indices, id: \.self) { i in
@@ -473,6 +478,7 @@ public struct CartesianChartView<
                                 offset: tooltipOffset,
                                 padding: tooltipPadding,
                                 maxWidth: tooltipMaxWidth,
+                                overflowAllowance: tooltipOverflowAllowance,
                                 content: elementTooltipContent,
                                 onDiagnosticsChanged: publishTooltipDiagnostics
                             )
@@ -542,14 +548,6 @@ public struct CartesianChartView<
             }
             .padding(.top, layoutInsets.top).padding(.bottom, layoutInsets.bottom)
         }
-    }
-
-    private func measuredHeight(for axis: XAxisConfig) -> CGFloat {
-        ChartLayoutEngine.measuredHeight(for: axis, labelSampleLimit: 12)
-    }
-
-    private func measuredWidth(for axis: YAxisConfig) -> CGFloat {
-        ChartLayoutEngine.measuredWidth(for: axis, labelSampleLimit: 12)
     }
 
     // MARK: - Gesture handling
@@ -1022,6 +1020,21 @@ public struct CartesianChartView<
 }
 
 private extension CartesianChartView {
+    func measuredHeight(for axis: XAxisConfig) -> CGFloat {
+        ChartLayoutEngine.measuredHeight(for: axis, labelSampleLimit: 12)
+    }
+
+    func measuredWidth(for axis: YAxisConfig) -> CGFloat {
+        ChartLayoutEngine.measuredWidth(for: axis, labelSampleLimit: 12)
+    }
+
+    func measuredYAxisWidth(position: YAxisPosition) -> CGFloat {
+        yAxes
+            .filter { $0.position == position }
+            .map { measuredWidth(for: $0) }
+            .reduce(0, +)
+    }
+
     func totalCanvasSize(
         plotAreaSize: CGSize?,
         layoutInsets: ChartInsets?
@@ -1154,6 +1167,7 @@ private struct ChartElementTooltipOverlay: View {
     let offset: CGPoint
     let padding: CGFloat
     let maxWidth: CGFloat?
+    let overflowAllowance: ChartTooltipOverflowAllowance
     let content: ((ChartElementTooltipContext) -> AnyView)?
     let onDiagnosticsChanged: ([ChartDiagnostic]) -> Void
 
@@ -1169,7 +1183,7 @@ private struct ChartElementTooltipOverlay: View {
                 placement: placement,
                 offset: offset,
                 padding: padding,
-                overflowAllowance: elementTooltipOverflowAllowance(for: layoutSize)
+                directionalOverflowAllowance: overflowAllowance
             )
             resolvedContent
                 .frame(maxWidth: resolvedMaxWidth, alignment: .center)
@@ -1228,7 +1242,7 @@ private struct ChartElementTooltipOverlay: View {
             placement: placement,
             offset: offset,
             padding: padding,
-            overflowAllowance: elementTooltipOverflowAllowance(for: measuredTooltipSize)
+            directionalOverflowAllowance: overflowAllowance
         )
         return ChartElementTooltipContext(
             elements: elements,
@@ -1262,10 +1276,6 @@ private struct ChartElementTooltipOverlay: View {
         case .center, .fixed:
             return .none
         }
-    }
-
-    private func elementTooltipOverflowAllowance(for tooltipSize: CGSize) -> CGSize {
-        CGSize(width: max(0, tooltipSize.width / 2), height: 0)
     }
 
     private func formattedValue(_ value: Double?) -> String {

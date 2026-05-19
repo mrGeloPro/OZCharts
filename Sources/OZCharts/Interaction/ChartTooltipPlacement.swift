@@ -34,6 +34,36 @@ struct ChartTooltipLayoutResult: Equatable {
     var wasClamped: Bool
 }
 
+struct ChartTooltipOverflowAllowance: Equatable {
+    var leading: CGFloat
+    var trailing: CGFloat
+    var top: CGFloat
+    var bottom: CGFloat
+
+    static let zero = ChartTooltipOverflowAllowance()
+
+    init(
+        leading: CGFloat = 0,
+        trailing: CGFloat = 0,
+        top: CGFloat = 0,
+        bottom: CGFloat = 0
+    ) {
+        self.leading = max(0, leading)
+        self.trailing = max(0, trailing)
+        self.top = max(0, top)
+        self.bottom = max(0, bottom)
+    }
+
+    init(symmetric size: CGSize) {
+        self.init(
+            leading: size.width,
+            trailing: size.width,
+            top: size.height,
+            bottom: size.height
+        )
+    }
+}
+
 struct ChartTooltipLayout {
     static func anchor(for positions: [CGPoint]) -> CGPoint? {
         guard !positions.isEmpty else { return nil }
@@ -91,6 +121,26 @@ struct ChartTooltipLayout {
         padding: CGFloat,
         overflowAllowance: CGSize = .zero
     ) -> ChartTooltipLayoutResult {
+        resolve(
+            anchor: anchor,
+            tooltipSize: tooltipSize,
+            canvasSize: canvasSize,
+            placement: placement,
+            offset: offset,
+            padding: padding,
+            directionalOverflowAllowance: ChartTooltipOverflowAllowance(symmetric: overflowAllowance)
+        )
+    }
+
+    static func resolve(
+        anchor: CGPoint,
+        tooltipSize: CGSize,
+        canvasSize: CGSize,
+        placement: ChartTooltipPlacement,
+        offset: CGPoint,
+        padding: CGFloat,
+        directionalOverflowAllowance overflowAllowance: ChartTooltipOverflowAllowance
+    ) -> ChartTooltipLayoutResult {
         let preferred = preferredLayout(
             anchor: anchor,
             tooltipSize: tooltipSize,
@@ -123,7 +173,7 @@ struct ChartTooltipLayout {
         placement: ChartTooltipPlacement,
         offset: CGPoint,
         padding: CGFloat,
-        overflowAllowance: CGSize = .zero
+        overflowAllowance: ChartTooltipOverflowAllowance = .zero
     ) -> (position: CGPoint, attachment: ChartTooltipAttachment, wasClamped: Bool) {
         switch placement {
         case .automatic:
@@ -210,7 +260,7 @@ struct ChartTooltipLayout {
         placement: ChartTooltipPlacement,
         offset: CGPoint,
         padding: CGFloat,
-        overflowAllowance: CGSize
+        overflowAllowance: ChartTooltipOverflowAllowance
     ) -> (position: CGPoint, attachment: ChartTooltipAttachment, wasClamped: Bool) {
         let layout = preferredLayout(
             anchor: anchor,
@@ -230,7 +280,8 @@ struct ChartTooltipLayout {
                     tooltipWidth: tooltipSize.width,
                     canvasWidth: canvasSize.width,
                     padding: padding,
-                    overflowAllowance: overflowAllowance.width
+                    leadingOverflowAllowance: overflowAllowance.leading,
+                    trailingOverflowAllowance: overflowAllowance.trailing
                 ),
                 y: layout.position.y
             )
@@ -247,7 +298,8 @@ struct ChartTooltipLayout {
                     tooltipHeight: tooltipSize.height,
                     canvasHeight: canvasSize.height,
                     padding: padding,
-                    overflowAllowance: overflowAllowance.height
+                    topOverflowAllowance: overflowAllowance.top,
+                    bottomOverflowAllowance: overflowAllowance.bottom
                 )
             )
             return (
@@ -283,13 +335,14 @@ struct ChartTooltipLayout {
         tooltipWidth: CGFloat,
         canvasWidth: CGFloat,
         padding: CGFloat,
-        overflowAllowance: CGFloat
+        leadingOverflowAllowance: CGFloat,
+        trailingOverflowAllowance: CGFloat
     ) -> CGFloat {
         guard tooltipWidth > 0, canvasWidth > 0 else { return preferredX }
 
         let halfWidth = tooltipWidth / 2
-        let minX = padding + halfWidth - overflowAllowance
-        let maxX = max(minX, canvasWidth - padding - halfWidth + overflowAllowance)
+        let minX = padding + halfWidth - leadingOverflowAllowance
+        let maxX = max(minX, canvasWidth - padding - halfWidth + trailingOverflowAllowance)
         return clamp(preferredX, lower: minX, upper: maxX)
     }
 
@@ -298,13 +351,14 @@ struct ChartTooltipLayout {
         tooltipHeight: CGFloat,
         canvasHeight: CGFloat,
         padding: CGFloat,
-        overflowAllowance: CGFloat
+        topOverflowAllowance: CGFloat,
+        bottomOverflowAllowance: CGFloat
     ) -> CGFloat {
         guard tooltipHeight > 0, canvasHeight > 0 else { return preferredY }
 
         let halfHeight = tooltipHeight / 2
-        let minY = padding + halfHeight - overflowAllowance
-        let maxY = max(minY, canvasHeight - padding - halfHeight + overflowAllowance)
+        let minY = padding + halfHeight - topOverflowAllowance
+        let maxY = max(minY, canvasHeight - padding - halfHeight + bottomOverflowAllowance)
         return clamp(preferredY, lower: minY, upper: maxY)
     }
 
@@ -313,14 +367,14 @@ struct ChartTooltipLayout {
         tooltipSize: CGSize,
         canvasSize: CGSize,
         padding: CGFloat,
-        overflowAllowance: CGSize = .zero
+        overflowAllowance: ChartTooltipOverflowAllowance = .zero
     ) -> CGFloat {
         let halfWidth = tooltipSize.width / 2
         let halfHeight = tooltipSize.height / 2
-        let minX = padding + halfWidth - overflowAllowance.width
-        let maxX = max(minX, canvasSize.width - padding - halfWidth + overflowAllowance.width)
-        let minY = padding + halfHeight - overflowAllowance.height
-        let maxY = max(minY, canvasSize.height - padding - halfHeight + overflowAllowance.height)
+        let minX = padding + halfWidth - overflowAllowance.leading
+        let maxX = max(minX, canvasSize.width - padding - halfWidth + overflowAllowance.trailing)
+        let minY = padding + halfHeight - overflowAllowance.top
+        let maxY = max(minY, canvasSize.height - padding - halfHeight + overflowAllowance.bottom)
 
         let xOverflow = max(0, minX - point.x) + max(0, point.x - maxX)
         let yOverflow = max(0, minY - point.y) + max(0, point.y - maxY)
@@ -332,14 +386,14 @@ struct ChartTooltipLayout {
         tooltipSize: CGSize,
         canvasSize: CGSize,
         padding: CGFloat,
-        overflowAllowance: CGSize = .zero
+        overflowAllowance: ChartTooltipOverflowAllowance = .zero
     ) -> CGPoint {
         let halfWidth = tooltipSize.width / 2
         let halfHeight = tooltipSize.height / 2
-        let minX = padding + halfWidth - overflowAllowance.width
-        let maxX = max(minX, canvasSize.width - padding - halfWidth + overflowAllowance.width)
-        let minY = padding + halfHeight - overflowAllowance.height
-        let maxY = max(minY, canvasSize.height - padding - halfHeight + overflowAllowance.height)
+        let minX = padding + halfWidth - overflowAllowance.leading
+        let maxX = max(minX, canvasSize.width - padding - halfWidth + overflowAllowance.trailing)
+        let minY = padding + halfHeight - overflowAllowance.top
+        let maxY = max(minY, canvasSize.height - padding - halfHeight + overflowAllowance.bottom)
 
         return CGPoint(
             x: min(max(point.x, minX), maxX),

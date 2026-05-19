@@ -179,6 +179,22 @@ final class ChartTooltipLayoutTests: XCTestCase {
         XCTAssertFalse(result.wasClamped)
     }
 
+    func testDirectionalOverflowClampsOnlyAgainstAvailableTrailingSpace() {
+        let result = ChartTooltipLayout.resolve(
+            anchor: CGPoint(x: 220, y: 100),
+            tooltipSize: CGSize(width: 200, height: 60),
+            canvasSize: CGSize(width: 240, height: 180),
+            placement: .top,
+            offset: .zero,
+            padding: 8,
+            directionalOverflowAllowance: ChartTooltipOverflowAllowance(leading: 100, trailing: 58)
+        )
+
+        XCTAssertEqual(result.position.x, 190)
+        XCTAssertEqual(result.position.y, 70)
+        XCTAssertTrue(result.wasClamped)
+    }
+
     func testResolvedMaxWidthFallsBackToVisibleCanvasWidth() {
         let maxWidth = ChartTooltipLayout.resolvedMaxWidth(
             configuredMaxWidth: nil,
