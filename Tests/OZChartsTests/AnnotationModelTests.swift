@@ -142,4 +142,48 @@ final class AnnotationModelTests: XCTestCase {
         XCTAssertEqual(annotation.label, "Peak")
         XCTAssertTrue(annotation.isSelectable)
     }
+
+    func testAxisMarkerStoresAxisValuePlacementAndContent() {
+        let id = UUID()
+        let marker = ChartAxisMarker.x(
+            id: id,
+            value: 12,
+            placement: .top,
+            offset: CGSize(width: 3, height: -4),
+            priority: 3,
+            collisionStrategy: .hideLabel,
+            hitboxRadius: 18,
+            accessibilityLabel: "Time change"
+        ) {
+            Image(systemName: "clock.arrow.circlepath")
+        }
+
+        XCTAssertEqual(marker.id, id)
+        XCTAssertEqual(marker.axis, .x)
+        XCTAssertEqual(marker.value, 12)
+        XCTAssertEqual(marker.placement, .top)
+        XCTAssertEqual(marker.offset, CGSize(width: 3, height: -4))
+        XCTAssertEqual(marker.priority, 3)
+        XCTAssertEqual(marker.collisionStrategy, .hideLabel)
+        XCTAssertEqual(marker.hitboxRadius, 18)
+        XCTAssertEqual(marker.accessibilityLabel, "Time change")
+        XCTAssertNil(marker.compactContent)
+    }
+
+    func testAxisMarkerCanStoreCompactContentForCollisions() {
+        let marker = ChartAxisMarker.y(
+            value: 120,
+            collisionStrategy: .automatic,
+            compactContent: {
+                Circle().frame(width: 8, height: 8)
+            },
+            content: {
+                Text("Target 120")
+            }
+        )
+
+        XCTAssertEqual(marker.axis, .y)
+        XCTAssertEqual(marker.collisionStrategy, .automatic)
+        XCTAssertNotNil(marker.compactContent)
+    }
 }

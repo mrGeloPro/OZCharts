@@ -92,6 +92,10 @@ YAxisConfig(
 `labelSpacing` applies even when ticks are hidden, so designs can hide tick
 marks without labels sticking to the plot area.
 
+Use `contentInsets` to move the complete axes+plot block inside a card, and
+`plotInsets` only when the marks need extra breathing room inside the plot
+frame.
+
 ## Donut Score
 
 Use ``OZDonutChart`` with `gapAngle`, `lineCap`, `thickness`, and

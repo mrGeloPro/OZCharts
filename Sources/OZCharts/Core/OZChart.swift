@@ -25,6 +25,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var pointAnnotations: [PointAnnotation<Double, Double>]
     private var eventMarkers: [ChartEventMarker]
     private var customViewAnnotations: [CustomViewAnnotation<Double, Double>]
+    private var axisMarkers: [ChartAxisMarker]
+    private var axisMarkerSelectionOptions: ChartAxisMarkerSelectionOptions
     private var interactionOptions: ChartInteractionOptions
     private var selectionOptions: ChartSelectionOptions
     private var selectionPriority: ChartSelectionPriority
@@ -35,6 +37,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var tooltipOptions: ChartTooltipOptions
     private var viewportOptions: ChartViewportOptions
     private var renderOptions: ChartRenderOptions
+    private var contentInsets: ChartInsets
+    private var plotInsets: ChartInsets
     private var emptyState: (() -> AnyView)?
     private var diagnosticsHandler: ([ChartDiagnostic]) -> Void
     private var onSelectionChanged: ([ChartPointContext<Point>]) -> Void
@@ -42,6 +46,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
     private var onChartSelectionChanged: (ChartSelection<Point>) -> Void
     private var elementTooltipContent: ((ChartElementTooltipContext) -> AnyView)?
     private var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void
+    private var onAxisMarkerSelectionChanged: ([ChartAxisMarkerContext]) -> Void
     private var onEmptyTap: (CGPoint) -> Void
     private var viewportBinding: Binding<ChartViewportState>?
     private var selectionStateBinding: Binding<ChartSelectionState>?
@@ -73,6 +78,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.pointAnnotations = []
         self.eventMarkers = []
         self.customViewAnnotations = []
+        self.axisMarkers = []
+        self.axisMarkerSelectionOptions = .disabled
         self.interactionOptions = .automatic
         self.selectionOptions = ChartSelectionOptions()
         self.selectionPriority = .annotationsFirst
@@ -83,6 +90,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.tooltipOptions = .automatic
         self.viewportOptions = .automatic
         self.renderOptions = .automatic
+        self.contentInsets = .zero
+        self.plotInsets = .zero
         self.emptyState = nil
         self.diagnosticsHandler = { _ in }
         self.onSelectionChanged = { _ in }
@@ -90,6 +99,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         self.onChartSelectionChanged = { _ in }
         self.elementTooltipContent = nil
         self.onAnnotationSelectionChanged = { _ in }
+        self.onAxisMarkerSelectionChanged = { _ in }
         self.onEmptyTap = { _ in }
         self.viewportBinding = nil
         self.selectionStateBinding = nil
@@ -112,6 +122,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
             pointAnnotations: pointAnnotations,
             eventMarkers: eventMarkers,
             customViewAnnotations: customViewAnnotations,
+            axisMarkers: axisMarkers,
             viewport: viewportBinding,
             selectionState: selectionStateBinding,
             onSelectionChanged: onSelectionChanged,
@@ -129,11 +140,19 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
             fallbackToPointSelection: annotationFallbackToPointSelection,
             onChange: onAnnotationSelectionChanged
         )
+        .chartAxisMarkerSelection(
+            axisMarkerSelectionOptions.isEnabled,
+            hitboxRadius: axisMarkerSelectionOptions.hitboxRadius,
+            overlapping: axisMarkerSelectionOptions.overlappingMode,
+            onChange: onAxisMarkerSelectionChanged
+        )
         .chartSelectionPriority(selectionPriority)
         .chartTooltipOptions(tooltipOptions)
         .chartElementTooltipIfNeeded(elementTooltipContent)
         .chartViewportOptions(viewportOptions)
         .chartRenderOptions(renderOptions)
+        .chartContentInsets(contentInsets)
+        .chartPlotInsets(plotInsets)
         .chartEmptyTap(onEmptyTap)
         .chartDiagnostics(onChange: diagnosticsHandler)
     }
@@ -359,6 +378,32 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         return copy
     }
 
+    public func axisMarkers(_ markers: [ChartAxisMarker]) -> Self {
+        var copy = self
+        copy.axisMarkers = markers
+        return copy
+    }
+
+    public func axisMarkers(_ markers: ChartAxisMarker...) -> Self {
+        axisMarkers(markers)
+    }
+
+    public func axisMarkerSelection(
+        _ isEnabled: Bool = true,
+        hitboxRadius: CGFloat = 20,
+        overlapping: ChartOverlappingSelectionMode = .cycle,
+        onChange: @escaping ([ChartAxisMarkerContext]) -> Void = { _ in }
+    ) -> Self {
+        var copy = self
+        copy.axisMarkerSelectionOptions = ChartAxisMarkerSelectionOptions(
+            isEnabled: isEnabled,
+            hitboxRadius: hitboxRadius,
+            overlappingMode: overlapping
+        )
+        copy.onAxisMarkerSelectionChanged = onChange
+        return copy
+    }
+
     public func interaction(_ options: ChartInteractionOptions) -> Self {
         var copy = self
         copy.interactionOptions = options
@@ -443,6 +488,50 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
                 color: color,
                 lineWidth: lineWidth,
                 dash: dash
+            )
+        )
+    }
+
+    public func plotInsets(_ insets: ChartInsets) -> Self {
+        var copy = self
+        copy.plotInsets = insets
+        return copy
+    }
+
+    public func contentInsets(_ insets: ChartInsets) -> Self {
+        var copy = self
+        copy.contentInsets = insets
+        return copy
+    }
+
+    public func contentInsets(
+        top: CGFloat = 0,
+        leading: CGFloat = 0,
+        bottom: CGFloat = 0,
+        trailing: CGFloat = 0
+    ) -> Self {
+        contentInsets(
+            ChartInsets(
+                top: top,
+                leading: leading,
+                bottom: bottom,
+                trailing: trailing
+            )
+        )
+    }
+
+    public func plotInsets(
+        top: CGFloat = 0,
+        leading: CGFloat = 0,
+        bottom: CGFloat = 0,
+        trailing: CGFloat = 0
+    ) -> Self {
+        plotInsets(
+            ChartInsets(
+                top: top,
+                leading: leading,
+                bottom: bottom,
+                trailing: trailing
             )
         )
     }
@@ -613,6 +702,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.pointAnnotations = pointAnnotations
         copy.eventMarkers = eventMarkers
         copy.customViewAnnotations = customViewAnnotations
+        copy.axisMarkers = axisMarkers
+        copy.axisMarkerSelectionOptions = axisMarkerSelectionOptions
         copy.interactionOptions = interactionOptions
         copy.selectionOptions = selectionOptions
         copy.selectionPriority = selectionPriority
@@ -623,6 +714,8 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.tooltipOptions = tooltipOptions
         copy.viewportOptions = viewportOptions
         copy.renderOptions = renderOptions
+        copy.contentInsets = contentInsets
+        copy.plotInsets = plotInsets
         copy.emptyState = emptyState
         copy.diagnosticsHandler = diagnosticsHandler
         copy.onSelectionChanged = onSelectionChanged
@@ -630,6 +723,7 @@ public struct OZChart<Point: ChartDataPoint, TooltipContent: View>: View
         copy.onChartSelectionChanged = onChartSelectionChanged
         copy.elementTooltipContent = elementTooltipContent
         copy.onAnnotationSelectionChanged = onAnnotationSelectionChanged
+        copy.onAxisMarkerSelectionChanged = onAxisMarkerSelectionChanged
         copy.onEmptyTap = onEmptyTap
         copy.viewportBinding = viewportBinding
         copy.selectionStateBinding = selectionStateBinding

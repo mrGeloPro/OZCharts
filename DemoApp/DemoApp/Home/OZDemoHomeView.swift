@@ -77,6 +77,13 @@ struct OZDemoHomeView: View {
             destination: AnyView(SelectableAnnotationsDemoView())
         ),
         DemoRoute(
+            title: "Axis Markers",
+            subtitle: "Axis icons, collision rules and tap cycling",
+            icon: "clock.badge",
+            tint: DemoColors.cyan,
+            destination: AnyView(AxisMarkersDemoView())
+        ),
+        DemoRoute(
             title: "Line and Empty State",
             subtitle: "Axes, tooltip and no-data UI",
             icon: "chart.xyaxis.line",

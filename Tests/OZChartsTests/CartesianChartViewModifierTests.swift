@@ -189,6 +189,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .chartSelectedElementStyle(ChartSelectedElementStyle(lineWidth: 4, cornerRadius: 9))
             .chartCanvasRenderOrder([.coreChart, .grid])
             .chartPlotBorder(edges: [.top, .leading], lineWidth: 2)
+            .chartContentInsets(top: 2, leading: 4, bottom: 6, trailing: 8)
+            .chartPlotInsets(top: 3, leading: 5, bottom: 7, trailing: 11)
 
         XCTAssertEqual(view.crosshairStyle.mode, .both)
         XCTAssertEqual(view.tooltipOffset, CGPoint(x: 4, y: -12))
@@ -211,6 +213,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.canvasRenderOrder, [.coreChart, .grid])
         XCTAssertEqual(view.plotBorderStyle.edges, [.top, .leading])
         XCTAssertEqual(view.plotBorderStyle.lineWidth, 2)
+        XCTAssertEqual(view.contentInsets, ChartInsets(top: 2, leading: 4, bottom: 6, trailing: 8))
+        XCTAssertEqual(view.plotInsets, ChartInsets(top: 3, leading: 5, bottom: 7, trailing: 11))
     }
 
     func testCustomLegendModifierInstallsBuilder() {
@@ -230,6 +234,46 @@ final class CartesianChartViewModifierTests: XCTestCase {
         XCTAssertEqual(view.legendPosition, .top)
         XCTAssertEqual(view.legendOptions.itemLimit, 3)
         XCTAssertNotNil(view.customLegendContent)
+    }
+
+    func testAxisMarkersModifierStoresMarkers() {
+        let marker = ChartAxisMarker.x(value: 7, accessibilityLabel: "DST") {
+            Text("DST")
+        }
+        let view = makeChart().chartAxisMarkers([marker])
+
+        XCTAssertEqual(view.axisMarkers.count, 1)
+        XCTAssertEqual(view.axisMarkers.first?.axis, .x)
+        XCTAssertEqual(view.axisMarkers.first?.value, 7)
+        XCTAssertEqual(view.axisMarkers.first?.placement, .bottom)
+        XCTAssertEqual(view.axisMarkers.first?.accessibilityLabel, "DST")
+    }
+
+    func testAxisMarkerSelectionModifierStoresOptionsAndCallback() {
+        let view = makeChart().chartAxisMarkerSelection(
+            true,
+            hitboxRadius: 32,
+            overlapping: .all
+        ) { _ in }
+
+        XCTAssertTrue(view.axisMarkerSelectionOptions.isEnabled)
+        XCTAssertEqual(view.axisMarkerSelectionOptions.hitboxRadius, 32)
+        XCTAssertEqual(view.axisMarkerSelectionOptions.overlappingMode, .all)
+    }
+
+    func testOZChartBuilderCompilesAxisMarkerAPI() {
+        let chart = OZChart([Point2D(x: 0, y: 1), Point2D(x: 1, y: 2)])
+            .line(color: .blue)
+            .axisMarkers(
+                .x(value: 0.5, placement: .bottom) {
+                    Image(systemName: "clock")
+                }
+            )
+            .axisMarkerSelection(hitboxRadius: 28) { contexts in
+                _ = contexts.first?.marker.value
+            }
+
+        XCTAssertNotNil(chart.body)
     }
 
     func testLiveTrackingModifierAcceptsExplicitMode() {
@@ -415,6 +459,8 @@ final class CartesianChartViewModifierTests: XCTestCase {
             .onSelection { _ in }
             .tooltipAnchor(.tapLocation)
             .plotBorder(edges: .all, color: .gray, lineWidth: 1)
+            .contentInsets(top: 1, leading: 3, bottom: 5, trailing: 7)
+            .plotInsets(top: 2, leading: 4, bottom: 6, trailing: 8)
             .onEmptyTap { _ in }
             .tooltip { points in
                 Text("\(points.count)")

@@ -12,6 +12,13 @@ diagnostics, and achievement-style bars easier to use in real app screens.
   card defaults without hiding lower-level options.
 * `XAxisConfig` and `YAxisConfig` now support `labelReservedSize` and
   `labelAlignment` for pixel-perfect axis labels.
+* `.plotInsets(...)` provides first-class plot-area padding for Figma layouts
+  that need the rendered marks/grid inset independently from axis label slots.
+* `ChartAxisMarker` and `.axisMarkers(...)` let product screens pin custom
+  SwiftUI icons or badges to x/y axis values, for example DST/time-change
+  markers, without adding fake data points or custom axis labels.
+* Axis markers now support `priority`, compact fallback content, collision
+  strategies, and opt-in selection/cycling for overlapping marker clusters.
 * Achievement stacked bars now have convenience APIs for row/segment
   interaction and hatched remainder targets.
 * The diagnostics layer now reports product-integration issues such as small
@@ -56,6 +63,82 @@ YAxisConfig(
 Use `labelSpacing` for distance from the axis/plot area, `labelInsets` for
 padding inside the label slot, and `labelReservedSize` when the design reserves
 a fixed label column or row.
+
+When the plot marks themselves need breathing room inside the axis frame, use
+`plotInsets` instead of compensating with external SwiftUI padding:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .axes(x: [bottomAxis], y: [leadingAxis, trailingAxis])
+    .plotInsets(top: 0, leading: 8, bottom: 0, trailing: 12)
+```
+
+`plotInsets` shrink the drawable plot area and keep axes, grid, annotations,
+selection, tooltips, and axis markers aligned to the inset plot.
+
+When the whole axes+plot block should be offset inside a product card, use
+`contentInsets` instead. It keeps axes, plot marks, overlays, selection, and
+tooltips moving together:
+
+```swift
+OZChart(samples)
+    .line(color: .cyan)
+    .axes(x: [bottomAxis], y: [leadingAxis])
+    .contentInsets(leading: 12)
+```
+
+## Recommended Axis Marker Pattern
+
+```swift
+OZChart(samples)
+    .line(color: .green)
+    .axisMarkers(
+        .x(
+            value: daylightSavingTimestamp,
+            placement: .bottom,
+            offset: CGSize(width: 0, height: 18),
+            accessibilityLabel: "Time changed"
+        ) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.caption)
+        }
+    )
+```
+
+Axis markers are a presentation layer. They follow the active viewport and stay
+hidden when their value is outside the visible plot range, but they do not
+modify domains, ticks, grid lines, or selection hit-testing.
+
+For dense axes, provide compact content and a collision policy:
+
+```swift
+OZChart(samples)
+    .line(color: .green)
+    .axisMarkers(
+        .x(
+            value: daylightSavingTimestamp,
+            placement: .bottom,
+            priority: 10,
+            collisionStrategy: .automatic,
+            compactContent: {
+                Image(systemName: "clock")
+                    .font(.caption2)
+            },
+            content: {
+                Label("Time changed", systemImage: "clock")
+                    .font(.caption)
+            }
+        )
+    )
+    .axisMarkerSelection(hitboxRadius: 24, overlapping: .cycle) { markers in
+        selectedAxisMarker = markers.first
+    }
+```
+
+Use `.hideLabel` when compact icon-only content should replace a label,
+`.shift` or `.stack` when nearby markers should remain visible, and
+`.hideLowerPriority` for low-importance decorations.
 
 ## Diagnostics
 

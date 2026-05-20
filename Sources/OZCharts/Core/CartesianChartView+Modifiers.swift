@@ -394,6 +394,76 @@ public extension CartesianChartView {
         )
     }
 
+    func chartPlotInsets(_ insets: ChartInsets) -> Self {
+        var copy = self
+        copy.plotInsets = insets
+        return copy
+    }
+
+    func chartContentInsets(_ insets: ChartInsets) -> Self {
+        var copy = self
+        copy.contentInsets = insets
+        return copy
+    }
+
+    func chartContentInsets(
+        top: CGFloat = 0,
+        leading: CGFloat = 0,
+        bottom: CGFloat = 0,
+        trailing: CGFloat = 0
+    ) -> Self {
+        chartContentInsets(
+            ChartInsets(
+                top: top,
+                leading: leading,
+                bottom: bottom,
+                trailing: trailing
+            )
+        )
+    }
+
+    func chartPlotInsets(
+        top: CGFloat = 0,
+        leading: CGFloat = 0,
+        bottom: CGFloat = 0,
+        trailing: CGFloat = 0
+    ) -> Self {
+        chartPlotInsets(
+            ChartInsets(
+                top: top,
+                leading: leading,
+                bottom: bottom,
+                trailing: trailing
+            )
+        )
+    }
+
+    func chartAxisMarkers(_ markers: [ChartAxisMarker]) -> Self {
+        var copy = self
+        copy.axisMarkers = markers
+        return copy
+    }
+
+    func chartAxisMarkers(_ markers: ChartAxisMarker...) -> Self {
+        chartAxisMarkers(markers)
+    }
+
+    func chartAxisMarkerSelection(
+        _ isEnabled: Bool = true,
+        hitboxRadius: CGFloat = 20,
+        overlapping: ChartOverlappingSelectionMode = .cycle,
+        onChange: @escaping ([ChartAxisMarkerContext]) -> Void = { _ in }
+    ) -> Self {
+        var copy = self
+        copy.axisMarkerSelectionOptions = ChartAxisMarkerSelectionOptions(
+            isEnabled: isEnabled,
+            hitboxRadius: hitboxRadius,
+            overlappingMode: overlapping
+        )
+        copy.onAxisMarkerSelectionChanged = onChange
+        return copy
+    }
+
     func chartEmptyState(
         @ViewBuilder _ content: @escaping () -> some View
     ) -> Self {

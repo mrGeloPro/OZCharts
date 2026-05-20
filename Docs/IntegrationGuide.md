@@ -221,6 +221,26 @@ YAxisConfig(
 )
 ```
 
+Use `.plotInsets(...)` when the rendered plot content should be inset inside
+the axis frame while axis labels keep their reserved slots. This avoids wrapper
+padding that can desync grid lines, annotations, selection hit-testing, or
+tooltips from the visible marks.
+
+```swift
+chart
+    .plotInsets(top: 0, leading: 8, bottom: 0, trailing: 12)
+```
+
+Use `.contentInsets(...)` when the entire chart block should move inside a
+card or screen while axes, plot, markers, selection, and tooltips stay together.
+This is the right tool for balancing unequal left/right visual margins without
+negative SwiftUI padding around the chart.
+
+```swift
+chart
+    .contentInsets(top: 0, leading: 12, bottom: 0, trailing: 0)
+```
+
 Use `.plotBorder(edges:color:lineWidth:)` when the design calls for a complete
 plot-area frame. It draws on the canvas boundary itself, so top/bottom/leading/
 trailing edges meet cleanly without adding fake axes or annotation lines.

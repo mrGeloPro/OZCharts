@@ -24,6 +24,7 @@ final class DemoAppStructureTests: XCTestCase {
             "DemoApp/DemoApp/Demos/Core/ViewportControlsDemoView.swift",
             "DemoApp/DemoApp/Demos/Core/LinkedChartsDemoView.swift",
             "DemoApp/DemoApp/Demos/Core/SelectableAnnotationsDemoView.swift",
+            "DemoApp/DemoApp/Demos/Core/AxisMarkersDemoView.swift",
             "DemoApp/DemoApp/Demos/Product/AccuracyDemoView.swift",
             "DemoApp/DemoApp/Demos/Product/DonutScoreDemoView.swift",
             "DemoApp/DemoApp/Demos/Product/StarAchievementDemoView.swift",
@@ -61,7 +62,8 @@ final class DemoAppStructureTests: XCTestCase {
             "DonutScoreDemoView",
             "AllFeaturesShowcaseView",
             "ViewportControlsDemoView",
-            "SelectableAnnotationsDemoView"
+            "SelectableAnnotationsDemoView",
+            "AxisMarkersDemoView"
         ].forEach {
             XCTAssertTrue(home.contains($0), "Home route is missing \($0).")
         }

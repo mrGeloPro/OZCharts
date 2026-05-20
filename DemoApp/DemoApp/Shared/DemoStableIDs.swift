@@ -24,6 +24,7 @@ enum DemoSeriesID {
     static let hybridLine = UUID(uuidString: "10000000-0000-0000-0000-000000000013")!
     static let liveTrackingLine = UUID(uuidString: "10000000-0000-0000-0000-000000000014")!
     static let emptyStateLine = UUID(uuidString: "10000000-0000-0000-0000-000000000015")!
+    static let axisMarkerLine = UUID(uuidString: "10000000-0000-0000-0000-000000000016")!
 }
 
 enum DemoAnnotationID {
@@ -37,4 +38,13 @@ enum DemoAnnotationID {
         default: return UUID(uuidString: "20000000-0000-0000-0000-000000000013")!
         }
     }
+}
+
+enum DemoAxisMarkerID {
+    static let highPriority = UUID(uuidString: "30000000-0000-0000-0000-000000000001")!
+    static let compactFallback = UUID(uuidString: "30000000-0000-0000-0000-000000000002")!
+    static let shifted = UUID(uuidString: "30000000-0000-0000-0000-000000000003")!
+    static let stacked = UUID(uuidString: "30000000-0000-0000-0000-000000000004")!
+    static let leadingThreshold = UUID(uuidString: "30000000-0000-0000-0000-000000000005")!
+    static let trailingThreshold = UUID(uuidString: "30000000-0000-0000-0000-000000000006")!
 }

@@ -32,6 +32,16 @@ final class ChartLayoutEngineTests: XCTestCase {
         XCTAssertEqual(layout.plotArea, CGRect(x: 40, y: 24, width: 228, height: 184))
     }
 
+    func testChartInsetsCanBeComposed() {
+        let axisInsets = ChartInsets(top: 10, leading: 20, bottom: 30, trailing: 40)
+        let plotInsets = ChartInsets(top: 2, leading: 4, bottom: 6, trailing: 8)
+
+        XCTAssertEqual(
+            axisInsets.adding(plotInsets),
+            ChartInsets(top: 12, leading: 24, bottom: 36, trailing: 48)
+        )
+    }
+
     func testMeasuredInsetsExpandForLongAxisLabels() {
         let measured = ChartLayoutEngine.measuredInsets(
             xAxes: [

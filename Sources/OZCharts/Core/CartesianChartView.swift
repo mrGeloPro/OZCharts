@@ -30,6 +30,7 @@ public struct CartesianChartView<
     let horizontalAnnotations: [HorizontalAnnotation]
     let pointAnnotations: [PointAnnotation<Double, Double>]
     let customViewAnnotations: [CustomViewAnnotation<Double, Double>]
+    var axisMarkers: [ChartAxisMarker]
 
     var baseXScale: XScale
     var baseYScale: YScale
@@ -79,6 +80,9 @@ public struct CartesianChartView<
     public var selectedElementStyle: ChartSelectedElementStyle = .product
     public var canvasRenderOrder: [CanvasLayer] = [.grid, .rangeAnnotations, .horizontalAnnotations, .pointAnnotations, .coreChart]
     public var plotBorderStyle: ChartPlotBorderStyle = .hidden
+    public var contentInsets: ChartInsets = .zero
+    public var plotInsets: ChartInsets = .zero
+    public var axisMarkerSelectionOptions: ChartAxisMarkerSelectionOptions = .disabled
     public var emptyState: (() -> AnyView)?
     var customLegendContent: (([ChartLegendItem]) -> AnyView)?
     var accessibilityDescriptor: ChartAccessibilityDescriptor<Point>?
@@ -90,6 +94,7 @@ public struct CartesianChartView<
     var elementTooltipContent: ((ChartElementTooltipContext) -> AnyView)?
     var annotationTooltipContent: (([ChartAnnotationContext]) -> AnyView)?
     var onAnnotationSelectionChanged: ([ChartAnnotationContext]) -> Void = { _ in }
+    var onAxisMarkerSelectionChanged: ([ChartAxisMarkerContext]) -> Void = { _ in }
     var onEmptyTap: (CGPoint) -> Void = { _ in }
     var onDiagnosticsChanged: ([ChartDiagnostic]) -> Void = { _ in }
 
@@ -97,9 +102,13 @@ public struct CartesianChartView<
 
     @StateObject private var store: ChartStore<Point, XScale, YScale>
     @State private var highlightedAnnotations: [ChartAnnotationContext] = []
+    @State private var highlightedAxisMarkers: [ChartAxisMarkerContext] = []
     @State private var lastGestureLocation: CGPoint?
     @State private var annotationSelectionCycle = ChartAnnotationSelectionCycle()
+    @State private var axisMarkerSelectionCycle = ChartAxisMarkerSelectionCycle()
     @State private var customAnnotationSizes: [UUID: CGSize] = [:]
+    @State private var axisMarkerSizes: [UUID: CGSize] = [:]
+    @State private var axisMarkerCompactSizes: [UUID: CGSize] = [:]
     @State private var lastReportedDiagnostics: [ChartDiagnostic] = []
     @State private var runtimeDiagnostics: [ChartDiagnostic] = []
     @State private var handledSeriesChangeSignature: [ChartSeriesChangeSignature]?
@@ -132,6 +141,7 @@ public struct CartesianChartView<
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
         eventMarkers: [ChartEventMarker] = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
+        axisMarkers: [ChartAxisMarker] = [],
         isHorizontalScrollEnabled: Bool = true,
         isHorizontalZoomEnabled: Bool = true,
         isVerticalScrollEnabled: Bool = true,
@@ -169,6 +179,7 @@ public struct CartesianChartView<
         self.horizontalAnnotations = horizontalAnnotations
         self.pointAnnotations = pointAnnotations + eventMarkers.map(\.pointAnnotation)
         self.customViewAnnotations = customViewAnnotations
+        self.axisMarkers = axisMarkers
         self.isHorizontalScrollEnabled = isHorizontalScrollEnabled
         self.isHorizontalZoomEnabled = isHorizontalZoomEnabled
         self.isVerticalScrollEnabled = isVerticalScrollEnabled
@@ -210,6 +221,7 @@ public struct CartesianChartView<
         pointAnnotations: [PointAnnotation<Double, Double>] = [],
         eventMarkers: [ChartEventMarker] = [],
         customViewAnnotations: [CustomViewAnnotation<Double, Double>] = [],
+        axisMarkers: [ChartAxisMarker] = [],
         isHorizontalScrollEnabled: Bool = true,
         isHorizontalZoomEnabled: Bool = true,
         isVerticalScrollEnabled: Bool = true,
@@ -248,6 +260,7 @@ public struct CartesianChartView<
             pointAnnotations: pointAnnotations,
             eventMarkers: eventMarkers,
             customViewAnnotations: customViewAnnotations,
+            axisMarkers: axisMarkers,
             isHorizontalScrollEnabled: isHorizontalScrollEnabled,
             isHorizontalZoomEnabled: isHorizontalZoomEnabled,
             isVerticalScrollEnabled: isVerticalScrollEnabled,
@@ -313,241 +326,6 @@ public struct CartesianChartView<
             for: store.highlightedPoints,
             selectedElements: store.selectedElements
         ) ?? "")
-    }
-
-    @ViewBuilder
-    private var legendView: some View {
-        let items = series.flatMap(\.legendItems)
-        if !items.isEmpty {
-            if let customLegendContent {
-                customLegendContent(items)
-            } else {
-                ChartLegendView(items: items, options: legendOptions)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func chartWithLegend(layoutInsets: ChartInsets) -> some View {
-        switch legendPosition {
-        case .hidden:
-            chartContent(layoutInsets: layoutInsets)
-
-        case .top:
-            VStack(alignment: .leading, spacing: legendSpacing) {
-                legendView
-                chartContent(layoutInsets: layoutInsets)
-            }
-
-        case .bottom:
-            VStack(alignment: .leading, spacing: legendSpacing) {
-                chartContent(layoutInsets: layoutInsets)
-                legendView
-            }
-
-        case .leading:
-            HStack(alignment: .top, spacing: legendSpacing) {
-                legendView
-                chartContent(layoutInsets: layoutInsets)
-            }
-
-        case .trailing:
-            HStack(alignment: .top, spacing: legendSpacing) {
-                chartContent(layoutInsets: layoutInsets)
-                legendView
-            }
-        }
-    }
-
-    private func chartContent(layoutInsets: ChartInsets) -> some View {
-        let tooltipOverflowAllowance = ChartTooltipOverflowAllowance(
-            leading: measuredYAxisWidth(position: .leading),
-            trailing: measuredYAxisWidth(position: .trailing)
-        )
-
-        return HStack(spacing: 0) {
-            // Leading Y axes
-            HStack(spacing: 0) {
-                ForEach(yAxes.indices, id: \.self) { i in
-                    if yAxes[i].position == .leading {
-                        YAxisView(scale: store.activeYScale, config: yAxes[i])
-                            .frame(width: measuredWidth(for: yAxes[i]))
-                    }
-                }
-            }
-            .padding(.top, layoutInsets.top).padding(.bottom, layoutInsets.bottom)
-
-            VStack(spacing: 0) {
-                // Top X axes
-                ForEach(xAxes.indices, id: \.self) { i in
-                    if xAxes[i].position == .top {
-                        XAxisView(scale: store.activeXScale, config: xAxes[i])
-                            .frame(height: measuredHeight(for: xAxes[i]))
-                    }
-                }
-
-                // Canvas + gestures
-                GeometryReader { geometry in
-                    ZStack {
-                        ChartCanvasView(
-                            series: series.sorted { $0.zIndex < $1.zIndex },
-                            seriesContexts: store.seriesContexts,
-                            renderSeriesContexts: store.renderSeriesContexts,
-                            oldSeriesContexts: store.oldSeriesContexts,
-                            oldRenderSeriesContexts: store.oldRenderSeriesContexts,
-                            animationProgress: store.animationProgress,
-                            animationPhase: store.animationPhase,
-                            isAnimationActive: store.isAnimationActive,
-                            animationStyle: series.first?.animation ?? .none,
-                            activeXScale: store.activeXScale,
-                            activeYScale: store.activeYScale,
-                            xAxes: xAxes,
-                            yAxes: yAxes,
-                            canvasRenderOrder: canvasRenderOrder,
-                            xRangeAnnotations: xRangeAnnotations,
-                            xyRangeAnnotations: xyRangeAnnotations,
-                            rangeAnnotations: rangeAnnotations,
-                            verticalAnnotations: verticalAnnotations,
-                            horizontalAnnotations: horizontalAnnotations,
-                            visiblePointAnnotations: visiblePointAnnotations,
-                            violinBackgrounds: store.violinBackgrounds,
-                            violinColorMapper: nil,
-                            highlightedPoints: store.highlightedPoints,
-                            selectedElementContexts: store.selectedElementContexts,
-                            selectedElementStyle: selectedElementStyle,
-                            plotBorderStyle: plotBorderStyle,
-                            crosshairStyle: crosshairStyle,
-                            tooltipPlacement: tooltipPlacement,
-                            tooltipAnchorPoint: resolvedTooltipAnchorPoint,
-                            tooltipOffset: tooltipOffset,
-                            tooltipPadding: tooltipPadding,
-                            tooltipMaxWidth: tooltipMaxWidth,
-                            tooltipContent: tooltipContent
-                        )
-
-                        ChartGestureHandler(
-                            config: ChartGestureConfig(
-                                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
-                                isVerticalScrollEnabled: isVerticalScrollEnabled,
-                                isHorizontalZoomEnabled: isHorizontalZoomEnabled,
-                                isVerticalZoomEnabled: isVerticalZoomEnabled,
-                                hitboxRadius: hitboxRadius,
-                                selectionBehavior: selectionBehavior,
-                                selectionDismissalPolicy: selectionDismissalPolicy,
-                                selectionActivation: selectionActivation
-                            ),
-                            onEvent: { handleGestureEvent($0) }
-                        )
-
-                        let resolvedAnnotations = resolvedCustomViewAnnotations(in: geometry.size)
-                        ForEach(visibleCustomViewAnnotations) { annotation in
-                            if let resolved = resolvedAnnotations[annotation.id], resolved.isVisible {
-                                annotation.content
-                                    .fixedSize()
-                                    .readSize { customAnnotationSizes[annotation.id] = $0 }
-                                    .position(resolved.position)
-                            } else {
-                                annotation.content
-                                    .fixedSize()
-                                    .hidden()
-                                    .readSize { customAnnotationSizes[annotation.id] = $0 }
-                            }
-                        }
-
-                        if !highlightedAnnotations.isEmpty {
-                            ChartAnnotationTooltipOverlay(
-                                annotations: highlightedAnnotations,
-                                canvasSize: geometry.size,
-                                placement: tooltipPlacement,
-                                anchorOverride: resolvedAnnotationTooltipAnchorPoint,
-                                offset: tooltipOffset,
-                                padding: tooltipPadding,
-                                maxWidth: tooltipMaxWidth,
-                                content: annotationTooltipContent,
-                                onDiagnosticsChanged: publishTooltipDiagnostics
-                            )
-                            .allowsHitTesting(false)
-                        }
-
-                        if !store.selectedElements.isEmpty {
-                            ChartElementTooltipOverlay(
-                                elements: store.selectedElements,
-                                canvasSize: geometry.size,
-                                placement: tooltipPlacement,
-                                anchorOverride: resolvedTooltipAnchorPoint,
-                                offset: tooltipOffset,
-                                padding: tooltipPadding,
-                                maxWidth: tooltipMaxWidth,
-                                overflowAllowance: tooltipOverflowAllowance,
-                                content: elementTooltipContent,
-                                onDiagnosticsChanged: publishTooltipDiagnostics
-                            )
-                            .allowsHitTesting(false)
-                        }
-
-                        if showsZoomControls {
-                            ChartViewportControls(
-                                onZoomIn: { applyProgrammaticZoom(magnification: zoomControlStep) },
-                                onZoomOut: { applyProgrammaticZoom(magnification: 1 / zoomControlStep) },
-                                onReset: { resetViewportFromControls() }
-                            )
-                            .padding(8)
-                            .frame(
-                                maxWidth: .infinity,
-                                maxHeight: .infinity,
-                                alignment: .topTrailing
-                            )
-                        }
-                    }
-                    .onAppear {
-                        syncBaseScales()
-                        store.canvasSize = geometry.size
-                        publishDiagnostics(plotAreaSize: geometry.size, layoutInsets: layoutInsets)
-                        restoreBoundViewportOrInitialize()
-                        publishViewportState()
-                        handledSeriesChangeSignature = seriesChangeSignature
-                        store.queueUpdate(
-                            series: series,
-                            in: geometry.size,
-                            animate: false,
-                            coalesce: false
-                        )
-                        applyBoundSelectionState(boundSelectionState)
-                    }
-                    .onChange(of: geometry.size) { newSize in
-                        store.canvasSize = newSize
-                        publishDiagnostics(plotAreaSize: newSize, layoutInsets: layoutInsets)
-                        store.queueUpdate(
-                            series: series,
-                            in: newSize,
-                            animate: false,
-                            coalesce: false
-                        )
-                        applyBoundSelectionState(boundSelectionState)
-                    }
-                }
-
-                // Bottom X axes
-                ForEach(xAxes.indices, id: \.self) { i in
-                    if xAxes[i].position == .bottom {
-                        XAxisView(scale: store.activeXScale, config: xAxes[i])
-                            .frame(height: measuredHeight(for: xAxes[i]))
-                    }
-                }
-            }
-            .zIndex(1)
-
-            // Trailing Y axes
-            HStack(spacing: 0) {
-                ForEach(yAxes.indices, id: \.self) { i in
-                    if yAxes[i].position == .trailing {
-                        YAxisView(scale: store.activeYScale, config: yAxes[i])
-                            .frame(width: measuredWidth(for: yAxes[i]))
-                    }
-                }
-            }
-            .padding(.top, layoutInsets.top).padding(.bottom, layoutInsets.bottom)
-        }
     }
 
     // MARK: - Gesture handling
@@ -662,6 +440,25 @@ public struct CartesianChartView<
         annotationSelectionCycle.reset()
         onAnnotationSelectionChanged([])
         onChartSelectionChanged(currentSelection)
+    }
+
+    private func handleAxisMarkerTap(
+        _ context: ChartAxisMarkerContext,
+        selectableContexts: [ChartAxisMarkerContext]
+    ) {
+        guard axisMarkerSelectionOptions.isEnabled else { return }
+
+        var cycle = axisMarkerSelectionCycle
+        let selected = ChartAxisMarkerSelectionResolver.select(
+            near: context,
+            contexts: selectableContexts,
+            defaultRadius: axisMarkerSelectionOptions.hitboxRadius,
+            overlappingMode: axisMarkerSelectionOptions.overlappingMode,
+            cycle: &cycle
+        )
+        axisMarkerSelectionCycle = cycle
+        highlightedAxisMarkers = selected
+        onAxisMarkerSelectionChanged(selected)
     }
 
     private func publishDiagnostics(
@@ -1020,6 +817,307 @@ public struct CartesianChartView<
 }
 
 private extension CartesianChartView {
+    @ViewBuilder
+    var legendView: some View {
+        let items = series.flatMap(\.legendItems)
+        if !items.isEmpty {
+            if let customLegendContent {
+                customLegendContent(items)
+            } else {
+                ChartLegendView(items: items, options: legendOptions)
+            }
+        }
+    }
+
+    @ViewBuilder
+    func chartWithLegend(layoutInsets: ChartInsets) -> some View {
+        switch legendPosition {
+        case .hidden:
+            chartContent(layoutInsets: layoutInsets)
+
+        case .top:
+            VStack(alignment: .leading, spacing: legendSpacing) {
+                legendView
+                chartContent(layoutInsets: layoutInsets)
+            }
+
+        case .bottom:
+            VStack(alignment: .leading, spacing: legendSpacing) {
+                chartContent(layoutInsets: layoutInsets)
+                legendView
+            }
+
+        case .leading:
+            HStack(alignment: .top, spacing: legendSpacing) {
+                legendView
+                chartContent(layoutInsets: layoutInsets)
+            }
+
+        case .trailing:
+            HStack(alignment: .top, spacing: legendSpacing) {
+                chartContent(layoutInsets: layoutInsets)
+                legendView
+            }
+        }
+    }
+
+    func chartContent(layoutInsets: ChartInsets) -> some View {
+        let resolvedLayoutInsets = layoutInsets.adding(plotInsets)
+        let tooltipOverflowAllowance = ChartTooltipOverflowAllowance(
+            leading: measuredYAxisWidth(position: .leading),
+            trailing: measuredYAxisWidth(position: .trailing)
+        )
+
+        return HStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ForEach(yAxes.indices, id: \.self) { i in
+                    if yAxes[i].position == .leading {
+                        YAxisView(scale: store.activeYScale, config: yAxes[i])
+                            .frame(width: measuredWidth(for: yAxes[i]))
+                    }
+                }
+            }
+            .padding(.top, resolvedLayoutInsets.top)
+            .padding(.bottom, resolvedLayoutInsets.bottom)
+
+            VStack(spacing: 0) {
+                ForEach(xAxes.indices, id: \.self) { i in
+                    if xAxes[i].position == .top {
+                        XAxisView(scale: store.activeXScale, config: xAxes[i])
+                            .padding(.leading, plotInsets.leading)
+                            .padding(.trailing, plotInsets.trailing)
+                            .frame(height: measuredHeight(for: xAxes[i]))
+                    }
+                }
+
+                GeometryReader { geometry in
+                    let plotSize = resolvedPlotSize(in: geometry.size)
+                    ZStack {
+                        chartCanvasView
+                        chartGestureHandler
+                        customViewAnnotationLayer(in: plotSize)
+                        annotationTooltipLayer(in: plotSize)
+                        elementTooltipLayer(in: plotSize, overflowAllowance: tooltipOverflowAllowance)
+                        zoomControlsLayer
+                    }
+                    .frame(width: plotSize.width, height: plotSize.height)
+                    .padding(plotInsets.edgeInsets)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .onAppear {
+                        syncBaseScales()
+                        store.canvasSize = plotSize
+                        publishDiagnostics(plotAreaSize: plotSize, layoutInsets: resolvedLayoutInsets)
+                        restoreBoundViewportOrInitialize()
+                        publishViewportState()
+                        handledSeriesChangeSignature = seriesChangeSignature
+                        store.queueUpdate(
+                            series: series,
+                            in: plotSize,
+                            animate: false,
+                            coalesce: false
+                        )
+                        applyBoundSelectionState(boundSelectionState)
+                    }
+                    .onChange(of: geometry.size) { newSize in
+                        let newPlotSize = resolvedPlotSize(in: newSize)
+                        store.canvasSize = newPlotSize
+                        publishDiagnostics(plotAreaSize: newPlotSize, layoutInsets: resolvedLayoutInsets)
+                        store.queueUpdate(
+                            series: series,
+                            in: newPlotSize,
+                            animate: false,
+                            coalesce: false
+                        )
+                        applyBoundSelectionState(boundSelectionState)
+                    }
+                    .onChange(of: plotInsets) { _ in
+                        let newPlotSize = resolvedPlotSize(in: geometry.size)
+                        store.canvasSize = newPlotSize
+                        publishDiagnostics(plotAreaSize: newPlotSize, layoutInsets: resolvedLayoutInsets)
+                        store.queueUpdate(
+                            series: series,
+                            in: newPlotSize,
+                            animate: false,
+                            coalesce: false
+                        )
+                        applyBoundSelectionState(boundSelectionState)
+                    }
+                }
+
+                ForEach(xAxes.indices, id: \.self) { i in
+                    if xAxes[i].position == .bottom {
+                        XAxisView(scale: store.activeXScale, config: xAxes[i])
+                            .padding(.leading, plotInsets.leading)
+                            .padding(.trailing, plotInsets.trailing)
+                            .frame(height: measuredHeight(for: xAxes[i]))
+                    }
+                }
+            }
+            .zIndex(1)
+
+            HStack(spacing: 0) {
+                ForEach(yAxes.indices, id: \.self) { i in
+                    if yAxes[i].position == .trailing {
+                        YAxisView(scale: store.activeYScale, config: yAxes[i])
+                            .frame(width: measuredWidth(for: yAxes[i]))
+                    }
+                }
+            }
+            .padding(.top, resolvedLayoutInsets.top)
+            .padding(.bottom, resolvedLayoutInsets.bottom)
+        }
+        .overlay(alignment: .topLeading) {
+            ChartAxisMarkerOverlay(
+                markers: axisMarkers,
+                xScale: store.activeXScale,
+                yScale: store.activeYScale,
+                plotOrigin: CGPoint(
+                    x: resolvedLayoutInsets.leading,
+                    y: resolvedLayoutInsets.top
+                ),
+                plotSize: store.canvasSize,
+                markerSizes: $axisMarkerSizes,
+                compactMarkerSizes: $axisMarkerCompactSizes,
+                selectionOptions: axisMarkerSelectionOptions,
+                selectedIDs: Set(highlightedAxisMarkers.map(\.id)),
+                onMarkerTap: handleAxisMarkerTap
+            )
+            .allowsHitTesting(axisMarkerSelectionOptions.isEnabled)
+        }
+        .padding(contentInsets.edgeInsets)
+    }
+
+    var chartCanvasView: some View {
+        ChartCanvasView(
+            series: series.sorted { $0.zIndex < $1.zIndex },
+            seriesContexts: store.seriesContexts,
+            renderSeriesContexts: store.renderSeriesContexts,
+            oldSeriesContexts: store.oldSeriesContexts,
+            oldRenderSeriesContexts: store.oldRenderSeriesContexts,
+            animationProgress: store.animationProgress,
+            animationPhase: store.animationPhase,
+            isAnimationActive: store.isAnimationActive,
+            animationStyle: series.first?.animation ?? .none,
+            activeXScale: store.activeXScale,
+            activeYScale: store.activeYScale,
+            xAxes: xAxes,
+            yAxes: yAxes,
+            canvasRenderOrder: canvasRenderOrder,
+            xRangeAnnotations: xRangeAnnotations,
+            xyRangeAnnotations: xyRangeAnnotations,
+            rangeAnnotations: rangeAnnotations,
+            verticalAnnotations: verticalAnnotations,
+            horizontalAnnotations: horizontalAnnotations,
+            visiblePointAnnotations: visiblePointAnnotations,
+            violinBackgrounds: store.violinBackgrounds,
+            violinColorMapper: nil,
+            highlightedPoints: store.highlightedPoints,
+            selectedElementContexts: store.selectedElementContexts,
+            selectedElementStyle: selectedElementStyle,
+            plotBorderStyle: plotBorderStyle,
+            crosshairStyle: crosshairStyle,
+            tooltipPlacement: tooltipPlacement,
+            tooltipAnchorPoint: resolvedTooltipAnchorPoint,
+            tooltipOffset: tooltipOffset,
+            tooltipPadding: tooltipPadding,
+            tooltipMaxWidth: tooltipMaxWidth,
+            tooltipContent: tooltipContent
+        )
+    }
+
+    var chartGestureHandler: some View {
+        ChartGestureHandler(
+            config: ChartGestureConfig(
+                isHorizontalScrollEnabled: isHorizontalScrollEnabled,
+                isVerticalScrollEnabled: isVerticalScrollEnabled,
+                isHorizontalZoomEnabled: isHorizontalZoomEnabled,
+                isVerticalZoomEnabled: isVerticalZoomEnabled,
+                hitboxRadius: hitboxRadius,
+                selectionBehavior: selectionBehavior,
+                selectionDismissalPolicy: selectionDismissalPolicy,
+                selectionActivation: selectionActivation
+            ),
+            onEvent: { handleGestureEvent($0) }
+        )
+    }
+
+    @ViewBuilder
+    func customViewAnnotationLayer(in canvasSize: CGSize) -> some View {
+        let resolvedAnnotations = resolvedCustomViewAnnotations(in: canvasSize)
+        ForEach(visibleCustomViewAnnotations) { annotation in
+            if let resolved = resolvedAnnotations[annotation.id], resolved.isVisible {
+                annotation.content
+                    .fixedSize()
+                    .readSize { customAnnotationSizes[annotation.id] = $0 }
+                    .position(resolved.position)
+            } else {
+                annotation.content
+                    .fixedSize()
+                    .hidden()
+                    .readSize { customAnnotationSizes[annotation.id] = $0 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    func annotationTooltipLayer(in canvasSize: CGSize) -> some View {
+        if !highlightedAnnotations.isEmpty {
+            ChartAnnotationTooltipOverlay(
+                annotations: highlightedAnnotations,
+                canvasSize: canvasSize,
+                placement: tooltipPlacement,
+                anchorOverride: resolvedAnnotationTooltipAnchorPoint,
+                offset: tooltipOffset,
+                padding: tooltipPadding,
+                maxWidth: tooltipMaxWidth,
+                content: annotationTooltipContent,
+                onDiagnosticsChanged: publishTooltipDiagnostics
+            )
+            .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    func elementTooltipLayer(
+        in canvasSize: CGSize,
+        overflowAllowance: ChartTooltipOverflowAllowance
+    ) -> some View {
+        if !store.selectedElements.isEmpty {
+            ChartElementTooltipOverlay(
+                elements: store.selectedElements,
+                canvasSize: canvasSize,
+                placement: tooltipPlacement,
+                anchorOverride: resolvedTooltipAnchorPoint,
+                offset: tooltipOffset,
+                padding: tooltipPadding,
+                maxWidth: tooltipMaxWidth,
+                overflowAllowance: overflowAllowance,
+                content: elementTooltipContent,
+                onDiagnosticsChanged: publishTooltipDiagnostics
+            )
+            .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    var zoomControlsLayer: some View {
+        if showsZoomControls {
+            ChartViewportControls(
+                onZoomIn: { applyProgrammaticZoom(magnification: zoomControlStep) },
+                onZoomOut: { applyProgrammaticZoom(magnification: 1 / zoomControlStep) },
+                onReset: { resetViewportFromControls() }
+            )
+            .padding(8)
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity,
+                alignment: .topTrailing
+            )
+        }
+    }
+}
+
+private extension CartesianChartView {
     func measuredHeight(for axis: XAxisConfig) -> CGFloat {
         ChartLayoutEngine.measuredHeight(for: axis, labelSampleLimit: 12)
     }
@@ -1033,6 +1131,13 @@ private extension CartesianChartView {
             .filter { $0.position == position }
             .map { measuredWidth(for: $0) }
             .reduce(0, +)
+    }
+
+    func resolvedPlotSize(in availableSize: CGSize) -> CGSize {
+        CGSize(
+            width: max(0, availableSize.width - plotInsets.leading - plotInsets.trailing),
+            height: max(0, availableSize.height - plotInsets.top - plotInsets.bottom)
+        )
     }
 
     func totalCanvasSize(
@@ -1066,6 +1171,188 @@ private extension CartesianChartView {
 
         runtimeDiagnostics = filtered
         publishDiagnostics(plotAreaSize: store.canvasSize)
+    }
+}
+
+private struct ChartAxisMarkerOverlay<XScale: Scale, YScale: Scale>: View
+where XScale.InputType == Double, XScale.OutputType == CGFloat,
+    YScale.InputType == Double, YScale.OutputType == CGFloat {
+    let markers: [ChartAxisMarker]
+    let xScale: XScale
+    let yScale: YScale
+    let plotOrigin: CGPoint
+    let plotSize: CGSize
+    @Binding var markerSizes: [UUID: CGSize]
+    @Binding var compactMarkerSizes: [UUID: CGSize]
+    let selectionOptions: ChartAxisMarkerSelectionOptions
+    let selectedIDs: Set<UUID>
+    let onMarkerTap: (ChartAxisMarkerContext, [ChartAxisMarkerContext]) -> Void
+
+    var body: some View {
+        GeometryReader { geometry in
+            let results = resolvedResults(in: geometry.size)
+            let contexts = contexts(for: results)
+            let visibleResults = results
+                .filter(\.isVisible)
+                .sorted { first, second in
+                    let firstIsSelected = selectedIDs.contains(first.id)
+                    let secondIsSelected = selectedIDs.contains(second.id)
+                    if firstIsSelected != secondIsSelected {
+                        return !firstIsSelected && secondIsSelected
+                    }
+                    return first.originalIndex < second.originalIndex
+                }
+
+            ZStack(alignment: .topLeading) {
+                measurementLayer
+                    .allowsHitTesting(false)
+
+                ForEach(visibleResults, id: \.id) { result in
+                    if let marker = marker(for: result.id) {
+                        markerView(for: marker, compact: result.usesCompactContent)
+                            .position(result.position)
+                            .onTapGesture {
+                                if let context = contexts.first(where: { $0.id == marker.id }) {
+                                    onMarkerTap(context, contexts)
+                                }
+                            }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var measurementLayer: some View {
+        ForEach(markers) { marker in
+            ZStack {
+                marker.content
+                    .fixedSize()
+                    .hidden()
+                    .readSize { markerSizes[marker.id] = $0 }
+
+                if let compactContent = marker.compactContent {
+                    compactContent
+                        .fixedSize()
+                        .hidden()
+                        .readSize { compactMarkerSizes[marker.id] = $0 }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func markerView(for marker: ChartAxisMarker, compact: Bool) -> some View {
+        let content = compact ? marker.compactContent ?? marker.content : marker.content
+
+        if let label = marker.accessibilityLabel {
+            content
+                .fixedSize()
+                .accessibilityLabel(Text(label))
+                .contentShape(Rectangle())
+        } else {
+            content
+                .fixedSize()
+                .contentShape(Rectangle())
+        }
+    }
+
+    private func resolvedResults(in chartSize: CGSize) -> [ChartAxisMarkerLayoutResult] {
+        let bounds = CGRect(origin: .zero, size: chartSize)
+        let candidates = markers.enumerated().compactMap { index, marker in
+            candidate(for: marker, index: index)
+        }
+
+        return ChartAxisMarkerCollisionResolver.resolve(candidates, bounds: bounds)
+    }
+
+    private func contexts(
+        for results: [ChartAxisMarkerLayoutResult]
+    ) -> [ChartAxisMarkerContext] {
+        results.compactMap { result in
+            guard result.isVisible,
+                  let marker = marker(for: result.id)
+            else { return nil }
+
+            return ChartAxisMarkerContext(
+                marker: marker,
+                anchor: result.anchor,
+                position: result.position,
+                frame: result.frame,
+                usesCompactContent: result.usesCompactContent
+            )
+        }
+    }
+
+    private func candidate(
+        for marker: ChartAxisMarker,
+        index: Int
+    ) -> ChartAxisMarkerLayoutCandidate? {
+        guard let anchor = anchor(for: marker) else { return nil }
+
+        let position = CGPoint(
+            x: anchor.x + marker.offset.width,
+            y: anchor.y + marker.offset.height
+        )
+
+        guard position.x.isFinite, position.y.isFinite else { return nil }
+
+        return ChartAxisMarkerLayoutCandidate(
+            id: marker.id,
+            axis: marker.axis,
+            placement: marker.placement,
+            anchor: anchor,
+            position: position,
+            size: markerSizes[marker.id] ?? .zero,
+            compactSize: compactMarkerSizes[marker.id],
+            priority: marker.priority,
+            collisionStrategy: marker.collisionStrategy,
+            originalIndex: index
+        )
+    }
+
+    private func marker(for id: UUID) -> ChartAxisMarker? {
+        markers.first { $0.id == id }
+    }
+
+    private func anchor(for marker: ChartAxisMarker) -> CGPoint? {
+        guard plotSize.width > 0, plotSize.height > 0 else { return nil }
+
+        switch marker.axis {
+        case .x:
+            let x = xScale.scale(marker.value)
+            guard x >= 0, x <= plotSize.width else { return nil }
+            return CGPoint(
+                x: plotOrigin.x + x,
+                y: xMarkerY(for: marker.placement)
+            )
+
+        case .y:
+            let y = plotSize.height - yScale.scale(marker.value)
+            guard y >= 0, y <= plotSize.height else { return nil }
+            return CGPoint(
+                x: yMarkerX(for: marker.placement),
+                y: plotOrigin.y + y
+            )
+        }
+    }
+
+    private func xMarkerY(for placement: ChartAxisMarkerPlacement) -> CGFloat {
+        switch placement {
+        case .top, .leading:
+            return plotOrigin.y
+        case .bottom, .trailing:
+            return plotOrigin.y + plotSize.height
+        }
+    }
+
+    private func yMarkerX(for placement: ChartAxisMarkerPlacement) -> CGFloat {
+        switch placement {
+        case .leading, .top:
+            return plotOrigin.x
+        case .trailing, .bottom:
+            return plotOrigin.x + plotSize.width
+        }
     }
 }
 

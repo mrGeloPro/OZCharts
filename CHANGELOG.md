@@ -16,6 +16,15 @@
 * Added `StackedBarInteractionOptions.achievement` and
   `StackedBarRemainderStyle.achievementTarget(...)` for achievement-style
   horizontal stacked bars.
+* Added `ChartAxisMarker` and `.axisMarkers(...)` for SwiftUI icons or badges
+  pinned to x/y axis values without changing ticks, grid, or chart domains.
+* Added axis-marker collision controls (`priority`, compact content, and
+  `allowOverlap`/`hideLabel`/`shift`/`stack`/`automatic` strategies), plus
+  opt-in axis-marker selection for overlapping marker clusters.
+* Added `.contentInsets(...)` for shifting the complete axes+plot chart block
+  inside product cards without external wrapper padding.
+* Added `.plotInsets(...)` for first-class plot-area padding without external
+  SwiftUI wrappers or fake axis spacing.
 * Added `ChartFillStyle.achievementRemainder(...)` for native hatched
   remainder segments.
 * Added runtime/product diagnostics for `axis-layout-warning`,

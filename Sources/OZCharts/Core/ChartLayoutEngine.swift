@@ -10,6 +10,8 @@ import CoreGraphics
 import SwiftUI
 
 public struct ChartInsets {
+    public static let zero = ChartInsets()
+
     public let top: CGFloat
     public let leading: CGFloat
     public let bottom: CGFloat
@@ -25,6 +27,19 @@ public struct ChartInsets {
         self.leading = leading
         self.bottom = bottom
         self.trailing = trailing
+    }
+
+    public var edgeInsets: EdgeInsets {
+        EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)
+    }
+
+    public func adding(_ other: ChartInsets) -> ChartInsets {
+        ChartInsets(
+            top: top + other.top,
+            leading: leading + other.leading,
+            bottom: bottom + other.bottom,
+            trailing: trailing + other.trailing
+        )
     }
 }
 
