@@ -7,30 +7,6 @@
 //
 
 import CoreGraphics
-import Foundation
-
-struct ChartAxisMarkerLayoutCandidate {
-    let id: UUID
-    let axis: ChartAxisMarkerAxis
-    let placement: ChartAxisMarkerPlacement
-    let anchor: CGPoint
-    let position: CGPoint
-    let size: CGSize
-    let compactSize: CGSize?
-    let priority: Double
-    let collisionStrategy: ChartAxisMarkerCollisionStrategy
-    let originalIndex: Int
-}
-
-struct ChartAxisMarkerLayoutResult {
-    let id: UUID
-    let anchor: CGPoint
-    let position: CGPoint
-    let frame: CGRect
-    let isVisible: Bool
-    let usesCompactContent: Bool
-    let originalIndex: Int
-}
 
 enum ChartAxisMarkerCollisionResolver {
     static func resolve(
@@ -362,9 +338,4 @@ private extension ChartAxisMarkerCollisionResolver {
             height: resolvedSize.height
         )
     }
-}
-
-private struct ChartAxisMarkerCollisionGroup: Hashable {
-    let axis: ChartAxisMarkerAxis
-    let placement: ChartAxisMarkerPlacement
 }
